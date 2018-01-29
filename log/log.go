@@ -1,4 +1,4 @@
-package main
+package log
 
 import (
 	"io"
@@ -19,7 +19,7 @@ func Init(
 	errorHandle io.Writer) {
 
 	Trace = log.New(traceHandle,
-		"TRACE: ",
+		"Trace: ",
 		log.Ldate|log.Ltime|log.Lshortfile)
 
 	Info = log.New(infoHandle,

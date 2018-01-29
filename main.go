@@ -3,18 +3,22 @@ package main
 import (
 	"io/ioutil"
 	"os"
+
+	"github.com/juruen/rmapi/api"
+	"github.com/juruen/rmapi/log"
+	"github.com/juruen/rmapi/shell"
 )
 
 func main() {
-	Init(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr)
+	log.Init(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr)
 
-	ctx := authHttpCtx()
+	ctx := api.AuthHttpCtx()
 
-	fileTree := ctx.documentsFileTree()
+	fileTree := ctx.DocumentsFileTree()
 
 	if fileTree == nil {
-		Error.Fatal("failed to build documents tree")
+		log.Error.Fatal("failed to build documents tree")
 	}
 
-	runShell(fileTree)
+	shell.RunShell(ctx, fileTree)
 }

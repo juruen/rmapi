@@ -1,4 +1,4 @@
-package main
+package api
 
 type FileTreeCtx struct {
 	root          *Node
@@ -18,6 +18,10 @@ func CreateFileTreeCtx() FileTreeCtx {
 		make(map[string]*Node),
 		make(map[string]map[string]struct{}),
 	}
+}
+
+func (ctx *FileTreeCtx) Root() *Node {
+	return ctx.root
 }
 
 func (ctx *FileTreeCtx) addDocument(document Document) {

@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"testing"
@@ -34,7 +34,7 @@ func createDirectory(id, parent, name string) Document {
 func TestCreateFileTreeCtx(t *testing.T) {
 	ctx := CreateFileTreeCtx()
 
-	assert.Equal(t, "/", ctx.root.name())
+	assert.Equal(t, "/", ctx.root.Name())
 }
 
 func TestAddSingleFileToRoot(t *testing.T) {
@@ -45,7 +45,7 @@ func TestAddSingleFileToRoot(t *testing.T) {
 	ctx.addDocument(file)
 
 	assert.Equal(t, 1, len(ctx.root.Children))
-	assert.Equal(t, "file", ctx.root.Children["1"].name())
+	assert.Equal(t, "file", ctx.root.Children["1"].Name())
 }
 
 func TestAddDirAndFiles(t *testing.T) {
@@ -64,10 +64,10 @@ func TestAddDirAndFiles(t *testing.T) {
 	ctx.addDocument(file1)
 	assert.Equal(t, 0, len(ctx.pendingParent))
 
-	assert.Equal(t, "/", ctx.root.name())
-	assert.Equal(t, "dir", ctx.root.Children["1"].name())
-	assert.Equal(t, "file", ctx.root.Children["1"].Children["2"].name())
-	assert.Equal(t, "file1", ctx.root.Children["1"].Children["3"].name())
+	assert.Equal(t, "/", ctx.root.Name())
+	assert.Equal(t, "dir", ctx.root.Children["1"].Name())
+	assert.Equal(t, "file", ctx.root.Children["1"].Children["2"].Name())
+	assert.Equal(t, "file1", ctx.root.Children["1"].Children["3"].Name())
 
 }
 
@@ -101,12 +101,12 @@ func TestAddSeveralFilesAndDirs(t *testing.T) {
 	ctx.addDocument(dir12)
 	ctx.addDocument(dir1)
 
-	assert.Equal(t, "/", ctx.root.name())
-	assert.Equal(t, "dir1", ctx.root.Children["1"].name())
-	assert.Equal(t, "dir12", ctx.root.Children["1"].Children["2"].name())
-	assert.Equal(t, "file1", ctx.root.Children["1"].Children["2"].Children["5"].name())
-	assert.Equal(t, "file2", ctx.root.Children["3"].Children["6"].name())
-	assert.Equal(t, "file3", ctx.root.Children["4"].Children["7"].name())
-	assert.Equal(t, "file4", ctx.root.Children["4"].Children["8"].name())
-	assert.Equal(t, "file5", ctx.root.Children["9"].name())
+	assert.Equal(t, "/", ctx.root.Name())
+	assert.Equal(t, "dir1", ctx.root.Children["1"].Name())
+	assert.Equal(t, "dir12", ctx.root.Children["1"].Children["2"].Name())
+	assert.Equal(t, "file1", ctx.root.Children["1"].Children["2"].Children["5"].Name())
+	assert.Equal(t, "file2", ctx.root.Children["3"].Children["6"].Name())
+	assert.Equal(t, "file3", ctx.root.Children["4"].Children["7"].Name())
+	assert.Equal(t, "file4", ctx.root.Children["4"].Children["8"].Name())
+	assert.Equal(t, "file5", ctx.root.Children["9"].Name())
 }
