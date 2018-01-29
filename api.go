@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/satori/go.uuid"
 )
@@ -77,15 +76,23 @@ func (httpCtx *HttpClientCtx) newUserToken() (string, error) {
 	return resp, nil
 }
 
-func (httpCtx *HttpClientCtx) listDocuments() {
+func (httpCtx *HttpClientCtx) documentsFileTree() *FileTreeCtx {
 	documents := make([]Document, 0)
 
 	if err := httpCtx.httpGet(UserBearer, listDocs, EmptyBody, &documents); err != nil {
 		Error.Println("failed to fetch documents")
-		return
+		return nil
 	}
 
+	fileTree := CreateFileTreeCtx()
+
 	for _, d := range documents {
-		fmt.Printf("%s = {%s, %s}\n", d.VissibleName, d.ID, d.Parent)
+		fileTree.addDocument(d)
 	}
+
+	for _, d := range fileTree.root.Children {
+		Trace.Println(d.name(), d.isFile())
+	}
+
+	return &fileTree
 }
