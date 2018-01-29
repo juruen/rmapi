@@ -1,5 +1,7 @@
 package api
 
+import "errors"
+
 type Node struct {
 	Document *Document
 	Children map[string]*Node
@@ -25,4 +27,13 @@ func (node *Node) IsFile() bool {
 func (node *Node) EntyExists(id string) bool {
 	_, ok := node.Children[id]
 	return ok
+}
+
+func (node *Node) FindByName(name string) (*Node, error) {
+	for _, n := range node.Children {
+		if n.Name() == name {
+			return n, nil
+		}
+	}
+	return nil, errors.New("entry doesn't exist")
 }

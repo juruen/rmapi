@@ -1,5 +1,12 @@
 package api
 
+import (
+	"errors"
+	"strings"
+
+	"github.com/juruen/rmapi/util"
+)
+
 type FileTreeCtx struct {
 	root          *Node
 	idToNode      map[string]*Node
@@ -55,4 +62,84 @@ func (ctx *FileTreeCtx) addDocument(document Document) {
 		}
 		delete(ctx.pendingParent, nodeId)
 	}
+}
+
+func (ctx *FileTreeCtx) NodeByPath(path string, current *Node) (*Node, error) {
+	if current == nil {
+		current = ctx.Root()
+	}
+
+	entries := util.SplitPath(path)
+
+	if len(entries) == 0 {
+		return current, nil
+	}
+
+	i := 0
+	if entries[i] == "" {
+		current = ctx.Root()
+		i++
+	}
+
+	for i < len(entries) {
+		if entries[i] == "" || entries[i] == "." {
+			i++
+			continue
+		}
+
+		if entries[i] == ".." {
+			if current.Parent == nil {
+				current = ctx.Root()
+			} else {
+				current = current.Parent
+			}
+
+			i++
+			continue
+		}
+
+		var err error
+		current, err = current.FindByName(entries[i])
+
+		if err != nil {
+			return nil, err
+		}
+
+		i++
+	}
+
+	return current, nil
+}
+
+func (ctx *FileTreeCtx) NodeToPath(node *Node) (string, error) {
+	path, err := dfs(ctx.Root(), node, make([]string, 0))
+
+	if err != nil {
+		return "", err
+	}
+
+	if len(path) == 1 {
+		return "/", nil
+	}
+
+	return path[1:len(path)], nil
+}
+
+func dfs(node, target *Node, pathResult []string) (string, error) {
+	pathResult = append(pathResult, node.Name())
+
+	if target == node {
+		return strings.Join(pathResult, "/"), nil
+	}
+
+	newPathResult := make([]string, len(pathResult))
+	copy(newPathResult, pathResult)
+
+	for _, c := range node.Children {
+		if n, err := dfs(c, target, newPathResult); err == nil {
+			return n, nil
+		}
+	}
+
+	return "", errors.New("node not found")
 }
