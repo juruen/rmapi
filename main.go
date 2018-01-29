@@ -10,5 +10,11 @@ func main() {
 
 	ctx := authHttpCtx()
 
-	ctx.listDocuments()
+	fileTree := ctx.documentsFileTree()
+
+	if fileTree == nil {
+		Error.Fatal("failed to build documents tree")
+	}
+
+	runShell(fileTree)
 }
