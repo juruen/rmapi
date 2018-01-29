@@ -85,26 +85,17 @@ func getCmd(ctx *ShellCtxt) *ishell.Cmd {
 			}
 
 			srcName := c.Args[0]
-			found := false
-			var srcId string
 
-			for _, e := range ctx.node.Children {
-				if e.Name() == srcName && e.IsFile() {
-					found = true
-					srcId = e.Document.ID
-					break
-				}
-			}
+			node, err := ctx.fileTree.NodeByPath(srcName, ctx.node)
 
-			sourceNode, _ := ctx.node.Children[srcId]
-			if !found {
-				c.Println("remote file doesn't exist")
+			if err != nil || node.IsDirectory() {
+				c.Println("file doesn't exist")
 				return
 			}
 
 			c.Println(fmt.Sprintf("downlading: [%s]...", srcName))
 
-			err := ctx.httpCtx.FetchDocument(sourceNode.Document.ID, fmt.Sprintf("%s.zip", srcName))
+			err = ctx.httpCtx.FetchDocument(node.Document.ID, fmt.Sprintf("%s.zip", node.Name()))
 
 			if err == nil {
 				c.Println("OK")
