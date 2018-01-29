@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"fmt"
@@ -6,11 +6,12 @@ import (
 	"os"
 	"testing"
 
+	"github.com/juruen/rmapi/common"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSaveLoadConfig(t *testing.T) {
-	tokens := AuthTokens{"foo", "bar"}
+	tokens := common.AuthTokens{"foo", "bar"}
 
 	f, err := ioutil.TempFile("", "rmapitmp")
 
@@ -22,9 +23,9 @@ func TestSaveLoadConfig(t *testing.T) {
 
 	defer os.Remove(path)
 
-	saveTokens(path, tokens)
+	SaveTokens(path, tokens)
 
-	savedTokens := loadTokens(path)
+	savedTokens := LoadTokens(path)
 
 	assert.Equal(t, "foo", savedTokens.DeviceToken)
 	assert.Equal(t, "bar", savedTokens.UserToken)

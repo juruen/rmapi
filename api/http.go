@@ -1,14 +1,18 @@
-package main
+package api
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"strings"
 	"time"
+
+	"github.com/juruen/rmapi/common"
+	"github.com/juruen/rmapi/log"
 )
 
 type AuthType int
@@ -25,17 +29,12 @@ const (
 	EmptyBody string = ""
 )
 
-type AuthTokens struct {
-	DeviceToken string
-	UserToken   string
-}
-
 type HttpClientCtx struct {
 	client *http.Client
-	tokens AuthTokens
+	tokens common.AuthTokens
 }
 
-func CreateHttpClientCtx(tokens AuthTokens) HttpClientCtx {
+func CreateHttpClientCtx(tokens common.AuthTokens) HttpClientCtx {
 	var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 	return HttpClientCtx{httpClient, tokens}
@@ -70,6 +69,17 @@ func (ctx HttpClientCtx) httpGet(authType AuthType, url, body string, target int
 	return json.NewDecoder(response.Body).Decode(target)
 }
 
+func (ctx HttpClientCtx) httpGetStream(authType AuthType, url, body string) (io.ReadCloser, error) {
+	response, err := ctx.httpRequest(authType, http.MethodGet, url, body)
+
+	var respBody io.ReadCloser
+	if response != nil {
+		respBody = response.Body
+	}
+
+	return respBody, err
+}
+
 func (ctx HttpClientCtx) httpPostRaw(authType AuthType, url, reqBody string) (string, error) {
 	response, err := ctx.httpRequest(authType, http.MethodPost, url, reqBody)
 
@@ -96,7 +106,7 @@ func (ctx HttpClientCtx) httpRequest(authType AuthType, verb, url, body string) 
 	ctx.addAuthorization(request, authType)
 
 	drequest, err := httputil.DumpRequest(request, true)
-	Trace.Printf("request: %s", string(drequest))
+	log.Trace.Printf("request: %s", string(drequest))
 
 	response, err := ctx.client.Do(request)
 
@@ -107,10 +117,10 @@ func (ctx HttpClientCtx) httpRequest(authType AuthType, verb, url, body string) 
 	defer response.Body.Close()
 
 	dresponse, err := httputil.DumpResponse(response, true)
-	Trace.Print(string(dresponse))
+	log.Trace.Print(string(dresponse))
 
 	if response.StatusCode != 200 {
-		Warning.Printf("request failed with status %i\n", response.StatusCode)
+		log.Trace.Printf("request failed with status %i\n", response.StatusCode)
 	}
 
 	switch response.StatusCode {

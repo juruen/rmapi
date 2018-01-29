@@ -1,40 +1,43 @@
-package main
+package api
 
 import (
 	"bufio"
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/juruen/rmapi/config"
+	"github.com/juruen/rmapi/log"
 )
 
-func authHttpCtx() *HttpClientCtx {
-	authTokens := loadTokens(configPath())
+func AuthHttpCtx() *HttpClientCtx {
+	authTokens := config.LoadTokens(config.ConfigPath())
 	httpClientCtx := CreateHttpClientCtx(authTokens)
 
 	if authTokens.DeviceToken == "" {
 		deviceToken, err := httpClientCtx.newDeviceToken(readCode())
 
 		if err != nil {
-			Error.Fatal("failed to crete device token from on-time code")
+			log.Error.Fatal("failed to crete device token from on-time code")
 		}
 
-		Trace.Println("device token %s", deviceToken)
+		log.Trace.Println("device token %s", deviceToken)
 
 		authTokens.DeviceToken = deviceToken
-		saveTokens(configPath(), authTokens)
+		config.SaveTokens(config.ConfigPath(), authTokens)
 	}
 
 	if authTokens.UserToken == "" {
 		userToken, err := httpClientCtx.newUserToken()
 
 		if err != nil {
-			Error.Fatal("failed to crete user token from device token")
+			log.Error.Fatal("failed to crete user token from device token")
 		}
 
-		Trace.Println("user token %s", userToken)
+		log.Trace.Println("user token %s", userToken)
 
 		authTokens.UserToken = userToken
-		saveTokens(configPath(), authTokens)
+		config.SaveTokens(config.ConfigPath(), authTokens)
 	}
 
 	return &httpClientCtx
@@ -46,7 +49,7 @@ func readCode() string {
 	code, _ := reader.ReadString('\n')
 
 	if len(code) != 9 {
-		Error.Println("Code has the wrong lenth, it should be 8")
+		log.Error.Println("Code has the wrong lenth, it should be 8")
 		return readCode()
 	}
 
