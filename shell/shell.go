@@ -2,15 +2,16 @@ package shell
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/abiosoft/ishell"
 	"github.com/juruen/rmapi/api"
 )
 
 type ShellCtxt struct {
-	node *api.Node
-	path []string
+	node     *api.Node
+	fileTree *api.FileTreeCtx
+	httpCtx  *api.HttpClientCtx
+	path     string
 }
 
 func lsCmd(ctx *ShellCtxt) *ishell.Cmd {
@@ -34,7 +35,7 @@ func pwdCmd(ctx *ShellCtxt) *ishell.Cmd {
 		Name: "pwd",
 		Help: "print current directory",
 		Func: func(c *ishell.Context) {
-			c.Println(ctx.pathString())
+			c.Println(ctx.path)
 		},
 	}
 }
@@ -50,32 +51,30 @@ func cdCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			target := c.Args[0]
 
-			if target == ".." {
-				if ctx.node.Parent != nil {
-					ctx.node = ctx.node.Parent
-					ctx.path = ctx.path[:len(ctx.path)-1]
-					c.Println("")
-					c.SetPrompt(ctx.prompt())
-					return
-				}
+			node, err := ctx.fileTree.NodeByPath(target, ctx.node)
+
+			if err != nil || node.IsFile() {
+				c.Println("directory doesn't exist")
+				return
 			}
 
-			for _, e := range ctx.node.Children {
-				if e.Name() == target && e.IsDirectory() {
-					ctx.node = e
-					ctx.path = append(ctx.path, e.Name())
-					c.Println("")
-					c.SetPrompt(ctx.prompt())
-					return
-				}
+			path, err := ctx.fileTree.NodeToPath(node)
+
+			if err != nil || node.IsFile() {
+				c.Println("directory doesn't exist")
+				return
 			}
 
-			c.Println("dir doesn't exist")
+			ctx.path = path
+			ctx.node = node
+
+			c.Println()
+			c.SetPrompt(ctx.prompt())
 		},
 	}
 }
 
-func getCmd(httpCtx *api.HttpClientCtx, ctx *ShellCtxt) *ishell.Cmd {
+func getCmd(ctx *ShellCtxt) *ishell.Cmd {
 	return &ishell.Cmd{
 		Name: "get",
 		Help: "copy remote file to local",
@@ -105,7 +104,7 @@ func getCmd(httpCtx *api.HttpClientCtx, ctx *ShellCtxt) *ishell.Cmd {
 
 			c.Println(fmt.Sprintf("downlading: [%s]...", srcName))
 
-			err := httpCtx.FetchDocument(sourceNode.Document.ID, fmt.Sprintf("%s.zip", srcName))
+			err := ctx.httpCtx.FetchDocument(sourceNode.Document.ID, fmt.Sprintf("%s.zip", srcName))
 
 			if err == nil {
 				c.Println("OK")
@@ -117,17 +116,13 @@ func getCmd(httpCtx *api.HttpClientCtx, ctx *ShellCtxt) *ishell.Cmd {
 	}
 }
 
-func (ctx *ShellCtxt) pathString() string {
-	return fmt.Sprintf("/%s", strings.Join(ctx.path, "/"))
-}
-
 func (ctx *ShellCtxt) prompt() string {
-	return fmt.Sprintf("[%s]>", ctx.pathString())
+	return fmt.Sprintf("[%s]>", ctx.path)
 }
 
 func RunShell(httpCtx *api.HttpClientCtx, fileTreeCtx *api.FileTreeCtx) {
 	shell := ishell.New()
-	ctx := &ShellCtxt{fileTreeCtx.Root(), make([]string, 0)}
+	ctx := &ShellCtxt{fileTreeCtx.Root(), fileTreeCtx, httpCtx, "/"}
 
 	shell.Println("ReMarkable Cloud API Shell")
 	shell.SetPrompt(ctx.prompt())
@@ -135,7 +130,7 @@ func RunShell(httpCtx *api.HttpClientCtx, fileTreeCtx *api.FileTreeCtx) {
 	shell.AddCmd(lsCmd(ctx))
 	shell.AddCmd(pwdCmd(ctx))
 	shell.AddCmd(cdCmd(ctx))
-	shell.AddCmd(getCmd(httpCtx, ctx))
+	shell.AddCmd(getCmd(ctx))
 
 	shell.Run()
 }
