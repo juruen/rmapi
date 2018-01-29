@@ -110,3 +110,90 @@ func TestAddSeveralFilesAndDirs(t *testing.T) {
 	assert.Equal(t, "file4", ctx.root.Children["4"].Children["8"].Name())
 	assert.Equal(t, "file5", ctx.root.Children["9"].Name())
 }
+
+func TestNodeByPath(t *testing.T) {
+	ctx := CreateFileTreeCtx()
+
+	// dir1/dir12/file1
+	dir1 := createDirectory("1", "", "dir1")
+	dir12 := createDirectory("2", "1", "dir12")
+	file1 := createFile("3", "2", "file1")
+
+	ctx.addDocument(file1)
+	ctx.addDocument(dir12)
+	ctx.addDocument(dir1)
+
+	node, _ := ctx.NodeByPath("/", ctx.Root())
+	assert.Equal(t, "/", node.Name())
+
+	node, _ = ctx.NodeByPath("/dir1", ctx.Root())
+	assert.Equal(t, "dir1", node.Name())
+
+	node, _ = ctx.NodeByPath("dir1", ctx.Root())
+	assert.Equal(t, "dir1", node.Name())
+
+	node, _ = ctx.NodeByPath("/dir1/dir12", ctx.Root())
+	assert.Equal(t, "dir12", node.Name())
+
+	node, _ = ctx.NodeByPath("/dir1/dir12/file1", ctx.Root())
+	assert.Equal(t, "file1", node.Name())
+
+	dir12Node, _ := ctx.NodeByPath("/dir1/dir12", ctx.Root())
+	node, _ = ctx.NodeByPath("file1", dir12Node)
+	assert.Equal(t, "file1", node.Name())
+
+	node, _ = ctx.NodeByPath("../dir12/file1", dir12Node)
+	assert.Equal(t, "file1", node.Name())
+
+	node, _ = ctx.NodeByPath("./file1", dir12Node)
+	assert.Equal(t, "file1", node.Name())
+}
+
+func TestNodeToPath(t *testing.T) {
+	ctx := CreateFileTreeCtx()
+
+	// dir1/dir12/file1
+	// dir2/file2
+	// dir3/file3
+	// dir3/file4
+	// file5.pdf
+
+	dir1 := createDirectory("1", "", "dir1")
+	dir12 := createDirectory("2", "1", "dir12")
+	dir2 := createDirectory("3", "", "dir2")
+	dir3 := createDirectory("4", "", "dir3")
+
+	file1 := createFile("5", "2", "file1")
+	file2 := createFile("6", "3", "file2")
+	file3 := createFile("7", "4", "file3")
+	file4 := createFile("8", "4", "file4")
+	file5 := createFile("9", "", "file5")
+
+	ctx.addDocument(file1)
+	ctx.addDocument(file2)
+	ctx.addDocument(file3)
+	ctx.addDocument(file4)
+	ctx.addDocument(file5)
+	ctx.addDocument(dir3)
+	ctx.addDocument(dir2)
+	ctx.addDocument(dir12)
+	ctx.addDocument(dir1)
+
+	path, _ := ctx.NodeToPath(ctx.Root())
+	assert.Equal(t, "/", path)
+
+	path, _ = ctx.NodeToPath(ctx.root.Children["1"])
+	assert.Equal(t, "/dir1", path)
+
+	path, _ = ctx.NodeToPath(ctx.root.Children["1"].Children["2"])
+	assert.Equal(t, "/dir1/dir12", path)
+
+	path, _ = ctx.NodeToPath(ctx.root.Children["1"].Children["2"].Children["5"])
+	assert.Equal(t, "/dir1/dir12/file1", path)
+
+	path, _ = ctx.NodeToPath(ctx.root.Children["3"].Children["6"])
+	assert.Equal(t, "/dir2/file2", path)
+
+	path, _ = ctx.NodeToPath(ctx.root.Children["9"])
+	assert.Equal(t, "/file5", path)
+}
