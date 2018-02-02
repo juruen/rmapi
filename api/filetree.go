@@ -13,6 +13,10 @@ type FileTreeCtx struct {
 	pendingParent map[string]map[string]struct{}
 }
 
+type FileTreeVistor struct {
+	visit func(node *Node, path []string) bool
+}
+
 func CreateFileTreeCtx() FileTreeCtx {
 	root := CreateNode(Document{
 		ID:           "1",
@@ -111,35 +115,64 @@ func (ctx *FileTreeCtx) NodeByPath(path string, current *Node) (*Node, error) {
 	return current, nil
 }
 
-func (ctx *FileTreeCtx) NodeToPath(node *Node) (string, error) {
-	path, err := dfs(ctx.Root(), node, make([]string, 0))
+func (ctx *FileTreeCtx) NodeToPath(targetNode *Node) (string, error) {
+	resultPath := ""
+	found := false
 
-	if err != nil {
-		return "", err
+	visitor := FileTreeVistor{
+		func(currentNode *Node, path []string) bool {
+			if targetNode != currentNode {
+				return false
+			}
+
+			found = true
+
+			if len(path) == 0 {
+				resultPath = currentNode.Name()
+				return true
+			}
+
+			path = append(path, currentNode.Name())
+			resultPath = strings.Join(path, "/")
+			resultPath = resultPath[1:len(resultPath)]
+
+			return true
+		},
 	}
 
-	if len(path) == 1 {
-		return "/", nil
-	}
+	WalkTree(ctx.root, visitor)
 
-	return path[1:len(path)], nil
+	if found {
+		return resultPath, nil
+	} else {
+		return "", errors.New("entry not found")
+	}
 }
 
-func dfs(node, target *Node, pathResult []string) (string, error) {
-	pathResult = append(pathResult, node.Name())
+func WalkTree(node *Node, visitor FileTreeVistor) {
+	doWalkTree(node, make([]string, 0), visitor)
+}
 
-	if target == node {
-		return strings.Join(pathResult, "/"), nil
+func appendEntryPath(currentPath []string, entry string) []string {
+	newPath := make([]string, len(currentPath))
+	copy(newPath, currentPath)
+	newPath = append(newPath, entry)
+
+	return newPath
+}
+
+func doWalkTree(node *Node, path []string, visitor FileTreeVistor) bool {
+	if visitor.visit(node, path) {
+		return true
 	}
 
-	newPathResult := make([]string, len(pathResult))
-	copy(newPathResult, pathResult)
+	newPath := appendEntryPath(path, node.Name())
 
 	for _, c := range node.Children {
-		if n, err := dfs(c, target, newPathResult); err == nil {
-			return n, nil
+		if doWalkTree(c, newPath, visitor) {
+			return true
 		}
 	}
 
-	return "", errors.New("node not found")
+	return false
 }
