@@ -7,6 +7,11 @@ import (
 	"github.com/juruen/rmapi/util"
 )
 
+const (
+	stopVisiting     = true
+	continueVisiting = false
+)
+
 type FileTreeCtx struct {
 	root          *Node
 	idToNode      map[string]*Node
@@ -122,21 +127,21 @@ func (ctx *FileTreeCtx) NodeToPath(targetNode *Node) (string, error) {
 	visitor := FileTreeVistor{
 		func(currentNode *Node, path []string) bool {
 			if targetNode != currentNode {
-				return false
+				return continueVisiting
 			}
 
 			found = true
 
 			if len(path) == 0 {
 				resultPath = currentNode.Name()
-				return true
+				return stopVisiting
 			}
 
 			path = append(path, currentNode.Name())
 			resultPath = strings.Join(path, "/")
 			resultPath = resultPath[1:len(resultPath)]
 
-			return true
+			return stopVisiting
 		},
 	}
 
@@ -163,16 +168,16 @@ func appendEntryPath(currentPath []string, entry string) []string {
 
 func doWalkTree(node *Node, path []string, visitor FileTreeVistor) bool {
 	if visitor.visit(node, path) {
-		return true
+		return stopVisiting
 	}
 
 	newPath := appendEntryPath(path, node.Name())
 
 	for _, c := range node.Children {
 		if doWalkTree(c, newPath, visitor) {
-			return true
+			return stopVisiting
 		}
 	}
 
-	return false
+	return continueVisiting
 }
