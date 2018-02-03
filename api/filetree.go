@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	stopVisiting     = true
-	continueVisiting = false
+	StopVisiting     = true
+	ContinueVisiting = false
 )
 
 type FileTreeCtx struct {
@@ -19,7 +19,7 @@ type FileTreeCtx struct {
 }
 
 type FileTreeVistor struct {
-	visit func(node *Node, path []string) bool
+	Visit func(node *Node, path []string) bool
 }
 
 func CreateFileTreeCtx() FileTreeCtx {
@@ -120,6 +120,20 @@ func (ctx *FileTreeCtx) NodeByPath(path string, current *Node) (*Node, error) {
 	return current, nil
 }
 
+func BuildPath(path []string, entry string) string {
+	if len(path) == 0 {
+		return entry
+	}
+
+	path = append(path, entry)
+	resultPath := strings.Join(path, "/")
+
+	if len(path) > 1 && path[0] == "/" {
+		return resultPath[1:len(resultPath)]
+	}
+	return resultPath
+}
+
 func (ctx *FileTreeCtx) NodeToPath(targetNode *Node) (string, error) {
 	resultPath := ""
 	found := false
@@ -127,25 +141,16 @@ func (ctx *FileTreeCtx) NodeToPath(targetNode *Node) (string, error) {
 	visitor := FileTreeVistor{
 		func(currentNode *Node, path []string) bool {
 			if targetNode != currentNode {
-				return continueVisiting
+				return ContinueVisiting
 			}
 
 			found = true
-
-			if len(path) == 0 {
-				resultPath = currentNode.Name()
-				return stopVisiting
-			}
-
-			path = append(path, currentNode.Name())
-			resultPath = strings.Join(path, "/")
-			resultPath = resultPath[1:len(resultPath)]
-
-			return stopVisiting
+			resultPath = BuildPath(path, currentNode.Name())
+			return StopVisiting
 		},
 	}
 
-	WalkTree(ctx.root, visitor)
+	ctx.WalkTree(ctx.root, visitor)
 
 	if found {
 		return resultPath, nil
@@ -154,7 +159,7 @@ func (ctx *FileTreeCtx) NodeToPath(targetNode *Node) (string, error) {
 	}
 }
 
-func WalkTree(node *Node, visitor FileTreeVistor) {
+func (_ *FileTreeCtx) WalkTree(node *Node, visitor FileTreeVistor) {
 	doWalkTree(node, make([]string, 0), visitor)
 }
 
@@ -167,17 +172,17 @@ func appendEntryPath(currentPath []string, entry string) []string {
 }
 
 func doWalkTree(node *Node, path []string, visitor FileTreeVistor) bool {
-	if visitor.visit(node, path) {
-		return stopVisiting
+	if visitor.Visit(node, path) {
+		return StopVisiting
 	}
 
 	newPath := appendEntryPath(path, node.Name())
 
 	for _, c := range node.Children {
 		if doWalkTree(c, newPath, visitor) {
-			return stopVisiting
+			return StopVisiting
 		}
 	}
 
-	return continueVisiting
+	return ContinueVisiting
 }
