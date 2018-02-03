@@ -8,7 +8,13 @@ This is a shell to interact with ReMarkable Cloud API.
 
 # Install it
 
+Install and build the project:
+
+`go get -u github.com/juruen/rmapi`
+
 # Commands
+
+Start the shell by running `rmapi`
 
 ## List current directory
 
