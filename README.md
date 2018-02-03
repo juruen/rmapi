@@ -4,7 +4,10 @@ ReMarkable Cloud Go API
 
 # What is this?
 
-This is a shell to interact with ReMarkable Cloud API.
+An attempt to access the ReMarkable Cloud API programmatically.
+So far, we expose interactions through a shell. However, you can
+run the shell commands non-interactively as way to create scripts
+that work with your reMarkable data.
 
 ![Console Capture](docs/console.gif)
 
@@ -13,6 +16,17 @@ This is a shell to interact with ReMarkable Cloud API.
 Install and build the project:
 
 `go get -u github.com/juruen/rmapi`
+
+# API support
+
+- [x] list files and directories
+- [x] move around directories
+- [x] download a specific file
+- [x] download a directory and all its files and subdiretores recursively
+- [ ] delete a file or a directory
+- [ ] renme a file or a directory
+- [ ] upload a specic file
+- [ ] upload a directory and all its files and subdirectories recursively
 
 # Commands
 
