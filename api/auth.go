@@ -27,18 +27,16 @@ func AuthHttpCtx() *HttpClientCtx {
 		config.SaveTokens(config.ConfigPath(), authTokens)
 	}
 
-	if authTokens.UserToken == "" {
-		userToken, err := httpClientCtx.newUserToken()
+	userToken, err := httpClientCtx.newUserToken()
 
-		if err != nil {
-			log.Error.Fatal("failed to crete user token from device token")
-		}
-
-		log.Trace.Println("user token %s", userToken)
-
-		authTokens.UserToken = userToken
-		config.SaveTokens(config.ConfigPath(), authTokens)
+	if err != nil {
+		log.Error.Fatal("failed to create user token from device token")
 	}
+
+	log.Trace.Println("user token %s", userToken)
+
+	authTokens.UserToken = userToken
+	config.SaveTokens(config.ConfigPath(), authTokens)
 
 	return &httpClientCtx
 }
