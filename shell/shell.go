@@ -134,8 +134,6 @@ func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 					dir := path.Dir(dst)
 
-					fmt.Println(dst, dir)
-
 					if dir[0] != '/' {
 						dir = "./" + dir
 						dst = "./" + dst
@@ -187,5 +185,10 @@ func RunShell(httpCtx *api.HttpClientCtx, fileTreeCtx *api.FileTreeCtx) {
 	shell.AddCmd(getCmd(ctx))
 	shell.AddCmd(mgetCmd(ctx))
 
-	shell.Run()
+	if len(os.Args) > 1 && os.Args[1] == "exit" {
+		shell.Process(os.Args[2:]...)
+	} else {
+		// start shell
+		shell.Run()
+	}
 }
