@@ -6,6 +6,8 @@ ReMarkable Cloud Go API
 
 This is a shell to interact with ReMarkable Cloud API.
 
+![Console Capture](docs/console.gif)
+
 # Install it
 
 Install and build the project:
