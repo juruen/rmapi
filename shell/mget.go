@@ -11,7 +11,7 @@ import (
 func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 	return &ishell.Cmd{
 		Name: "mget",
-		Help: "copy remote file to local",
+		Help: "recursively copy remote directory to local",
 		Func: func(c *ishell.Context) {
 			if len(c.Args) == 0 {
 				c.Println("missing source dir")
@@ -29,17 +29,13 @@ func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			visitor := api.FileTreeVistor{
 				func(currentNode *api.Node, currentPath []string) bool {
-					dst := api.BuildPath(currentPath, currentNode.Name())
-
-					dir := path.Dir(dst)
-
-					if dir[0] != '/' {
-						dir = "./" + dir
-						dst = "./" + dst
-					} else {
-						dir = "." + dir
-						dst = "." + dst
+					idxDir := 0
+					if srcName == "." && len(currentPath) > 0 {
+						idxDir = 1
 					}
+
+					dst := "./" + api.BuildPath(currentPath[idxDir:], currentNode.Name())
+					dir := path.Dir(dst)
 
 					os.MkdirAll(dir, 0766)
 
@@ -62,7 +58,7 @@ func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 				},
 			}
 
-			ctx.fileTree.WalkTree(node, visitor)
+			api.WalkTree(node, visitor)
 		},
 	}
 }
