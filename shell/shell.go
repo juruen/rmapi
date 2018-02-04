@@ -3,7 +3,6 @@ package shell
 import (
 	"fmt"
 	"os"
-	"path"
 
 	"github.com/abiosoft/ishell"
 	"github.com/juruen/rmapi/api"
@@ -14,158 +13,6 @@ type ShellCtxt struct {
 	fileTree *api.FileTreeCtx
 	httpCtx  *api.HttpClientCtx
 	path     string
-}
-
-func lsCmd(ctx *ShellCtxt) *ishell.Cmd {
-	return &ishell.Cmd{
-		Name: "ls",
-		Help: "list current directory",
-		Func: func(c *ishell.Context) {
-			for _, e := range ctx.node.Children {
-				eType := "d"
-				if e.IsFile() {
-					eType = "f"
-				}
-				c.Printf("[%s]\t%s\n", eType, e.Name())
-			}
-		},
-	}
-}
-
-func pwdCmd(ctx *ShellCtxt) *ishell.Cmd {
-	return &ishell.Cmd{
-		Name: "pwd",
-		Help: "print current directory",
-		Func: func(c *ishell.Context) {
-			c.Println(ctx.path)
-		},
-	}
-}
-
-func cdCmd(ctx *ShellCtxt) *ishell.Cmd {
-	return &ishell.Cmd{
-		Name: "cd",
-		Help: "change directory",
-		Func: func(c *ishell.Context) {
-			if len(c.Args) == 0 {
-				return
-			}
-
-			target := c.Args[0]
-
-			node, err := ctx.fileTree.NodeByPath(target, ctx.node)
-
-			if err != nil || node.IsFile() {
-				c.Println("directory doesn't exist")
-				return
-			}
-
-			path, err := ctx.fileTree.NodeToPath(node)
-
-			if err != nil || node.IsFile() {
-				c.Println("directory doesn't exist")
-				return
-			}
-
-			ctx.path = path
-			ctx.node = node
-
-			c.Println()
-			c.SetPrompt(ctx.prompt())
-		},
-	}
-}
-
-func getCmd(ctx *ShellCtxt) *ishell.Cmd {
-	return &ishell.Cmd{
-		Name: "get",
-		Help: "copy remote file to local",
-		Func: func(c *ishell.Context) {
-			if len(c.Args) == 0 {
-				c.Println("missing source file")
-				return
-			}
-
-			srcName := c.Args[0]
-
-			node, err := ctx.fileTree.NodeByPath(srcName, ctx.node)
-
-			if err != nil || node.IsDirectory() {
-				c.Println("file doesn't exist")
-				return
-			}
-
-			c.Println(fmt.Sprintf("downlading: [%s]...", srcName))
-
-			err = ctx.httpCtx.FetchDocument(node.Document.ID, fmt.Sprintf("%s.zip", node.Name()))
-
-			if err == nil {
-				c.Println("OK")
-				return
-			}
-
-			c.Println("Failed to downlaod file: %s", err.Error())
-		},
-	}
-}
-
-func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
-	return &ishell.Cmd{
-		Name: "mget",
-		Help: "copy remote file to local",
-		Func: func(c *ishell.Context) {
-			if len(c.Args) == 0 {
-				c.Println("missing source dir")
-				return
-			}
-
-			srcName := c.Args[0]
-
-			node, err := ctx.fileTree.NodeByPath(srcName, ctx.node)
-
-			if err != nil || node.IsFile() {
-				c.Println("directory doesn't exist")
-				return
-			}
-
-			visitor := api.FileTreeVistor{
-				func(currentNode *api.Node, currentPath []string) bool {
-					dst := api.BuildPath(currentPath, currentNode.Name())
-
-					dir := path.Dir(dst)
-
-					if dir[0] != '/' {
-						dir = "./" + dir
-						dst = "./" + dst
-					} else {
-						dir = "." + dir
-						dst = "." + dst
-					}
-
-					os.MkdirAll(dir, 0766)
-
-					if currentNode.IsDirectory() {
-						return api.ContinueVisiting
-					}
-
-					c.Printf("downloading [%s]...", dst)
-
-					err = ctx.httpCtx.FetchDocument(currentNode.Document.ID, dst)
-
-					if err == nil {
-						c.Println(" OK")
-						return api.ContinueVisiting
-					}
-
-					c.Println("Failed to downlaod file: %s", err)
-
-					return api.ContinueVisiting
-				},
-			}
-
-			ctx.fileTree.WalkTree(node, visitor)
-		},
-	}
 }
 
 func (ctx *ShellCtxt) prompt() string {
@@ -188,7 +35,6 @@ func RunShell(httpCtx *api.HttpClientCtx, fileTreeCtx *api.FileTreeCtx) {
 	if len(os.Args) > 1 && os.Args[1] == "exit" {
 		shell.Process(os.Args[2:]...)
 	} else {
-		// start shell
 		shell.Run()
 	}
 }
