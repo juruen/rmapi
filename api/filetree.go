@@ -2,14 +2,8 @@ package api
 
 import (
 	"errors"
-	"strings"
 
 	"github.com/juruen/rmapi/util"
-)
-
-const (
-	StopVisiting     = true
-	ContinueVisiting = false
 )
 
 type FileTreeCtx struct {
@@ -120,20 +114,6 @@ func (ctx *FileTreeCtx) NodeByPath(path string, current *Node) (*Node, error) {
 	return current, nil
 }
 
-func BuildPath(path []string, entry string) string {
-	if len(path) == 0 {
-		return entry
-	}
-
-	path = append(path, entry)
-	resultPath := strings.Join(path, "/")
-
-	if len(path) > 1 && path[0] == "/" {
-		return resultPath[1:len(resultPath)]
-	}
-	return resultPath
-}
-
 func (ctx *FileTreeCtx) NodeToPath(targetNode *Node) (string, error) {
 	resultPath := ""
 	found := false
@@ -150,39 +130,11 @@ func (ctx *FileTreeCtx) NodeToPath(targetNode *Node) (string, error) {
 		},
 	}
 
-	ctx.WalkTree(ctx.root, visitor)
+	WalkTree(ctx.root, visitor)
 
 	if found {
 		return resultPath, nil
 	} else {
 		return "", errors.New("entry not found")
 	}
-}
-
-func (_ *FileTreeCtx) WalkTree(node *Node, visitor FileTreeVistor) {
-	doWalkTree(node, make([]string, 0), visitor)
-}
-
-func appendEntryPath(currentPath []string, entry string) []string {
-	newPath := make([]string, len(currentPath))
-	copy(newPath, currentPath)
-	newPath = append(newPath, entry)
-
-	return newPath
-}
-
-func doWalkTree(node *Node, path []string, visitor FileTreeVistor) bool {
-	if visitor.Visit(node, path) {
-		return StopVisiting
-	}
-
-	newPath := appendEntryPath(path, node.Name())
-
-	for _, c := range node.Children {
-		if doWalkTree(c, newPath, visitor) {
-			return StopVisiting
-		}
-	}
-
-	return ContinueVisiting
 }
