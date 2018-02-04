@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -84,20 +83,19 @@ func (httpCtx *HttpClientCtx) FetchDocument(docId, dstPath string) error {
 }
 
 func (httpCtx *HttpClientCtx) CreateDir(parentId, name string) (Document, error) {
-	metaDir := CreateDirDocument(parentId, name)
-	documents := ([]MetadataDocument{metaDir})
-	documentBody, err := json.Marshal(documents)
+	metaDoc := CreateDirDocument(parentId, name)
+	metaBody, err := metaDoc.Serialize()
 
 	if err != nil {
 		return Document{}, err
 	}
 
-	_, err = httpCtx.httpPutRaw(UserBearer, updateStatus, string(documentBody))
+	_, err = httpCtx.httpPutRaw(UserBearer, updateStatus, metaBody)
 
 	if err != nil {
-		log.Error.Println("failed to create a new device directory", string(documentBody), err)
+		log.Error.Println("failed to create a new device directory", metaBody, err)
 		return Document{}, err
 	}
 
-	return metaDir.ToDocument(), nil
+	return metaDoc.ToDocument(), nil
 }

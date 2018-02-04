@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"log"
 	"time"
 
@@ -51,6 +52,17 @@ func CreateDirDocument(parent, name string) MetadataDocument {
 		Version:        1,
 		ModifiedClient: time.Now().Format(time.RFC3339Nano),
 	}
+}
+
+func (meta MetadataDocument) Serialize() (string, error) {
+	documents := ([]MetadataDocument{meta})
+	serialized, err := json.Marshal(documents)
+
+	if err != nil {
+		return "", err
+	}
+
+	return string(serialized), nil
 }
 
 func (meta MetadataDocument) ToDocument() Document {
