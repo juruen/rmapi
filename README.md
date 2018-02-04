@@ -6,7 +6,7 @@ ReMarkable Cloud Go API
 
 An attempt to access the ReMarkable Cloud API programmatically.
 So far, we expose interactions through a shell. However, you can
-run the shell commands non-interactively as way to create scripts
+also run the shell commands non-interactively as a way to create scripts
 that work with your reMarkable data.
 
 ![Console Capture](docs/console.gif)
@@ -52,7 +52,7 @@ Use `mget path_to_dir` to recursively download all the files in that directory.
 E.g: download all the files
 
 ```
-mget /
+mget .
 ```
 
 # Run command non-interactively
