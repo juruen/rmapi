@@ -42,7 +42,7 @@ func TestAddSingleFileToRoot(t *testing.T) {
 
 	file := createEntry("1", "", "file", false)
 
-	ctx.addDocument(file)
+	ctx.AddDocument(file)
 
 	assert.Equal(t, 1, len(ctx.root.Children))
 	assert.Equal(t, "file", ctx.root.Children["1"].Name())
@@ -55,13 +55,13 @@ func TestAddDirAndFiles(t *testing.T) {
 	file := createFile("2", "1", "file")
 	file1 := createFile("3", "1", "file1")
 
-	ctx.addDocument(file)
+	ctx.AddDocument(file)
 	assert.Equal(t, 1, len(ctx.pendingParent))
 
-	ctx.addDocument(dir)
+	ctx.AddDocument(dir)
 	assert.Equal(t, 0, len(ctx.pendingParent))
 
-	ctx.addDocument(file1)
+	ctx.AddDocument(file1)
 	assert.Equal(t, 0, len(ctx.pendingParent))
 
 	assert.Equal(t, "/", ctx.root.Name())
@@ -91,15 +91,15 @@ func TestAddSeveralFilesAndDirs(t *testing.T) {
 	file4 := createFile("8", "4", "file4")
 	file5 := createFile("9", "", "file5")
 
-	ctx.addDocument(file1)
-	ctx.addDocument(file2)
-	ctx.addDocument(file3)
-	ctx.addDocument(file4)
-	ctx.addDocument(file5)
-	ctx.addDocument(dir3)
-	ctx.addDocument(dir2)
-	ctx.addDocument(dir12)
-	ctx.addDocument(dir1)
+	ctx.AddDocument(file1)
+	ctx.AddDocument(file2)
+	ctx.AddDocument(file3)
+	ctx.AddDocument(file4)
+	ctx.AddDocument(file5)
+	ctx.AddDocument(dir3)
+	ctx.AddDocument(dir2)
+	ctx.AddDocument(dir12)
+	ctx.AddDocument(dir1)
 
 	assert.Equal(t, "/", ctx.root.Name())
 	assert.Equal(t, "dir1", ctx.root.Children["1"].Name())
@@ -119,9 +119,9 @@ func TestNodeByPath(t *testing.T) {
 	dir12 := createDirectory("2", "1", "dir12")
 	file1 := createFile("3", "2", "file1")
 
-	ctx.addDocument(file1)
-	ctx.addDocument(dir12)
-	ctx.addDocument(dir1)
+	ctx.AddDocument(file1)
+	ctx.AddDocument(dir12)
+	ctx.AddDocument(dir1)
 
 	node, _ := ctx.NodeByPath("/", ctx.Root())
 	assert.Equal(t, "/", node.Name())
@@ -169,15 +169,15 @@ func TestNodeToPath(t *testing.T) {
 	file4 := createFile("8", "4", "file4")
 	file5 := createFile("9", "", "file5")
 
-	ctx.addDocument(file1)
-	ctx.addDocument(file2)
-	ctx.addDocument(file3)
-	ctx.addDocument(file4)
-	ctx.addDocument(file5)
-	ctx.addDocument(dir3)
-	ctx.addDocument(dir2)
-	ctx.addDocument(dir12)
-	ctx.addDocument(dir1)
+	ctx.AddDocument(file1)
+	ctx.AddDocument(file2)
+	ctx.AddDocument(file3)
+	ctx.AddDocument(file4)
+	ctx.AddDocument(file5)
+	ctx.AddDocument(dir3)
+	ctx.AddDocument(dir2)
+	ctx.AddDocument(dir12)
+	ctx.AddDocument(dir1)
 
 	path, _ := ctx.NodeToPath(ctx.Root())
 	assert.Equal(t, "/", path)

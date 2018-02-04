@@ -34,7 +34,7 @@ func (ctx *FileTreeCtx) Root() *Node {
 	return ctx.root
 }
 
-func (ctx *FileTreeCtx) addDocument(document Document) {
+func (ctx *FileTreeCtx) AddDocument(document Document) {
 	node := CreateNode(document)
 	nodeId := document.ID
 	parentId := document.Parent
