@@ -32,8 +32,8 @@ func RunShell(httpCtx *api.HttpClientCtx, fileTreeCtx *api.FileTreeCtx) {
 	shell.AddCmd(getCmd(ctx))
 	shell.AddCmd(mgetCmd(ctx))
 
-	if len(os.Args) > 1 && os.Args[1] == "exit" {
-		shell.Process(os.Args[2:]...)
+	if len(os.Args) > 1 {
+		shell.Process(os.Args[1:]...)
 	} else {
 		shell.Run()
 	}

@@ -57,11 +57,10 @@ mget .
 
 # Run command non-interactively
 
-Add the commands you want to execute to the arguments of the binary, and add
-`exit` as the first argument.
+Add the commands you want to execute to the arguments of the binary.
 
 E.g: simple script to download all files from the cloud to your local machine
 
 ```bash
-$ rmapi exit mget .
+$ rmapi mget .
 ```
