@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -9,71 +8,7 @@ import (
 	"os"
 
 	"github.com/juruen/rmapi/log"
-	"github.com/satori/go.uuid"
 )
-
-type deviceTokenRequest struct {
-	Code       string `json:"code"`
-	DeviceDesc string `json:"deviceDesc"`
-	DeviceId   string `json:"deviceID"`
-}
-
-type Document struct {
-	ID                string
-	Version           int
-	Message           string
-	Success           bool
-	BlobURLGet        string
-	BlobURLGetExpires string
-	ModifiedClient    string
-	Type              string
-	VissibleName      string
-	CurrentPage       int
-	Bookmarked        bool
-	Parent            string
-}
-
-const (
-	defaultDeviceDesc string = "desktop-linux"
-)
-
-func (httpCtx *HttpClientCtx) newDeviceToken(code string) (string, error) {
-	uuid, err := uuid.NewV4()
-
-	if err != nil {
-		panic(err)
-	}
-
-	body, err := json.Marshal(deviceTokenRequest{code, defaultDeviceDesc, uuid.String()})
-
-	log.Trace.Println("body: ", string(body))
-
-	if err != nil {
-		panic(err)
-	}
-
-	resp, err := httpCtx.httpPostRaw(EmptyBearer, newTokenDevice, string(body))
-
-	if err != nil {
-		log.Error.Fatal("failed to create a new device token")
-
-		return "", err
-	}
-
-	return resp, nil
-}
-
-func (httpCtx *HttpClientCtx) newUserToken() (string, error) {
-	resp, err := httpCtx.httpPostRaw(DeviceBearer, newUserDevice, "")
-
-	if err != nil {
-		log.Error.Fatal("failed to create a new user token")
-
-		return "", err
-	}
-
-	return resp, nil
-}
 
 func (httpCtx *HttpClientCtx) DocumentsFileTree() *FileTreeCtx {
 	documents := make([]Document, 0)
