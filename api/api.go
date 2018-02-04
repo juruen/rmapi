@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -21,7 +22,7 @@ func (httpCtx *HttpClientCtx) DocumentsFileTree() *FileTreeCtx {
 	fileTree := CreateFileTreeCtx()
 
 	for _, d := range documents {
-		fileTree.addDocument(d)
+		fileTree.AddDocument(d)
 	}
 
 	for _, d := range fileTree.root.Children {
@@ -80,4 +81,23 @@ func (httpCtx *HttpClientCtx) FetchDocument(docId, dstPath string) error {
 	err = os.Rename(tmpPath, dstPath)
 
 	return nil
+}
+
+func (httpCtx *HttpClientCtx) CreateDir(parentId, name string) (Document, error) {
+	metaDir := CreateDirDocument(parentId, name)
+	documents := ([]MetadataDocument{metaDir})
+	documentBody, err := json.Marshal(documents)
+
+	if err != nil {
+		return Document{}, err
+	}
+
+	_, err = httpCtx.httpPutRaw(UserBearer, updateStatus, string(documentBody))
+
+	if err != nil {
+		log.Error.Println("failed to create a new device directory", string(documentBody), err)
+		return Document{}, err
+	}
+
+	return metaDir.ToDocument(), nil
 }

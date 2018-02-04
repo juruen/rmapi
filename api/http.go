@@ -81,7 +81,15 @@ func (ctx HttpClientCtx) httpGetStream(authType AuthType, url, body string) (io.
 }
 
 func (ctx HttpClientCtx) httpPostRaw(authType AuthType, url, reqBody string) (string, error) {
-	response, err := ctx.httpRequest(authType, http.MethodPost, url, reqBody)
+	return ctx.httpRawReq(authType, http.MethodPost, url, reqBody)
+}
+
+func (ctx HttpClientCtx) httpPutRaw(authType AuthType, url, reqBody string) (string, error) {
+	return ctx.httpRawReq(authType, http.MethodPut, url, reqBody)
+}
+
+func (ctx HttpClientCtx) httpRawReq(authType AuthType, verb, url, reqBody string) (string, error) {
+	response, err := ctx.httpRequest(authType, verb, url, reqBody)
 
 	if response != nil {
 		defer response.Body.Close()

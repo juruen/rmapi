@@ -16,6 +16,14 @@ func (node *Node) Name() string {
 	return node.Document.VissibleName
 }
 
+func (node *Node) Id() string {
+	return node.Document.ID
+}
+
+func (node *Node) IsRoot() bool {
+	return node.Id() == "1"
+}
+
 func (node *Node) IsDirectory() bool {
 	return node.Document.Type == "CollectionType"
 }

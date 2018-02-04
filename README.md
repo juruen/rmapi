@@ -23,9 +23,10 @@ Install and build the project:
 - [x] move around directories
 - [x] download a specific file
 - [x] download a directory and all its files and subdiretores recursively
+- [x] create a directory
 - [ ] delete a file or a directory
-- [ ] renme a file or a directory
-- [ ] upload a specic file
+- [ ] rename a file or a directory
+- [ ] upload a specific file
 - [ ] upload a directory and all its files and subdirectories recursively
 
 # Commands
@@ -54,6 +55,10 @@ E.g: download all the files
 ```
 mget .
 ```
+
+## Create a directoy
+
+Use `mkdir path_to_new_dir` to create a new directory
 
 # Run command non-interactively
 
