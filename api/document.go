@@ -92,6 +92,17 @@ func (meta MetadataDocument) ToDocument() Document {
 	}
 }
 
+func (doc Document) ToMetaDocument() MetadataDocument {
+	return MetadataDocument{
+		ID:             doc.ID,
+		Parent:         doc.Parent,
+		VissibleName:   doc.VissibleName,
+		Type:           doc.Type,
+		Version:        doc.Version,
+		ModifiedClient: time.Now().Format(time.RFC3339Nano),
+	}
+}
+
 func (doc Document) ToDeleteDocument() DeleteDocument {
 	return DeleteDocument{
 		ID:      doc.ID,

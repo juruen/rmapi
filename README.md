@@ -25,7 +25,7 @@ Install and build the project:
 - [x] download a directory and all its files and subdiretores recursively
 - [x] create a directory
 - [x] delete a file or a directory
-- [ ] rename a file or a directory
+- [x] move/rename a file or a directory
 - [ ] upload a specific file
 - [ ] upload a directory and all its files and subdirectories recursively
 
@@ -63,6 +63,10 @@ Use `mkdir path_to_new_dir` to create a new directory
 ##  Remove a directory or a file
 
 Use `rm directory_or_file` to remove. If it's directory, it needs to be empty in order to be deleted.
+
+##  Move/rename a directory or a file
+
+Use `mv source destination` to move or rename a file or directory.
 
 # Run command non-interactively
 

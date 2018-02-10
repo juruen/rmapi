@@ -117,3 +117,41 @@ func (httpCtx *HttpClientCtx) DeleteEntry(node *Node) error {
 
 	return nil
 }
+
+func (httpCtx *HttpClientCtx) MoveEntry(src *Node, dstDir *Node, name string) (*Node, error) {
+	if dstDir.IsFile() {
+		return nil, errors.New("destination directory is a file")
+	}
+
+	metaDoc := src.Document.ToMetaDocument()
+	metaDoc.Version = metaDoc.Version + 1
+	metaDoc.VissibleName = name
+
+	if dstDir.IsRoot() {
+		metaDoc.Parent = ""
+	} else {
+		metaDoc.Parent = dstDir.Id()
+	}
+
+	metaBody, err := metaDoc.Serialize()
+
+	if err != nil {
+		log.Error.Println("failed to move entry", err)
+		return nil, err
+	}
+
+	_, err = httpCtx.httpPutRaw(UserBearer, updateStatus, metaBody)
+
+	if err != nil {
+		log.Error.Println("failed to move entry", metaBody, err)
+		return nil, err
+	}
+
+	doc := metaDoc.ToDocument()
+
+	if doc.Parent == "" {
+		doc.Parent = "1"
+	}
+
+	return &Node{&doc, src.Children, dstDir}, nil
+}

@@ -30,6 +30,7 @@ func mkdirCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			if newDir == "/" || newDir == "." {
 				c.Println("invalid directory name")
+				return
 			}
 
 			parentNode, err := ctx.fileTree.NodeByPath(parentDir, ctx.node)
