@@ -56,9 +56,13 @@ E.g: download all the files
 mget .
 ```
 
-## Create a directoy
+## create a directoy
 
 Use `mkdir path_to_new_dir` to create a new directory
+
+##  remove a directory or a file
+
+Use `rm directory_or_file` to remove. If it's directory, it needs to be empty in order to be deleted.
 
 # Run command non-interactively
 
