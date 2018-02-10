@@ -33,6 +33,7 @@ func RunShell(httpCtx *api.HttpClientCtx, fileTreeCtx *api.FileTreeCtx) {
 	shell.AddCmd(mgetCmd(ctx))
 	shell.AddCmd(mkdirCmd(ctx))
 	shell.AddCmd(rmCmd(ctx))
+	shell.AddCmd(mvCmd(ctx))
 
 	if len(os.Args) > 1 {
 		shell.Process(os.Args[1:]...)

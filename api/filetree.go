@@ -75,6 +75,22 @@ func (ctx *FileTreeCtx) DeleteNode(node *Node) {
 	delete(node.Parent.Children, node.Id())
 }
 
+func (ctx *FileTreeCtx) MoveNode(src, dst *Node) {
+	if src.IsRoot() {
+		return
+	}
+
+	src.Document.VissibleName = dst.Document.VissibleName
+	src.Document.Version = dst.Document.Version
+	src.Document.ModifiedClient = dst.Document.ModifiedClient
+
+	if src.Parent != dst.Parent {
+		delete(src.Parent.Children, src.Id())
+		src.Parent = dst.Parent
+		dst.Parent.Children[src.Id()] = src
+	}
+}
+
 func (ctx *FileTreeCtx) NodeByPath(path string, current *Node) (*Node, error) {
 	if current == nil {
 		current = ctx.Root()
