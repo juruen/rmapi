@@ -24,7 +24,7 @@ Install and build the project:
 - [x] download a specific file
 - [x] download a directory and all its files and subdiretores recursively
 - [x] create a directory
-- [ ] delete a file or a directory
+- [x] delete a file or a directory
 - [ ] rename a file or a directory
 - [ ] upload a specific file
 - [ ] upload a directory and all its files and subdirectories recursively

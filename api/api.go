@@ -99,3 +99,21 @@ func (httpCtx *HttpClientCtx) CreateDir(parentId, name string) (Document, error)
 
 	return metaDoc.ToDocument(), nil
 }
+
+func (httpCtx *HttpClientCtx) DeleteEntry(node *Node) error {
+	if node.IsDirectory() && len(node.Children) > 0 {
+		return errors.New("directory is not empty")
+	}
+
+	del := node.Document.ToDeleteDocument()
+	delBody, err := del.Serialize()
+
+	_, err = httpCtx.httpPutRaw(UserBearer, deleteEntry, delBody)
+
+	if err != nil {
+		log.Error.Println("failed to remove entry", err)
+		return err
+	}
+
+	return nil
+}
