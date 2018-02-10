@@ -67,6 +67,14 @@ func (ctx *FileTreeCtx) AddDocument(document Document) {
 	}
 }
 
+func (ctx *FileTreeCtx) DeleteNode(node *Node) {
+	if node.IsRoot() {
+		return
+	}
+
+	delete(node.Parent.Children, node.Id())
+}
+
 func (ctx *FileTreeCtx) NodeByPath(path string, current *Node) (*Node, error) {
 	if current == nil {
 		current = ctx.Root()

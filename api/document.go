@@ -37,6 +37,11 @@ type MetadataDocument struct {
 	ModifiedClient string
 }
 
+type DeleteDocument struct {
+	ID      string
+	Version int
+}
+
 func CreateDirDocument(parent, name string) MetadataDocument {
 	id, err := uuid.NewV4()
 
@@ -65,6 +70,17 @@ func (meta MetadataDocument) Serialize() (string, error) {
 	return string(serialized), nil
 }
 
+func (del DeleteDocument) Serialize() (string, error) {
+	documents := ([]DeleteDocument{del})
+	serialized, err := json.Marshal(documents)
+
+	if err != nil {
+		return "", err
+	}
+
+	return string(serialized), nil
+}
+
 func (meta MetadataDocument) ToDocument() Document {
 	return Document{
 		ID:             meta.ID,
@@ -73,5 +89,12 @@ func (meta MetadataDocument) ToDocument() Document {
 		Type:           DirectoryType,
 		Version:        1,
 		ModifiedClient: meta.ModifiedClient,
+	}
+}
+
+func (doc Document) ToDeleteDocument() DeleteDocument {
+	return DeleteDocument{
+		ID:      doc.ID,
+		Version: doc.Version,
 	}
 }

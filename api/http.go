@@ -35,7 +35,7 @@ type HttpClientCtx struct {
 }
 
 func CreateHttpClientCtx(tokens common.AuthTokens) HttpClientCtx {
-	var httpClient = &http.Client{Timeout: 30 * time.Second}
+	var httpClient = &http.Client{Timeout: 60 * time.Second}
 
 	return HttpClientCtx{httpClient, tokens}
 }
@@ -88,6 +88,10 @@ func (ctx HttpClientCtx) httpPutRaw(authType AuthType, url, reqBody string) (str
 	return ctx.httpRawReq(authType, http.MethodPut, url, reqBody)
 }
 
+func (ctx HttpClientCtx) httpDelRaw(authType AuthType, url, reqBody string) (string, error) {
+	return ctx.httpRawReq(authType, http.MethodDelete, url, reqBody)
+}
+
 func (ctx HttpClientCtx) httpRawReq(authType AuthType, verb, url, reqBody string) (string, error) {
 	response, err := ctx.httpRequest(authType, verb, url, reqBody)
 
@@ -119,6 +123,7 @@ func (ctx HttpClientCtx) httpRequest(authType AuthType, verb, url, body string) 
 	response, err := ctx.client.Do(request)
 
 	if err != nil {
+		log.Error.Printf("http request failed with", err)
 		return nil, err
 	}
 
