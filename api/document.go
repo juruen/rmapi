@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"log"
 	"time"
 
@@ -83,7 +82,7 @@ func CreateUploadDocumentRequest() UploadDocumentRequest {
 
 	return UploadDocumentRequest{
 		id.String(),
-		"DocumentType",
+		DocumentType,
 		1,
 	}
 }
@@ -101,39 +100,6 @@ func CreateUploadDocumentMeta(id, parent, name string) MetadataDocument {
 		Version:        1,
 		ModifiedClient: time.Now().Format(time.RFC3339Nano),
 	}
-}
-
-func (meta MetadataDocument) Serialize() (string, error) {
-	documents := ([]MetadataDocument{meta})
-	serialized, err := json.Marshal(documents)
-
-	if err != nil {
-		return "", err
-	}
-
-	return string(serialized), nil
-}
-
-func (del DeleteDocument) Serialize() (string, error) {
-	documents := ([]DeleteDocument{del})
-	serialized, err := json.Marshal(documents)
-
-	if err != nil {
-		return "", err
-	}
-
-	return string(serialized), nil
-}
-
-func (req UploadDocumentRequest) Serialize() (string, error) {
-	documents := ([]UploadDocumentRequest{req})
-	serialized, err := json.Marshal(documents)
-
-	if err != nil {
-		return "", err
-	}
-
-	return string(serialized), nil
 }
 
 func (meta MetadataDocument) ToDocument() Document {

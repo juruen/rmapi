@@ -13,9 +13,14 @@ import (
 
 	"github.com/juruen/rmapi/common"
 	"github.com/juruen/rmapi/log"
+	"github.com/juruen/rmapi/util"
 )
 
 type AuthType int
+
+type BodyString struct {
+	Content string
+}
 
 var UnAuthorizedError = errors.New("401 Unauthorized Error")
 
@@ -55,8 +60,15 @@ func (ctx HttpClientCtx) addAuthorization(req *http.Request, authType AuthType) 
 	req.Header.Add("Authorization", header)
 }
 
-func (ctx HttpClientCtx) httpGet(authType AuthType, url, body string, target interface{}) error {
-	response, err := ctx.httpRequest(authType, http.MethodGet, url, strings.NewReader(body))
+func (ctx HttpClientCtx) httpGet(authType AuthType, url string, body interface{}, target interface{}) error {
+	bodyReader, err := util.ToIOReader(body)
+
+	if err != nil {
+		log.Error.Println("failed to serialize body", err)
+		return err
+	}
+
+	response, err := ctx.httpRequest(authType, http.MethodGet, url, bodyReader)
 
 	if response != nil {
 		defer response.Body.Close()
@@ -69,8 +81,8 @@ func (ctx HttpClientCtx) httpGet(authType AuthType, url, body string, target int
 	return json.NewDecoder(response.Body).Decode(target)
 }
 
-func (ctx HttpClientCtx) httpGetStream(authType AuthType, url, body string) (io.ReadCloser, error) {
-	response, err := ctx.httpRequest(authType, http.MethodGet, url, strings.NewReader(body))
+func (ctx HttpClientCtx) httpGetStream(authType AuthType, url string) (io.ReadCloser, error) {
+	response, err := ctx.httpRequest(authType, http.MethodGet, url, strings.NewReader(""))
 
 	var respBody io.ReadCloser
 	if response != nil {
@@ -80,40 +92,72 @@ func (ctx HttpClientCtx) httpGetStream(authType AuthType, url, body string) (io.
 	return respBody, err
 }
 
-func (ctx HttpClientCtx) httpPostRaw(authType AuthType, url, reqBody string) (string, error) {
-	return ctx.httpRawReq(authType, http.MethodPost, url, strings.NewReader(reqBody))
+func (ctx HttpClientCtx) httpPost(authType AuthType, url string, reqBody, resp interface{}) error {
+	return ctx.httpRawReq(authType, http.MethodPost, url, reqBody, resp)
 }
 
-func (ctx HttpClientCtx) httpPutRaw(authType AuthType, url, reqBody string) (string, error) {
-	return ctx.httpRawReq(authType, http.MethodPut, url, strings.NewReader(reqBody))
+func (ctx HttpClientCtx) httpPut(authType AuthType, url string, reqBody, resp interface{}) error {
+	return ctx.httpRawReq(authType, http.MethodPut, url, reqBody, resp)
 }
 
-func (ctx HttpClientCtx) httpPutStream(authType AuthType, url string, reqBody io.Reader) (string, error) {
-	return ctx.httpRawReq(authType, http.MethodPut, url, reqBody)
+func (ctx HttpClientCtx) httpPutStream(authType AuthType, url string, reqBody io.Reader) error {
+	return ctx.httpRawReq(authType, http.MethodPut, url, reqBody, nil)
 }
 
-func (ctx HttpClientCtx) httpDelRaw(authType AuthType, url, reqBody string) (string, error) {
-	return ctx.httpRawReq(authType, http.MethodDelete, url, strings.NewReader(reqBody))
+func (ctx HttpClientCtx) httpDelete(authType AuthType, url string, reqBody, resp interface{}) error {
+	return ctx.httpRawReq(authType, http.MethodDelete, url, reqBody, resp)
 }
 
-func (ctx HttpClientCtx) httpRawReq(authType AuthType, verb, url string, reqBody io.Reader) (string, error) {
-	response, err := ctx.httpRequest(authType, verb, url, reqBody)
+func (ctx HttpClientCtx) httpRawReq(authType AuthType, verb, url string, reqBody, resp interface{}) error {
+	var contentBody io.Reader
+
+	switch reqBody.(type) {
+	case io.Reader:
+		contentBody = reqBody.(io.Reader)
+	default:
+		c, err := util.ToIOReader(reqBody)
+
+		if err != nil {
+			log.Error.Println("failed to serialize body", err)
+			return nil
+		}
+
+		contentBody = c
+	}
+
+	response, err := ctx.httpRequest(authType, verb, url, contentBody)
 
 	if response != nil {
 		defer response.Body.Close()
 	}
 
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	respBody, err := ioutil.ReadAll(response.Body)
-
-	if err != nil {
-		return "", err
+	// We want to ingore the response
+	if resp == nil {
+		return nil
 	}
 
-	return string(respBody), nil
+	switch resp.(type) {
+	case *BodyString:
+		bodyContent, err := ioutil.ReadAll(response.Body)
+
+		if err != nil {
+			return err
+		}
+
+		resp.(*BodyString).Content = string(bodyContent)
+	default:
+		err := json.NewDecoder(response.Body).Decode(resp)
+
+		if err != nil {
+			log.Error.Println("failed to deserialize body", err, response.Body)
+			return err
+		}
+	}
+	return nil
 }
 
 func (ctx HttpClientCtx) httpRequest(authType AuthType, verb, url string, body io.Reader) (*http.Response, error) {

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -15,7 +14,7 @@ import (
 func (httpCtx *HttpClientCtx) DocumentsFileTree() *FileTreeCtx {
 	documents := make([]Document, 0)
 
-	if err := httpCtx.httpGet(UserBearer, listDocs, EmptyBody, &documents); err != nil {
+	if err := httpCtx.httpGet(UserBearer, listDocs, nil, &documents); err != nil {
 		log.Error.Println("failed to fetch documents %s", err.Error())
 		return nil
 	}
@@ -38,7 +37,7 @@ func (httpCtx *HttpClientCtx) FetchDocument(docId, dstPath string) error {
 
 	url := fmt.Sprintf("%s?withBlob=true&doc=%s", listDocs, docId)
 
-	if err := httpCtx.httpGet(UserBearer, url, EmptyBody, &documents); err != nil {
+	if err := httpCtx.httpGet(UserBearer, url, nil, &documents); err != nil {
 		log.Error.Println("failed to fetch document BlobURLGet %s", err)
 		return err
 	}
@@ -50,7 +49,7 @@ func (httpCtx *HttpClientCtx) FetchDocument(docId, dstPath string) error {
 
 	blobUrl := documents[0].BlobURLGet
 
-	src, err := httpCtx.httpGetStream(UserBearer, blobUrl, EmptyBody)
+	src, err := httpCtx.httpGetStream(UserBearer, blobUrl)
 
 	if src != nil {
 		defer src.Close()
@@ -86,16 +85,11 @@ func (httpCtx *HttpClientCtx) FetchDocument(docId, dstPath string) error {
 
 func (httpCtx *HttpClientCtx) CreateDir(parentId, name string) (Document, error) {
 	metaDoc := CreateDirDocument(parentId, name)
-	metaBody, err := metaDoc.Serialize()
+
+	err := httpCtx.httpPut(UserBearer, updateStatus, metaDoc, nil)
 
 	if err != nil {
-		return Document{}, err
-	}
-
-	_, err = httpCtx.httpPutRaw(UserBearer, updateStatus, metaBody)
-
-	if err != nil {
-		log.Error.Println("failed to create a new device directory", metaBody, err)
+		log.Error.Println("failed to create a new device directory", err)
 		return Document{}, err
 	}
 
@@ -107,10 +101,9 @@ func (httpCtx *HttpClientCtx) DeleteEntry(node *Node) error {
 		return errors.New("directory is not empty")
 	}
 
-	del := node.Document.ToDeleteDocument()
-	delBody, err := del.Serialize()
+	deleteDoc := node.Document.ToDeleteDocument()
 
-	_, err = httpCtx.httpPutRaw(UserBearer, deleteEntry, delBody)
+	err := httpCtx.httpPut(UserBearer, deleteEntry, deleteDoc, nil)
 
 	if err != nil {
 		log.Error.Println("failed to remove entry", err)
@@ -135,17 +128,10 @@ func (httpCtx *HttpClientCtx) MoveEntry(src *Node, dstDir *Node, name string) (*
 		metaDoc.Parent = dstDir.Id()
 	}
 
-	metaBody, err := metaDoc.Serialize()
+	err := httpCtx.httpPut(UserBearer, updateStatus, metaDoc, nil)
 
 	if err != nil {
 		log.Error.Println("failed to move entry", err)
-		return nil, err
-	}
-
-	_, err = httpCtx.httpPutRaw(UserBearer, updateStatus, metaBody)
-
-	if err != nil {
-		log.Error.Println("failed to move entry", metaBody, err)
 		return nil, err
 	}
 
@@ -190,7 +176,7 @@ func (httpCtx *HttpClientCtx) UploadDocument(parent string, pdfpath string) (*Do
 		return nil, err
 	}
 
-	_, err = httpCtx.httpPutStream(UserBearer, uploadRsp.BlobURLPut, f)
+	err = httpCtx.httpPutStream(UserBearer, uploadRsp.BlobURLPut, f)
 
 	if err != nil {
 		log.Error.Println("failed to upload zip document", err)
@@ -198,17 +184,11 @@ func (httpCtx *HttpClientCtx) UploadDocument(parent string, pdfpath string) (*Do
 	}
 
 	metaDoc := CreateUploadDocumentMeta(uploadRsp.ID, parent, name)
-	metaBody, err := metaDoc.Serialize()
+
+	err = httpCtx.httpPut(UserBearer, updateStatus, metaDoc, nil)
 
 	if err != nil {
-		log.Error.Println("failed to serialize uplaod meta request", err)
-		return nil, err
-	}
-
-	_, err = httpCtx.httpPutRaw(UserBearer, updateStatus, metaBody)
-
-	if err != nil {
-		log.Error.Println("failed to move entry", metaBody, err)
+		log.Error.Println("failed to move entry", err)
 		return nil, err
 	}
 
@@ -219,26 +199,13 @@ func (httpCtx *HttpClientCtx) UploadDocument(parent string, pdfpath string) (*Do
 
 func (httpCtx *HttpClientCtx) uploadRequest() (UploadDocumentResponse, error) {
 	uploadReq := CreateUploadDocumentRequest()
-	uploadReqBody, err := uploadReq.Serialize()
-	uploadRsp := make([]UploadDocumentResponse, 1)
+	uploadRsp := make([]UploadDocumentResponse, 0)
 
-	if err != nil {
-		log.Error.Println("failed to serilize upload request", err)
-		return uploadRsp[0], err
-	}
-
-	resp, err := httpCtx.httpPutRaw(UserBearer, uploadRequest, string(uploadReqBody))
+	err := httpCtx.httpPut(UserBearer, uploadRequest, uploadReq, &uploadRsp)
 
 	if err != nil {
 		log.Error.Println("failed to to send upload request", err)
-		return uploadRsp[0], err
-	}
-
-	err = json.Unmarshal([]byte(resp), &uploadRsp)
-
-	if err != nil {
-		log.Error.Println("failed to to deserialize upload request", err)
-		return uploadRsp[0], err
+		return UploadDocumentResponse{}, err
 	}
 
 	return uploadRsp[0], nil
