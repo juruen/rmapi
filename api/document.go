@@ -42,6 +42,21 @@ type DeleteDocument struct {
 	Version int
 }
 
+type UploadDocumentRequest struct {
+	ID      string
+	Type    string
+	Version int
+}
+
+type UploadDocumentResponse struct {
+	ID                string
+	Version           int
+	Message           string
+	Success           bool
+	BlobURLPut        string
+	BlobURLPutExpires string
+}
+
 func CreateDirDocument(parent, name string) MetadataDocument {
 	id, err := uuid.NewV4()
 
@@ -54,6 +69,35 @@ func CreateDirDocument(parent, name string) MetadataDocument {
 		Parent:         parent,
 		VissibleName:   name,
 		Type:           DirectoryType,
+		Version:        1,
+		ModifiedClient: time.Now().Format(time.RFC3339Nano),
+	}
+}
+
+func CreateUploadDocumentRequest() UploadDocumentRequest {
+	id, err := uuid.NewV4()
+
+	if err != nil {
+		log.Panic("failed to create uuid for upload request")
+	}
+
+	return UploadDocumentRequest{
+		id.String(),
+		"DocumentType",
+		1,
+	}
+}
+
+func CreateUploadDocumentMeta(id, parent, name string) MetadataDocument {
+	if parent == "1" {
+		parent = ""
+	}
+
+	return MetadataDocument{
+		ID:             id,
+		Parent:         parent,
+		VissibleName:   name,
+		Type:           DocumentType,
 		Version:        1,
 		ModifiedClient: time.Now().Format(time.RFC3339Nano),
 	}
@@ -81,12 +125,23 @@ func (del DeleteDocument) Serialize() (string, error) {
 	return string(serialized), nil
 }
 
+func (req UploadDocumentRequest) Serialize() (string, error) {
+	documents := ([]UploadDocumentRequest{req})
+	serialized, err := json.Marshal(documents)
+
+	if err != nil {
+		return "", err
+	}
+
+	return string(serialized), nil
+}
+
 func (meta MetadataDocument) ToDocument() Document {
 	return Document{
 		ID:             meta.ID,
 		Parent:         meta.Parent,
 		VissibleName:   meta.VissibleName,
-		Type:           DirectoryType,
+		Type:           meta.Type,
 		Version:        1,
 		ModifiedClient: meta.ModifiedClient,
 	}

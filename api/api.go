@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -8,6 +9,7 @@ import (
 	"os"
 
 	"github.com/juruen/rmapi/log"
+	"github.com/juruen/rmapi/util"
 )
 
 func (httpCtx *HttpClientCtx) DocumentsFileTree() *FileTreeCtx {
@@ -154,4 +156,90 @@ func (httpCtx *HttpClientCtx) MoveEntry(src *Node, dstDir *Node, name string) (*
 	}
 
 	return &Node{&doc, src.Children, dstDir}, nil
+}
+
+func (httpCtx *HttpClientCtx) UploadDocument(parent string, pdfpath string) (*Document, error) {
+	name := util.PdfPathToName(pdfpath)
+
+	if name == "" {
+		return nil, errors.New("file name is invalid")
+	}
+
+	uploadRsp, err := httpCtx.uploadRequest()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !uploadRsp.Success {
+		return nil, errors.New("upload request returned success := false")
+	}
+
+	zippath, err := util.CreateZipDocument(uploadRsp.ID, pdfpath)
+
+	if err != nil {
+		log.Error.Println("failed to create zip doc", err)
+		return nil, err
+	}
+
+	f, err := os.Open(zippath)
+	defer f.Close()
+
+	if err != nil {
+		log.Error.Println("failed to read zip file to upload", zippath, err)
+		return nil, err
+	}
+
+	_, err = httpCtx.httpPutStream(UserBearer, uploadRsp.BlobURLPut, f)
+
+	if err != nil {
+		log.Error.Println("failed to upload zip document", err)
+		return nil, err
+	}
+
+	metaDoc := CreateUploadDocumentMeta(uploadRsp.ID, parent, name)
+	metaBody, err := metaDoc.Serialize()
+
+	if err != nil {
+		log.Error.Println("failed to serialize uplaod meta request", err)
+		return nil, err
+	}
+
+	_, err = httpCtx.httpPutRaw(UserBearer, updateStatus, metaBody)
+
+	if err != nil {
+		log.Error.Println("failed to move entry", metaBody, err)
+		return nil, err
+	}
+
+	doc := metaDoc.ToDocument()
+
+	return &doc, err
+}
+
+func (httpCtx *HttpClientCtx) uploadRequest() (UploadDocumentResponse, error) {
+	uploadReq := CreateUploadDocumentRequest()
+	uploadReqBody, err := uploadReq.Serialize()
+	uploadRsp := make([]UploadDocumentResponse, 1)
+
+	if err != nil {
+		log.Error.Println("failed to serilize upload request", err)
+		return uploadRsp[0], err
+	}
+
+	resp, err := httpCtx.httpPutRaw(UserBearer, uploadRequest, string(uploadReqBody))
+
+	if err != nil {
+		log.Error.Println("failed to to send upload request", err)
+		return uploadRsp[0], err
+	}
+
+	err = json.Unmarshal([]byte(resp), &uploadRsp)
+
+	if err != nil {
+		log.Error.Println("failed to to deserialize upload request", err)
+		return uploadRsp[0], err
+	}
+
+	return uploadRsp[0], nil
 }

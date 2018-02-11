@@ -56,7 +56,7 @@ func (ctx HttpClientCtx) addAuthorization(req *http.Request, authType AuthType) 
 }
 
 func (ctx HttpClientCtx) httpGet(authType AuthType, url, body string, target interface{}) error {
-	response, err := ctx.httpRequest(authType, http.MethodGet, url, body)
+	response, err := ctx.httpRequest(authType, http.MethodGet, url, strings.NewReader(body))
 
 	if response != nil {
 		defer response.Body.Close()
@@ -70,7 +70,7 @@ func (ctx HttpClientCtx) httpGet(authType AuthType, url, body string, target int
 }
 
 func (ctx HttpClientCtx) httpGetStream(authType AuthType, url, body string) (io.ReadCloser, error) {
-	response, err := ctx.httpRequest(authType, http.MethodGet, url, body)
+	response, err := ctx.httpRequest(authType, http.MethodGet, url, strings.NewReader(body))
 
 	var respBody io.ReadCloser
 	if response != nil {
@@ -81,18 +81,22 @@ func (ctx HttpClientCtx) httpGetStream(authType AuthType, url, body string) (io.
 }
 
 func (ctx HttpClientCtx) httpPostRaw(authType AuthType, url, reqBody string) (string, error) {
-	return ctx.httpRawReq(authType, http.MethodPost, url, reqBody)
+	return ctx.httpRawReq(authType, http.MethodPost, url, strings.NewReader(reqBody))
 }
 
 func (ctx HttpClientCtx) httpPutRaw(authType AuthType, url, reqBody string) (string, error) {
+	return ctx.httpRawReq(authType, http.MethodPut, url, strings.NewReader(reqBody))
+}
+
+func (ctx HttpClientCtx) httpPutStream(authType AuthType, url string, reqBody io.Reader) (string, error) {
 	return ctx.httpRawReq(authType, http.MethodPut, url, reqBody)
 }
 
 func (ctx HttpClientCtx) httpDelRaw(authType AuthType, url, reqBody string) (string, error) {
-	return ctx.httpRawReq(authType, http.MethodDelete, url, reqBody)
+	return ctx.httpRawReq(authType, http.MethodDelete, url, strings.NewReader(reqBody))
 }
 
-func (ctx HttpClientCtx) httpRawReq(authType AuthType, verb, url, reqBody string) (string, error) {
+func (ctx HttpClientCtx) httpRawReq(authType AuthType, verb, url string, reqBody io.Reader) (string, error) {
 	response, err := ctx.httpRequest(authType, verb, url, reqBody)
 
 	if response != nil {
@@ -112,8 +116,8 @@ func (ctx HttpClientCtx) httpRawReq(authType AuthType, verb, url, reqBody string
 	return string(respBody), nil
 }
 
-func (ctx HttpClientCtx) httpRequest(authType AuthType, verb, url, body string) (*http.Response, error) {
-	request, _ := http.NewRequest(verb, url, strings.NewReader(body))
+func (ctx HttpClientCtx) httpRequest(authType AuthType, verb, url string, body io.Reader) (*http.Response, error) {
+	request, _ := http.NewRequest(verb, url, body)
 
 	ctx.addAuthorization(request, authType)
 
