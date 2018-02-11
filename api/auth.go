@@ -2,11 +2,11 @@ package api
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/juruen/rmapi/common"
 	"github.com/juruen/rmapi/config"
 	"github.com/juruen/rmapi/log"
 	uuid "github.com/satori/go.uuid"
@@ -15,12 +15,6 @@ import (
 const (
 	defaultDeviceDesc string = "desktop-linux"
 )
-
-type deviceTokenRequest struct {
-	Code       string `json:"code"`
-	DeviceDesc string `json:"deviceDesc"`
-	DeviceId   string `json:"deviceID"`
-}
 
 func AuthHttpCtx() *HttpClientCtx {
 	authTokens := config.LoadTokens(config.ConfigPath())
@@ -45,7 +39,7 @@ func AuthHttpCtx() *HttpClientCtx {
 		log.Error.Fatal("failed to create user token from device token")
 	}
 
-	log.Trace.Println("user token %s", userToken)
+	log.Trace.Println("user token:", userToken)
 
 	authTokens.UserToken = userToken
 	config.SaveTokens(config.ConfigPath(), authTokens)
@@ -73,27 +67,22 @@ func (httpCtx *HttpClientCtx) newDeviceToken(code string) (string, error) {
 		panic(err)
 	}
 
-	body, err := json.Marshal(deviceTokenRequest{code, defaultDeviceDesc, uuid.String()})
+	req := common.DeviceTokenRequest{code, defaultDeviceDesc, uuid.String()}
 
-	log.Trace.Println("body: ", string(body))
-
-	if err != nil {
-		panic(err)
-	}
-
-	resp, err := httpCtx.httpPostRaw(EmptyBearer, newTokenDevice, string(body))
+	resp := BodyString{}
+	err = httpCtx.httpPost(EmptyBearer, newTokenDevice, req, &resp)
 
 	if err != nil {
 		log.Error.Fatal("failed to create a new device token")
-
 		return "", err
 	}
 
-	return resp, nil
+	return resp.Content, nil
 }
 
 func (httpCtx *HttpClientCtx) newUserToken() (string, error) {
-	resp, err := httpCtx.httpPostRaw(DeviceBearer, newUserDevice, "")
+	resp := BodyString{}
+	err := httpCtx.httpPost(DeviceBearer, newUserDevice, nil, &resp)
 
 	if err != nil {
 		log.Error.Fatal("failed to create a new user token")
@@ -101,5 +90,5 @@ func (httpCtx *HttpClientCtx) newUserToken() (string, error) {
 		return "", err
 	}
 
-	return resp, nil
+	return resp.Content, nil
 }
