@@ -26,7 +26,7 @@ Install and build the project:
 - [x] create a directory
 - [x] delete a file or a directory
 - [x] move/rename a file or a directory
-- [ ] upload a specific file
+- [x] upload a specific file
 - [ ] upload a directory and all its files and subdirectories recursively
 
 # Commands
@@ -41,6 +41,10 @@ are directories, and `[f]` if they are files.
 ## Change current directory
 
 Use `cd` to change the current directory to any other directory in the hiearchy.
+
+## Upload a file
+
+Use `put path_to_local_file` to upload a file  to the current dirctory.
 
 ## Download a file
 
