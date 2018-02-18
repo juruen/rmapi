@@ -7,37 +7,50 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/juruen/rmapi/filetree"
 	"github.com/juruen/rmapi/log"
+	"github.com/juruen/rmapi/model"
+	"github.com/juruen/rmapi/transport"
 	"github.com/juruen/rmapi/util"
 )
 
-func (httpCtx *HttpClientCtx) DocumentsFileTree() *FileTreeCtx {
-	documents := make([]Document, 0)
+type ApiCtx struct {
+	Http     *transport.HttpClientCtx
+	Filetree *filetree.FileTreeCtx
+}
 
-	if err := httpCtx.httpGet(UserBearer, listDocs, nil, &documents); err != nil {
+func CreateApiCtx(http *transport.HttpClientCtx) *ApiCtx {
+	ctx := ApiCtx{http, DocumentsFileTree(http)}
+	return &ctx
+}
+
+func DocumentsFileTree(http *transport.HttpClientCtx) *filetree.FileTreeCtx {
+	documents := make([]model.Document, 0)
+
+	if err := http.Get(transport.UserBearer, listDocs, nil, &documents); err != nil {
 		log.Error.Println("failed to fetch documents %s", err.Error())
 		return nil
 	}
 
-	fileTree := CreateFileTreeCtx()
+	fileTree := filetree.CreateFileTreeCtx()
 
 	for _, d := range documents {
 		fileTree.AddDocument(d)
 	}
 
-	for _, d := range fileTree.root.Children {
+	for _, d := range fileTree.Root().Children {
 		log.Trace.Println(d.Name(), d.IsFile())
 	}
 
 	return &fileTree
 }
 
-func (httpCtx *HttpClientCtx) FetchDocument(docId, dstPath string) error {
-	documents := make([]Document, 0)
+func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
+	documents := make([]model.Document, 0)
 
 	url := fmt.Sprintf("%s?withBlob=true&doc=%s", listDocs, docId)
 
-	if err := httpCtx.httpGet(UserBearer, url, nil, &documents); err != nil {
+	if err := ctx.Http.Get(transport.UserBearer, url, nil, &documents); err != nil {
 		log.Error.Println("failed to fetch document BlobURLGet %s", err)
 		return err
 	}
@@ -49,7 +62,7 @@ func (httpCtx *HttpClientCtx) FetchDocument(docId, dstPath string) error {
 
 	blobUrl := documents[0].BlobURLGet
 
-	src, err := httpCtx.httpGetStream(UserBearer, blobUrl)
+	src, err := ctx.Http.GetStream(transport.UserBearer, blobUrl)
 
 	if src != nil {
 		defer src.Close()
@@ -83,27 +96,27 @@ func (httpCtx *HttpClientCtx) FetchDocument(docId, dstPath string) error {
 	return nil
 }
 
-func (httpCtx *HttpClientCtx) CreateDir(parentId, name string) (Document, error) {
-	metaDoc := CreateDirDocument(parentId, name)
+func (ctx *ApiCtx) CreateDir(parentId, name string) (model.Document, error) {
+	metaDoc := model.CreateDirDocument(parentId, name)
 
-	err := httpCtx.httpPut(UserBearer, updateStatus, metaDoc, nil)
+	err := ctx.Http.Put(transport.UserBearer, updateStatus, metaDoc, nil)
 
 	if err != nil {
 		log.Error.Println("failed to create a new device directory", err)
-		return Document{}, err
+		return model.Document{}, err
 	}
 
 	return metaDoc.ToDocument(), nil
 }
 
-func (httpCtx *HttpClientCtx) DeleteEntry(node *Node) error {
+func (ctx *ApiCtx) DeleteEntry(node *model.Node) error {
 	if node.IsDirectory() && len(node.Children) > 0 {
 		return errors.New("directory is not empty")
 	}
 
 	deleteDoc := node.Document.ToDeleteDocument()
 
-	err := httpCtx.httpPut(UserBearer, deleteEntry, deleteDoc, nil)
+	err := ctx.Http.Put(transport.UserBearer, deleteEntry, deleteDoc, nil)
 
 	if err != nil {
 		log.Error.Println("failed to remove entry", err)
@@ -113,7 +126,7 @@ func (httpCtx *HttpClientCtx) DeleteEntry(node *Node) error {
 	return nil
 }
 
-func (httpCtx *HttpClientCtx) MoveEntry(src *Node, dstDir *Node, name string) (*Node, error) {
+func (ctx *ApiCtx) MoveEntry(src, dstDir *model.Node, name string) (*model.Node, error) {
 	if dstDir.IsFile() {
 		return nil, errors.New("destination directory is a file")
 	}
@@ -128,7 +141,7 @@ func (httpCtx *HttpClientCtx) MoveEntry(src *Node, dstDir *Node, name string) (*
 		metaDoc.Parent = dstDir.Id()
 	}
 
-	err := httpCtx.httpPut(UserBearer, updateStatus, metaDoc, nil)
+	err := ctx.Http.Put(transport.UserBearer, updateStatus, metaDoc, nil)
 
 	if err != nil {
 		log.Error.Println("failed to move entry", err)
@@ -141,17 +154,17 @@ func (httpCtx *HttpClientCtx) MoveEntry(src *Node, dstDir *Node, name string) (*
 		doc.Parent = "1"
 	}
 
-	return &Node{&doc, src.Children, dstDir}, nil
+	return &model.Node{&doc, src.Children, dstDir}, nil
 }
 
-func (httpCtx *HttpClientCtx) UploadDocument(parent string, pdfpath string) (*Document, error) {
+func (ctx *ApiCtx) UploadDocument(parent string, pdfpath string) (*model.Document, error) {
 	name := util.PdfPathToName(pdfpath)
 
 	if name == "" {
 		return nil, errors.New("file name is invalid")
 	}
 
-	uploadRsp, err := httpCtx.uploadRequest()
+	uploadRsp, err := ctx.uploadRequest()
 
 	if err != nil {
 		return nil, err
@@ -176,16 +189,16 @@ func (httpCtx *HttpClientCtx) UploadDocument(parent string, pdfpath string) (*Do
 		return nil, err
 	}
 
-	err = httpCtx.httpPutStream(UserBearer, uploadRsp.BlobURLPut, f)
+	err = ctx.Http.PutStream(transport.UserBearer, uploadRsp.BlobURLPut, f)
 
 	if err != nil {
 		log.Error.Println("failed to upload zip document", err)
 		return nil, err
 	}
 
-	metaDoc := CreateUploadDocumentMeta(uploadRsp.ID, parent, name)
+	metaDoc := model.CreateUploadDocumentMeta(uploadRsp.ID, parent, name)
 
-	err = httpCtx.httpPut(UserBearer, updateStatus, metaDoc, nil)
+	err = ctx.Http.Put(transport.UserBearer, updateStatus, metaDoc, nil)
 
 	if err != nil {
 		log.Error.Println("failed to move entry", err)
@@ -197,15 +210,15 @@ func (httpCtx *HttpClientCtx) UploadDocument(parent string, pdfpath string) (*Do
 	return &doc, err
 }
 
-func (httpCtx *HttpClientCtx) uploadRequest() (UploadDocumentResponse, error) {
-	uploadReq := CreateUploadDocumentRequest()
-	uploadRsp := make([]UploadDocumentResponse, 0)
+func (ctx *ApiCtx) uploadRequest() (model.UploadDocumentResponse, error) {
+	uploadReq := model.CreateUploadDocumentRequest()
+	uploadRsp := make([]model.UploadDocumentResponse, 0)
 
-	err := httpCtx.httpPut(UserBearer, uploadRequest, uploadReq, &uploadRsp)
+	err := ctx.Http.Put(transport.UserBearer, uploadRequest, uploadReq, &uploadRsp)
 
 	if err != nil {
 		log.Error.Println("failed to to send upload request", err)
-		return UploadDocumentResponse{}, err
+		return model.UploadDocumentResponse{}, err
 	}
 
 	return uploadRsp[0], nil

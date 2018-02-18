@@ -1,8 +1,9 @@
-package api
+package filetree
 
 import (
 	"testing"
 
+	"github.com/juruen/rmapi/model"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -11,7 +12,7 @@ const (
 	FILE      = false
 )
 
-func createEntry(id, parent, name string, collection bool) Document {
+func createEntry(id, parent, name string, collection bool) model.Document {
 	var t string
 
 	if collection {
@@ -20,14 +21,14 @@ func createEntry(id, parent, name string, collection bool) Document {
 		t = "DocumentType"
 	}
 
-	return Document{ID: id, Parent: parent, VissibleName: name, Type: t}
+	return model.Document{ID: id, Parent: parent, VissibleName: name, Type: t}
 }
 
-func createFile(id, parent, name string) Document {
+func createFile(id, parent, name string) model.Document {
 	return createEntry(id, parent, name, FILE)
 }
 
-func createDirectory(id, parent, name string) Document {
+func createDirectory(id, parent, name string) model.Document {
 	return createEntry(id, parent, name, DIRECTORY)
 }
 

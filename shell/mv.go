@@ -17,7 +17,7 @@ func mvCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			src := c.Args[0]
 
-			srcNode, err := ctx.fileTree.NodeByPath(src, ctx.node)
+			srcNode, err := ctx.api.Filetree.NodeByPath(src, ctx.node)
 
 			if err != nil {
 				c.Println("source entry doesn't exist")
@@ -26,7 +26,7 @@ func mvCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			dst := c.Args[1]
 
-			dstNode, err := ctx.fileTree.NodeByPath(dst, ctx.node)
+			dstNode, err := ctx.api.Filetree.NodeByPath(dst, ctx.node)
 
 			if dstNode != nil && dstNode.IsFile() {
 				c.Println("destination entry already exists")
@@ -35,14 +35,14 @@ func mvCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			// We are moving the node to antoher directory
 			if dstNode != nil && dstNode.IsDirectory() {
-				n, err := ctx.httpCtx.MoveEntry(srcNode, dstNode, srcNode.Name())
+				n, err := ctx.api.MoveEntry(srcNode, dstNode, srcNode.Name())
 
 				if err != nil {
 					c.Println("failed to move entry", err)
 					return
 				}
 
-				ctx.fileTree.MoveNode(srcNode, n)
+				ctx.api.Filetree.MoveNode(srcNode, n)
 				return
 			}
 
@@ -50,21 +50,21 @@ func mvCmd(ctx *ShellCtxt) *ishell.Cmd {
 			parentDir := path.Dir(dst)
 			newEntry := path.Base(dst)
 
-			parentNode, err := ctx.fileTree.NodeByPath(parentDir, ctx.node)
+			parentNode, err := ctx.api.Filetree.NodeByPath(parentDir, ctx.node)
 
 			if err != nil || parentNode.IsFile() {
 				c.Println("directory doesn't exist")
 				return
 			}
 
-			n, err := ctx.httpCtx.MoveEntry(srcNode, parentNode, newEntry)
+			n, err := ctx.api.MoveEntry(srcNode, parentNode, newEntry)
 
 			if err != nil {
 				c.Println("failed to move entry", err)
 				return
 			}
 
-			ctx.fileTree.MoveNode(srcNode, n)
+			ctx.api.Filetree.MoveNode(srcNode, n)
 		},
 	}
 }

@@ -7,7 +7,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/juruen/rmapi/common"
+	"github.com/juruen/rmapi/model"
 )
 
 func PdfPathToName(pdfPath string) string {
@@ -19,7 +19,7 @@ func ToIOReader(source interface{}) (io.Reader, error) {
 
 	if source != nil {
 		switch source.(type) {
-		case common.DeviceTokenRequest:
+		case model.DeviceTokenRequest:
 			b, err := json.Marshal(source)
 			if err != nil {
 				return nil, err

@@ -5,7 +5,8 @@ import (
 	"path"
 
 	"github.com/abiosoft/ishell"
-	"github.com/juruen/rmapi/api"
+	"github.com/juruen/rmapi/filetree"
+	"github.com/juruen/rmapi/model"
 )
 
 func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
@@ -20,45 +21,45 @@ func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			srcName := c.Args[0]
 
-			node, err := ctx.fileTree.NodeByPath(srcName, ctx.node)
+			node, err := ctx.api.Filetree.NodeByPath(srcName, ctx.node)
 
 			if err != nil || node.IsFile() {
 				c.Println("directory doesn't exist")
 				return
 			}
 
-			visitor := api.FileTreeVistor{
-				func(currentNode *api.Node, currentPath []string) bool {
+			visitor := filetree.FileTreeVistor{
+				func(currentNode *model.Node, currentPath []string) bool {
 					idxDir := 0
 					if srcName == "." && len(currentPath) > 0 {
 						idxDir = 1
 					}
 
-					dst := "./" + api.BuildPath(currentPath[idxDir:], currentNode.Name())
+					dst := "./" + filetree.BuildPath(currentPath[idxDir:], currentNode.Name())
 					dir := path.Dir(dst)
 
 					os.MkdirAll(dir, 0766)
 
 					if currentNode.IsDirectory() {
-						return api.ContinueVisiting
+						return filetree.ContinueVisiting
 					}
 
 					c.Printf("downloading [%s]...", dst)
 
-					err = ctx.httpCtx.FetchDocument(currentNode.Document.ID, dst)
+					err = ctx.api.FetchDocument(currentNode.Document.ID, dst)
 
 					if err == nil {
 						c.Println(" OK")
-						return api.ContinueVisiting
+						return filetree.ContinueVisiting
 					}
 
 					c.Println("Failed to downlaod file: %s", err)
 
-					return api.ContinueVisiting
+					return filetree.ContinueVisiting
 				},
 			}
 
-			api.WalkTree(node, visitor)
+			filetree.WalkTree(node, visitor)
 		},
 	}
 }

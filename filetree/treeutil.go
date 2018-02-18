@@ -1,17 +1,21 @@
-package api
+package filetree
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/juruen/rmapi/model"
+)
 
 const (
 	StopVisiting     = true
 	ContinueVisiting = false
 )
 
-func WalkTree(node *Node, visitor FileTreeVistor) {
+func WalkTree(node *model.Node, visitor FileTreeVistor) {
 	doWalkTree(node, make([]string, 0), visitor)
 }
 
-func doWalkTree(node *Node, path []string, visitor FileTreeVistor) bool {
+func doWalkTree(node *model.Node, path []string, visitor FileTreeVistor) bool {
 	if visitor.Visit(node, path) {
 		return StopVisiting
 	}

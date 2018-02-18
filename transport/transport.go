@@ -1,4 +1,4 @@
-package api
+package transport
 
 import (
 	"encoding/json"
@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/juruen/rmapi/common"
 	"github.com/juruen/rmapi/log"
+	"github.com/juruen/rmapi/model"
 	"github.com/juruen/rmapi/util"
 )
 
@@ -35,11 +35,11 @@ const (
 )
 
 type HttpClientCtx struct {
-	client *http.Client
-	tokens common.AuthTokens
+	Client *http.Client
+	Tokens model.AuthTokens
 }
 
-func CreateHttpClientCtx(tokens common.AuthTokens) HttpClientCtx {
+func CreateHttpClientCtx(tokens model.AuthTokens) HttpClientCtx {
 	var httpClient = &http.Client{Timeout: 60 * time.Second}
 
 	return HttpClientCtx{httpClient, tokens}
@@ -52,15 +52,15 @@ func (ctx HttpClientCtx) addAuthorization(req *http.Request, authType AuthType) 
 	case EmptyBearer:
 		header = "Bearer"
 	case DeviceBearer:
-		header = fmt.Sprintf("Bearer %s", ctx.tokens.DeviceToken)
+		header = fmt.Sprintf("Bearer %s", ctx.Tokens.DeviceToken)
 	case UserBearer:
-		header = fmt.Sprintf("Bearer %s", ctx.tokens.UserToken)
+		header = fmt.Sprintf("Bearer %s", ctx.Tokens.UserToken)
 	}
 
 	req.Header.Add("Authorization", header)
 }
 
-func (ctx HttpClientCtx) httpGet(authType AuthType, url string, body interface{}, target interface{}) error {
+func (ctx HttpClientCtx) Get(authType AuthType, url string, body interface{}, target interface{}) error {
 	bodyReader, err := util.ToIOReader(body)
 
 	if err != nil {
@@ -68,7 +68,7 @@ func (ctx HttpClientCtx) httpGet(authType AuthType, url string, body interface{}
 		return err
 	}
 
-	response, err := ctx.httpRequest(authType, http.MethodGet, url, bodyReader)
+	response, err := ctx.Request(authType, http.MethodGet, url, bodyReader)
 
 	if response != nil {
 		defer response.Body.Close()
@@ -81,8 +81,8 @@ func (ctx HttpClientCtx) httpGet(authType AuthType, url string, body interface{}
 	return json.NewDecoder(response.Body).Decode(target)
 }
 
-func (ctx HttpClientCtx) httpGetStream(authType AuthType, url string) (io.ReadCloser, error) {
-	response, err := ctx.httpRequest(authType, http.MethodGet, url, strings.NewReader(""))
+func (ctx HttpClientCtx) GetStream(authType AuthType, url string) (io.ReadCloser, error) {
+	response, err := ctx.Request(authType, http.MethodGet, url, strings.NewReader(""))
 
 	var respBody io.ReadCloser
 	if response != nil {
@@ -92,19 +92,19 @@ func (ctx HttpClientCtx) httpGetStream(authType AuthType, url string) (io.ReadCl
 	return respBody, err
 }
 
-func (ctx HttpClientCtx) httpPost(authType AuthType, url string, reqBody, resp interface{}) error {
+func (ctx HttpClientCtx) Post(authType AuthType, url string, reqBody, resp interface{}) error {
 	return ctx.httpRawReq(authType, http.MethodPost, url, reqBody, resp)
 }
 
-func (ctx HttpClientCtx) httpPut(authType AuthType, url string, reqBody, resp interface{}) error {
+func (ctx HttpClientCtx) Put(authType AuthType, url string, reqBody, resp interface{}) error {
 	return ctx.httpRawReq(authType, http.MethodPut, url, reqBody, resp)
 }
 
-func (ctx HttpClientCtx) httpPutStream(authType AuthType, url string, reqBody io.Reader) error {
+func (ctx HttpClientCtx) PutStream(authType AuthType, url string, reqBody io.Reader) error {
 	return ctx.httpRawReq(authType, http.MethodPut, url, reqBody, nil)
 }
 
-func (ctx HttpClientCtx) httpDelete(authType AuthType, url string, reqBody, resp interface{}) error {
+func (ctx HttpClientCtx) Delete(authType AuthType, url string, reqBody, resp interface{}) error {
 	return ctx.httpRawReq(authType, http.MethodDelete, url, reqBody, resp)
 }
 
@@ -125,7 +125,7 @@ func (ctx HttpClientCtx) httpRawReq(authType AuthType, verb, url string, reqBody
 		contentBody = c
 	}
 
-	response, err := ctx.httpRequest(authType, verb, url, contentBody)
+	response, err := ctx.Request(authType, verb, url, contentBody)
 
 	if response != nil {
 		defer response.Body.Close()
@@ -160,7 +160,7 @@ func (ctx HttpClientCtx) httpRawReq(authType AuthType, verb, url string, reqBody
 	return nil
 }
 
-func (ctx HttpClientCtx) httpRequest(authType AuthType, verb, url string, body io.Reader) (*http.Response, error) {
+func (ctx HttpClientCtx) Request(authType AuthType, verb, url string, body io.Reader) (*http.Response, error) {
 	request, _ := http.NewRequest(verb, url, body)
 
 	ctx.addAuthorization(request, authType)
@@ -168,7 +168,7 @@ func (ctx HttpClientCtx) httpRequest(authType AuthType, verb, url string, body i
 	drequest, err := httputil.DumpRequest(request, true)
 	log.Trace.Printf("request: %s", string(drequest))
 
-	response, err := ctx.client.Do(request)
+	response, err := ctx.Client.Do(request)
 
 	if err != nil {
 		log.Error.Printf("http request failed with", err)

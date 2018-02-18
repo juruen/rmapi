@@ -13,14 +13,14 @@ func cdCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			target := c.Args[0]
 
-			node, err := ctx.fileTree.NodeByPath(target, ctx.node)
+			node, err := ctx.api.Filetree.NodeByPath(target, ctx.node)
 
 			if err != nil || node.IsFile() {
 				c.Println("directory doesn't exist")
 				return
 			}
 
-			path, err := ctx.fileTree.NodeToPath(node)
+			path, err := ctx.api.Filetree.NodeToPath(node)
 
 			if err != nil || node.IsFile() {
 				c.Println("directory doesn't exist")
