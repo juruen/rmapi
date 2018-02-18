@@ -88,9 +88,6 @@ func CreateUploadDocumentRequest() UploadDocumentRequest {
 }
 
 func CreateUploadDocumentMeta(id, parent, name string) MetadataDocument {
-	if parent == "1" {
-		parent = ""
-	}
 
 	return MetadataDocument{
 		ID:             id,

@@ -19,7 +19,7 @@ type FileTreeVistor struct {
 
 func CreateFileTreeCtx() FileTreeCtx {
 	root := model.CreateNode(model.Document{
-		ID:           "1",
+		ID:           "",
 		Type:         "CollectionType",
 		VissibleName: "/",
 	})

@@ -21,7 +21,7 @@ func (node *Node) Id() string {
 }
 
 func (node *Node) IsRoot() bool {
-	return node.Id() == "1"
+	return node.Id() == ""
 }
 
 func (node *Node) IsDirectory() bool {

@@ -135,12 +135,6 @@ func (ctx *ApiCtx) MoveEntry(src, dstDir *model.Node, name string) (*model.Node,
 	metaDoc.Version = metaDoc.Version + 1
 	metaDoc.VissibleName = name
 
-	if dstDir.IsRoot() {
-		metaDoc.Parent = ""
-	} else {
-		metaDoc.Parent = dstDir.Id()
-	}
-
 	err := ctx.Http.Put(transport.UserBearer, updateStatus, metaDoc, nil)
 
 	if err != nil {
@@ -149,10 +143,6 @@ func (ctx *ApiCtx) MoveEntry(src, dstDir *model.Node, name string) (*model.Node,
 	}
 
 	doc := metaDoc.ToDocument()
-
-	if doc.Parent == "" {
-		doc.Parent = "1"
-	}
 
 	return &model.Node{&doc, src.Children, dstDir}, nil
 }
