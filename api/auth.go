@@ -6,9 +6,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/juruen/rmapi/common"
 	"github.com/juruen/rmapi/config"
 	"github.com/juruen/rmapi/log"
+	"github.com/juruen/rmapi/model"
+	"github.com/juruen/rmapi/transport"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -16,12 +17,12 @@ const (
 	defaultDeviceDesc string = "desktop-linux"
 )
 
-func AuthHttpCtx() *HttpClientCtx {
+func AuthHttpCtx() *transport.HttpClientCtx {
 	authTokens := config.LoadTokens(config.ConfigPath())
-	httpClientCtx := CreateHttpClientCtx(authTokens)
+	httpClientCtx := transport.CreateHttpClientCtx(authTokens)
 
 	if authTokens.DeviceToken == "" {
-		deviceToken, err := httpClientCtx.newDeviceToken(readCode())
+		deviceToken, err := newDeviceToken(&httpClientCtx, readCode())
 
 		if err != nil {
 			log.Error.Fatal("failed to crete device token from on-time code")
@@ -33,7 +34,7 @@ func AuthHttpCtx() *HttpClientCtx {
 		config.SaveTokens(config.ConfigPath(), authTokens)
 	}
 
-	userToken, err := httpClientCtx.newUserToken()
+	userToken, err := newUserToken(&httpClientCtx)
 
 	if err != nil {
 		log.Error.Fatal("failed to create user token from device token")
@@ -60,17 +61,17 @@ func readCode() string {
 	return strings.TrimSuffix(code, "\n")
 }
 
-func (httpCtx *HttpClientCtx) newDeviceToken(code string) (string, error) {
+func newDeviceToken(http *transport.HttpClientCtx, code string) (string, error) {
 	uuid, err := uuid.NewV4()
 
 	if err != nil {
 		panic(err)
 	}
 
-	req := common.DeviceTokenRequest{code, defaultDeviceDesc, uuid.String()}
+	req := model.DeviceTokenRequest{code, defaultDeviceDesc, uuid.String()}
 
-	resp := BodyString{}
-	err = httpCtx.httpPost(EmptyBearer, newTokenDevice, req, &resp)
+	resp := transport.BodyString{}
+	err = http.Post(transport.EmptyBearer, newTokenDevice, req, &resp)
 
 	if err != nil {
 		log.Error.Fatal("failed to create a new device token")
@@ -80,9 +81,9 @@ func (httpCtx *HttpClientCtx) newDeviceToken(code string) (string, error) {
 	return resp.Content, nil
 }
 
-func (httpCtx *HttpClientCtx) newUserToken() (string, error) {
-	resp := BodyString{}
-	err := httpCtx.httpPost(DeviceBearer, newUserDevice, nil, &resp)
+func newUserToken(http *transport.HttpClientCtx) (string, error) {
+	resp := transport.BodyString{}
+	err := http.Post(transport.DeviceBearer, newUserDevice, nil, &resp)
 
 	if err != nil {
 		log.Error.Fatal("failed to create a new user token")

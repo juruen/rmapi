@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/juruen/rmapi/common"
 	"github.com/juruen/rmapi/log"
+	"github.com/juruen/rmapi/model"
 	"gopkg.in/yaml.v2"
 )
 
@@ -20,8 +20,8 @@ func ConfigPath() string {
 	return fmt.Sprintf("%s/%s", home, defaultConfigFile)
 }
 
-func LoadTokens(path string) common.AuthTokens {
-	tokens := common.AuthTokens{}
+func LoadTokens(path string) model.AuthTokens {
+	tokens := model.AuthTokens{}
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		log.Trace.Printf("config fail %s doesn't exist", path)
@@ -44,7 +44,7 @@ func LoadTokens(path string) common.AuthTokens {
 	return tokens
 }
 
-func SaveTokens(path string, tokens common.AuthTokens) {
+func SaveTokens(path string, tokens model.AuthTokens) {
 	content, err := yaml.Marshal(tokens)
 
 	if err != nil {

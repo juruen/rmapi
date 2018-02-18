@@ -21,7 +21,7 @@ func putCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			docName := util.PdfPathToName(srcName)
 
-			_, err := ctx.fileTree.NodeByPath(docName, ctx.node)
+			_, err := ctx.api.Filetree.NodeByPath(docName, ctx.node)
 			if err == nil {
 				c.Println("entry already exists")
 				return
@@ -29,7 +29,7 @@ func putCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			c.Println(fmt.Sprintf("uploading: [%s]...", srcName))
 
-			document, err := ctx.httpCtx.UploadDocument(ctx.node.Id(), srcName)
+			document, err := ctx.api.UploadDocument(ctx.node.Id(), srcName)
 
 			if err != nil {
 				c.Println("Failed to upload file: %s", err.Error())
@@ -38,7 +38,7 @@ func putCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			c.Println("OK")
 
-			ctx.fileTree.AddDocument(*document)
+			ctx.api.Filetree.AddDocument(*document)
 		},
 	}
 }

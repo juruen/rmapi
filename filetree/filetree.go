@@ -1,23 +1,24 @@
-package api
+package filetree
 
 import (
 	"errors"
 
+	"github.com/juruen/rmapi/model"
 	"github.com/juruen/rmapi/util"
 )
 
 type FileTreeCtx struct {
-	root          *Node
-	idToNode      map[string]*Node
+	root          *model.Node
+	idToNode      map[string]*model.Node
 	pendingParent map[string]map[string]struct{}
 }
 
 type FileTreeVistor struct {
-	Visit func(node *Node, path []string) bool
+	Visit func(node *model.Node, path []string) bool
 }
 
 func CreateFileTreeCtx() FileTreeCtx {
-	root := CreateNode(Document{
+	root := model.CreateNode(model.Document{
 		ID:           "1",
 		Type:         "CollectionType",
 		VissibleName: "/",
@@ -25,17 +26,17 @@ func CreateFileTreeCtx() FileTreeCtx {
 
 	return FileTreeCtx{
 		&root,
-		make(map[string]*Node),
+		make(map[string]*model.Node),
 		make(map[string]map[string]struct{}),
 	}
 }
 
-func (ctx *FileTreeCtx) Root() *Node {
+func (ctx *FileTreeCtx) Root() *model.Node {
 	return ctx.root
 }
 
-func (ctx *FileTreeCtx) AddDocument(document Document) {
-	node := CreateNode(document)
+func (ctx *FileTreeCtx) AddDocument(document model.Document) {
+	node := model.CreateNode(document)
 	nodeId := document.ID
 	parentId := document.Parent
 
@@ -67,7 +68,7 @@ func (ctx *FileTreeCtx) AddDocument(document Document) {
 	}
 }
 
-func (ctx *FileTreeCtx) DeleteNode(node *Node) {
+func (ctx *FileTreeCtx) DeleteNode(node *model.Node) {
 	if node.IsRoot() {
 		return
 	}
@@ -75,7 +76,7 @@ func (ctx *FileTreeCtx) DeleteNode(node *Node) {
 	delete(node.Parent.Children, node.Id())
 }
 
-func (ctx *FileTreeCtx) MoveNode(src, dst *Node) {
+func (ctx *FileTreeCtx) MoveNode(src, dst *model.Node) {
 	if src.IsRoot() {
 		return
 	}
@@ -91,7 +92,7 @@ func (ctx *FileTreeCtx) MoveNode(src, dst *Node) {
 	}
 }
 
-func (ctx *FileTreeCtx) NodeByPath(path string, current *Node) (*Node, error) {
+func (ctx *FileTreeCtx) NodeByPath(path string, current *model.Node) (*model.Node, error) {
 	if current == nil {
 		current = ctx.Root()
 	}
@@ -138,12 +139,12 @@ func (ctx *FileTreeCtx) NodeByPath(path string, current *Node) (*Node, error) {
 	return current, nil
 }
 
-func (ctx *FileTreeCtx) NodeToPath(targetNode *Node) (string, error) {
+func (ctx *FileTreeCtx) NodeToPath(targetNode *model.Node) (string, error) {
 	resultPath := ""
 	found := false
 
 	visitor := FileTreeVistor{
-		func(currentNode *Node, path []string) bool {
+		func(currentNode *model.Node, path []string) bool {
 			if targetNode != currentNode {
 				return ContinueVisiting
 			}

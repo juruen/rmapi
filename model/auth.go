@@ -1,4 +1,4 @@
-package common
+package model
 
 type AuthTokens struct {
 	DeviceToken string

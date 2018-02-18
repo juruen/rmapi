@@ -18,7 +18,7 @@ func getCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			srcName := c.Args[0]
 
-			node, err := ctx.fileTree.NodeByPath(srcName, ctx.node)
+			node, err := ctx.api.Filetree.NodeByPath(srcName, ctx.node)
 
 			if err != nil || node.IsDirectory() {
 				c.Println("file doesn't exist")
@@ -27,7 +27,7 @@ func getCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			c.Println(fmt.Sprintf("downlading: [%s]...", srcName))
 
-			err = ctx.httpCtx.FetchDocument(node.Document.ID, fmt.Sprintf("%s.zip", node.Name()))
+			err = ctx.api.FetchDocument(node.Document.ID, fmt.Sprintf("%s.zip", node.Name()))
 
 			if err == nil {
 				c.Println("OK")

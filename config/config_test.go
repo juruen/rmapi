@@ -6,12 +6,12 @@ import (
 	"os"
 	"testing"
 
-	"github.com/juruen/rmapi/common"
+	"github.com/juruen/rmapi/model"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSaveLoadConfig(t *testing.T) {
-	tokens := common.AuthTokens{"foo", "bar"}
+	tokens := model.AuthTokens{"foo", "bar"}
 
 	f, err := ioutil.TempFile("", "rmapitmp")
 

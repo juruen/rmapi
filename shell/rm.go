@@ -13,14 +13,14 @@ func rmCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			target := c.Args[0]
 
-			node, err := ctx.fileTree.NodeByPath(target, ctx.node)
+			node, err := ctx.api.Filetree.NodeByPath(target, ctx.node)
 
 			if err != nil {
 				c.Println("entry doesn't exist")
 				return
 			}
 
-			err = ctx.httpCtx.DeleteEntry(node)
+			err = ctx.api.DeleteEntry(node)
 
 			if err != nil {
 				c.Println("failed to delete entry", err)
@@ -29,7 +29,7 @@ func rmCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			c.Println("entry deleted")
 
-			ctx.fileTree.DeleteNode(node)
+			ctx.api.Filetree.DeleteNode(node)
 		},
 	}
 }

@@ -6,22 +6,22 @@ import (
 
 	"github.com/abiosoft/ishell"
 	"github.com/juruen/rmapi/api"
+	"github.com/juruen/rmapi/model"
 )
 
 type ShellCtxt struct {
-	node     *api.Node
-	fileTree *api.FileTreeCtx
-	httpCtx  *api.HttpClientCtx
-	path     string
+	node *model.Node
+	api  *api.ApiCtx
+	path string
 }
 
 func (ctx *ShellCtxt) prompt() string {
 	return fmt.Sprintf("[%s]>", ctx.path)
 }
 
-func RunShell(httpCtx *api.HttpClientCtx, fileTreeCtx *api.FileTreeCtx) {
+func RunShell(apiCtx *api.ApiCtx) {
 	shell := ishell.New()
-	ctx := &ShellCtxt{fileTreeCtx.Root(), fileTreeCtx, httpCtx, "/"}
+	ctx := &ShellCtxt{apiCtx.Filetree.Root(), apiCtx, apiCtx.Filetree.Root().Name()}
 
 	shell.Println("ReMarkable Cloud API Shell")
 	shell.SetPrompt(ctx.prompt())
