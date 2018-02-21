@@ -93,6 +93,11 @@ func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
 
 	err = os.Rename(tmpPath, dstPath)
 
+	if err != nil {
+		log.Error.Printf("failed to rename %s to %s, er: %s\n", tmpPath, dstPath, err.Error())
+		return err
+	}
+
 	return nil
 }
 
