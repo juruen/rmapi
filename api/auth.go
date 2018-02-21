@@ -31,6 +31,8 @@ func AuthHttpCtx() *transport.HttpClientCtx {
 		log.Trace.Println("device token", deviceToken)
 
 		authTokens.DeviceToken = deviceToken
+		httpClientCtx.Tokens.DeviceToken = deviceToken
+
 		config.SaveTokens(config.ConfigPath(), authTokens)
 	}
 
