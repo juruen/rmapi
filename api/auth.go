@@ -28,7 +28,7 @@ func AuthHttpCtx() *transport.HttpClientCtx {
 			log.Error.Fatal("failed to crete device token from on-time code")
 		}
 
-		log.Trace.Println("device token %s", deviceToken)
+		log.Trace.Println("device token", deviceToken)
 
 		authTokens.DeviceToken = deviceToken
 		config.SaveTokens(config.ConfigPath(), authTokens)
@@ -50,7 +50,7 @@ func AuthHttpCtx() *transport.HttpClientCtx {
 
 func readCode() string {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Enter one-time code (go to https://my.remkarable.com): ")
+	fmt.Print("Enter one-time code (go to https://my.remarkable.com): ")
 	code, _ := reader.ReadString('\n')
 
 	if len(code) != 9 {
