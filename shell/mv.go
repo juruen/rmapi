@@ -8,8 +8,9 @@ import (
 
 func mvCmd(ctx *ShellCtxt) *ishell.Cmd {
 	return &ishell.Cmd{
-		Name: "mv",
-		Help: "mv file or directory",
+		Name:      "mv",
+		Help:      "mv file or directory",
+		Completer: createEntryCompleter(ctx),
 		Func: func(c *ishell.Context) {
 			if len(c.Args) == 1 {
 				return
