@@ -91,10 +91,10 @@ func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
 		return err
 	}
 
-	err = os.Rename(tmpPath, dstPath)
+	_, err = util.CopyFile(tmpPath, dstPath)
 
 	if err != nil {
-		log.Error.Printf("failed to rename %s to %s, er: %s\n", tmpPath, dstPath, err.Error())
+		log.Error.Printf("failed to copy %s to %s, er: %s\n", tmpPath, dstPath, err.Error())
 		return err
 	}
 

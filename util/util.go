@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"os"
 	"path"
 	"strings"
 
@@ -43,4 +44,25 @@ func ToIOReader(source interface{}) (io.Reader, error) {
 	}
 
 	return bytes.NewReader(content), nil
+}
+
+func CopyFile(src, dst string) (int64, error) {
+	r, err := os.Open(src)
+	if err != nil {
+		return 0, err
+	}
+	defer r.Close()
+
+	w, err := os.Create(dst)
+	if err != nil {
+		return 0, err
+	}
+	defer w.Close()
+
+	n, err := io.Copy(w, r)
+	if err != nil {
+		return 0, err
+	}
+
+	return n, nil
 }
