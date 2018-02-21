@@ -36,6 +36,7 @@ func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 					}
 
 					dst := "./" + filetree.BuildPath(currentPath[idxDir:], currentNode.Name())
+					dst += ".zip"
 					dir := path.Dir(dst)
 
 					os.MkdirAll(dir, 0766)
