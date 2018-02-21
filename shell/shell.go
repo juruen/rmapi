@@ -19,6 +19,16 @@ func (ctx *ShellCtxt) prompt() string {
 	return fmt.Sprintf("[%s]>", ctx.path)
 }
 
+func setCustomCompleter(shell *ishell.Shell) {
+	cmdCompleter := make(cmdToCompleter)
+	for _, cmd := range shell.Cmds() {
+		cmdCompleter[cmd.Name] = cmd.Completer
+	}
+
+	completer := shellPathCompleter{cmdCompleter}
+	shell.CustomCompleter(completer)
+}
+
 func RunShell(apiCtx *api.ApiCtx) {
 	shell := ishell.New()
 	ctx := &ShellCtxt{apiCtx.Filetree.Root(), apiCtx, apiCtx.Filetree.Root().Name()}
@@ -35,6 +45,8 @@ func RunShell(apiCtx *api.ApiCtx) {
 	shell.AddCmd(rmCmd(ctx))
 	shell.AddCmd(mvCmd(ctx))
 	shell.AddCmd(putCmd(ctx))
+
+	setCustomCompleter(shell)
 
 	if len(os.Args) > 1 {
 		shell.Process(os.Args[1:]...)

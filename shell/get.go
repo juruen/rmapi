@@ -8,8 +8,9 @@ import (
 
 func getCmd(ctx *ShellCtxt) *ishell.Cmd {
 	return &ishell.Cmd{
-		Name: "get",
-		Help: "copy remote file to local",
+		Name:      "get",
+		Help:      "copy remote file to local",
+		Completer: createEntryCompleter(ctx),
 		Func: func(c *ishell.Context) {
 			if len(c.Args) == 0 {
 				c.Println("missing source file")

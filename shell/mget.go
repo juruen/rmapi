@@ -11,8 +11,9 @@ import (
 
 func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 	return &ishell.Cmd{
-		Name: "mget",
-		Help: "recursively copy remote directory to local",
+		Name:      "mget",
+		Help:      "recursively copy remote directory to local",
+		Completer: createDirCompleter(ctx),
 		Func: func(c *ishell.Context) {
 			if len(c.Args) == 0 {
 				c.Println("missing source dir")

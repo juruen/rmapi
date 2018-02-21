@@ -27,6 +27,12 @@ Install and build the project:
 - [x] delete a file or a directory
 - [x] move/rename a file or a directory
 - [x] upload a specific file
+- [ ] live syncs
+
+# Shell ergonomics
+
+- [x] autocomplete
+- [ ] globbing
 - [ ] upload a directory and all its files and subdirectories recursively
 
 # Commands
