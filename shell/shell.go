@@ -45,6 +45,7 @@ func RunShell(apiCtx *api.ApiCtx) {
 	shell.AddCmd(rmCmd(ctx))
 	shell.AddCmd(mvCmd(ctx))
 	shell.AddCmd(putCmd(ctx))
+	shell.AddCmd(versionCmd(ctx))
 
 	setCustomCompleter(shell)
 
