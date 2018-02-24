@@ -1,11 +1,14 @@
 package shell
 
-import "github.com/abiosoft/ishell"
+import (
+	"github.com/abiosoft/ishell"
+)
 
 func cdCmd(ctx *ShellCtxt) *ishell.Cmd {
 	return &ishell.Cmd{
-		Name: "cd",
-		Help: "change directory",
+		Name:      "cd",
+		Help:      "change directory",
+		Completer: createDirCompleter(ctx),
 		Func: func(c *ishell.Context) {
 			if len(c.Args) == 0 {
 				return
