@@ -4,8 +4,9 @@ import "github.com/abiosoft/ishell"
 
 func rmCmd(ctx *ShellCtxt) *ishell.Cmd {
 	return &ishell.Cmd{
-		Name: "rm",
-		Help: "delete entry",
+		Name:      "rm",
+		Help:      "delete entry",
+		Completer: createEntryCompleter(ctx),
 		Func: func(c *ishell.Context) {
 			if len(c.Args) == 0 {
 				return
