@@ -3,6 +3,8 @@
 This tuorial wil show you how to leverage `rmapi` and `Automator` to print directly to your ReMarkable tablet
 from your Mac. This way you won't need to take the extra step of using the desktop app.
 
+You can see a demo of it [here](https://youtu.be/gOGTYI15VxY).
+
 # Steps
 
 ## Open a terminal to download `rmapi`
