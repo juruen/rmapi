@@ -1,7 +1,7 @@
-# How to print directly to your ReMarkable on Mac
+# How to directly print to your ReMarkable on Mac
 
 This tuorial wil show you how to leverage [rmapi](https://github.com/juruen/rmapi) and `Automator` to print
-directly to your ReMarkable tablet from your Mac using the Cloud API.
+ to your ReMarkable tablet from your Mac using the Cloud API.
 
  This way you won't need to take the extra step of using the desktop app.
 
@@ -39,7 +39,7 @@ Run it with:
 ./rmapi
 ```
 
-The first time you run it, it will ask you go to `https://my.remarkable.com/` to enter a new activation code.
+The first time you run it, it will ask you to go to `https://my.remarkable.com/` to enter a new activation code.
 
 You will see a prompt like this where you just need to introduce the activation code.
 
