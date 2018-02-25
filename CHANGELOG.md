@@ -1,6 +1,8 @@
-## rmapi master
+## rmapi 0.0.3 (February 25, 2018)
 
 * Update doc
+
+* Fix file upload
 
 ## rmapi 0.0.2 (February 25, 2018)
 
