@@ -16,7 +16,7 @@ Use `terminal` or `iterm` to get a terminal to run commands from it.
 Download `rmapi` with the following command:
 
 ```bash
-curl -L -H 'Accept: application/octet-stream' https://api.github.com/repos/juruen/rmapi/releases/assets/6319862 -o rmapi.zip 
+curl -L -H 'Accept: application/octet-stream' https://api.github.com/repos/juruen/rmapi/releases/assets/6320697 -o rmapi.zip
 ```
 
 Alternatively, you can build it from sources.
