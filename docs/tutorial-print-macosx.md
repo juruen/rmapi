@@ -49,14 +49,14 @@ Enter one-time code (go to https://my.remarkable.com):
 
 If everything goes OK, you wil have access to the shell:
 
-``bash
+```bash
 ReMarkable Cloud API Shell
 [/]>
 ```
 
 You don't need to interact with it, if you don't need to, you can type `exit` and press return to leave it.
 
-``bash
+```bash
 ReMarkable Cloud API Shell
 [/]>exit
 ```
