@@ -73,7 +73,7 @@ func CreateDirDocument(parent, name string) MetadataDocument {
 	}
 }
 
-func CreateUploadDocumentRequest() UploadDocumentRequest {
+func CreateUploadDocumentRequest(entryType string) UploadDocumentRequest {
 	id, err := uuid.NewV4()
 
 	if err != nil {
@@ -82,18 +82,18 @@ func CreateUploadDocumentRequest() UploadDocumentRequest {
 
 	return UploadDocumentRequest{
 		id.String(),
-		DocumentType,
+		entryType,
 		1,
 	}
 }
 
-func CreateUploadDocumentMeta(id, parent, name string) MetadataDocument {
+func CreateUploadDocumentMeta(id, entryType, parent, name string) MetadataDocument {
 
 	return MetadataDocument{
 		ID:             id,
 		Parent:         parent,
 		VissibleName:   name,
-		Type:           DocumentType,
+		Type:           entryType,
 		Version:        1,
 		ModifiedClient: time.Now().Format(time.RFC3339Nano),
 	}
