@@ -94,7 +94,7 @@ func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
 	_, err = util.CopyFile(tmpPath, dstPath)
 
 	if err != nil {
-		log.Error.Printf("failed to copy %s to %s, er: %s\n", tmpPath, dstPath, err.Error())
+		log.Error.Printf("failgied to copy %s to %s, er: %s\n", tmpPath, dstPath, err.Error())
 		return err
 	}
 
@@ -102,16 +102,51 @@ func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
 }
 
 func (ctx *ApiCtx) CreateDir(parentId, name string) (model.Document, error) {
-	metaDoc := model.CreateDirDocument(parentId, name)
-
-	err := ctx.Http.Put(transport.UserBearer, updateStatus, metaDoc, nil)
+	uploadRsp, err := ctx.uploadRequest(model.DirectoryType)
 
 	if err != nil {
-		log.Error.Println("failed to create a new device directory", err)
 		return model.Document{}, err
 	}
 
-	return metaDoc.ToDocument(), nil
+	if !uploadRsp.Success {
+		return model.Document{}, errors.New("upload request returned success := false")
+	}
+
+	zippath, err := util.CreateZipDirectory(uploadRsp.ID)
+
+	if err != nil {
+		log.Error.Println("failed to create zip directory", err)
+		return model.Document{}, err
+	}
+
+	f, err := os.Open(zippath)
+	defer f.Close()
+
+	if err != nil {
+		log.Error.Println("failed to read zip file to upload", zippath, err)
+		return model.Document{}, err
+	}
+
+	err = ctx.Http.PutStream(transport.UserBearer, uploadRsp.BlobURLPut, f)
+
+	if err != nil {
+		log.Error.Println("failed to upload directory", err)
+		return model.Document{}, err
+	}
+
+	metaDoc := model.CreateUploadDocumentMeta(uploadRsp.ID, model.DirectoryType, parentId, name)
+
+	err = ctx.Http.Put(transport.UserBearer, updateStatus, metaDoc, nil)
+
+	if err != nil {
+		log.Error.Println("failed to move entry", err)
+		return model.Document{}, err
+	}
+
+	doc := metaDoc.ToDocument()
+
+	return doc, err
+
 }
 
 func (ctx *ApiCtx) DeleteEntry(node *model.Node) error {
@@ -159,7 +194,7 @@ func (ctx *ApiCtx) UploadDocument(parent string, pdfpath string) (*model.Documen
 		return nil, errors.New("file name is invalid")
 	}
 
-	uploadRsp, err := ctx.uploadRequest()
+	uploadRsp, err := ctx.uploadRequest(model.DocumentType)
 
 	if err != nil {
 		return nil, err
@@ -191,7 +226,7 @@ func (ctx *ApiCtx) UploadDocument(parent string, pdfpath string) (*model.Documen
 		return nil, err
 	}
 
-	metaDoc := model.CreateUploadDocumentMeta(uploadRsp.ID, parent, name)
+	metaDoc := model.CreateUploadDocumentMeta(uploadRsp.ID, model.DirectoryType, parent, name)
 
 	err = ctx.Http.Put(transport.UserBearer, updateStatus, metaDoc, nil)
 
@@ -205,8 +240,8 @@ func (ctx *ApiCtx) UploadDocument(parent string, pdfpath string) (*model.Documen
 	return &doc, err
 }
 
-func (ctx *ApiCtx) uploadRequest() (model.UploadDocumentResponse, error) {
-	uploadReq := model.CreateUploadDocumentRequest()
+func (ctx *ApiCtx) uploadRequest(entryType string) (model.UploadDocumentResponse, error) {
+	uploadReq := model.CreateUploadDocumentRequest(entryType)
 	uploadRsp := make([]model.UploadDocumentResponse, 0)
 
 	err := ctx.Http.Put(transport.UserBearer, uploadRequest, uploadReq, &uploadRsp)

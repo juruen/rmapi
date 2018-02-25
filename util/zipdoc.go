@@ -9,7 +9,7 @@ import (
 	"github.com/juruen/rmapi/log"
 )
 
-type content struct {
+type zipDocumentContent struct {
 	ExtraMetadata  map[string]string `json:"extraMetadata"`
 	FileType       string            `json:"fileType"`
 	LastOpenedPage int               `json:"lastOpenedPage"`
@@ -64,7 +64,7 @@ func CreateZipDocument(id, srcPath string) (string, error) {
 		return "", err
 	}
 
-	c, err := createContent()
+	c, err := createZipContent()
 	if err != nil {
 		return "", err
 	}
@@ -74,8 +74,33 @@ func CreateZipDocument(id, srcPath string) (string, error) {
 	return tmp.Name(), nil
 }
 
-func createContent() (string, error) {
-	c := content{
+func CreateZipDirectory(id string) (string, error) {
+	tmp, err := ioutil.TempFile("", "rmapizip")
+	log.Trace.Println("creating temp zip file:", tmp.Name())
+	defer tmp.Close()
+
+	if err != nil {
+		log.Error.Println("failed to create tmpfile for zip dir", err)
+		return "", err
+	}
+
+	w := zip.NewWriter(tmp)
+	defer w.Close()
+
+	// Create content content
+	f, err := w.Create(fmt.Sprintf("%s.content", id))
+	if err != nil {
+		log.Error.Println("failed to create content entry in zip file", err)
+		return "", err
+	}
+
+	f.Write([]byte("{}"))
+
+	return tmp.Name(), nil
+}
+
+func createZipContent() (string, error) {
+	c := zipDocumentContent{
 		make(map[string]string),
 		"pdf",
 		0,
