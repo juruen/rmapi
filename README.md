@@ -8,9 +8,15 @@ You can interact with the different API endpoints through a shell. However, you 
 
 # Install
 
+## From sources
+
 Install and build the project:
 
 `go get -u github.com/juruen/rmapi`
+
+## Binary
+
+You can download an already built version for either Linux or OSX from [releases](https://github.com/juruen/rmapi/releases).
 
 # API support
 

@@ -1,3 +1,7 @@
+## rmapi master
+
+* Update doc
+
 ## rmapi 0.0.2 (February 25, 2018)
 
 *  Fix directory creation (fixes #6)
