@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/user"
 
 	"github.com/juruen/rmapi/log"
 	"github.com/juruen/rmapi/model"
@@ -15,7 +16,12 @@ const (
 )
 
 func ConfigPath() string {
-	home := os.Getenv("HOME")
+	user, err := user.Current()
+	if err != nil {
+		log.Error.Panicln("failed to get current user:", err)
+	}
+
+	home := user.HomeDir
 
 	return fmt.Sprintf("%s/%s", home, defaultConfigFile)
 }
