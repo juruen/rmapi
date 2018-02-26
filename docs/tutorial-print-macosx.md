@@ -29,7 +29,7 @@ Unzip the downloaded file:
 unzip rmapi.zip
 ```
 
-## Run `rampi` for first time
+## Run `rmapi` for first time
 
 You need to run `rmapi` once to create the device and user token.
 
