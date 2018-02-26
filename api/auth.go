@@ -55,12 +55,15 @@ func readCode() string {
 	fmt.Print("Enter one-time code (go to https://my.remarkable.com): ")
 	code, _ := reader.ReadString('\n')
 
-	if len(code) != 9 {
-		log.Error.Println("Code has the wrong lenth, it should be 8")
+	code = strings.TrimSuffix(code, "\n")
+	code = strings.TrimSuffix(code, "\r")
+
+	if len(code) != 8 {
+		log.Error.Println("Code has the wrong length, it should be 8")
 		return readCode()
 	}
 
-	return strings.TrimSuffix(code, "\n")
+	return code
 }
 
 func newDeviceToken(http *transport.HttpClientCtx, code string) (string, error) {
