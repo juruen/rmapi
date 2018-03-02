@@ -1,10 +1,14 @@
-# rmapi
+# rMAPI
 
 rmapi is a Go app that allows you to acces the ReMarkable Cloud API programmatically.
 
 You can interact with the different API endpoints through a shell. However, you can run the command non-interactively. This may come in handy to script certian workflows such as taking automatic backups or upload documents automatically.
 
 ![Console Capture](docs/console.gif)
+
+# Some examples of use
+
+[Tutorial on how to directly print to your reMarkable on Mac with rMAPI](docs/tutorial-print-macosx.md)
 
 # Install
 
