@@ -60,18 +60,18 @@ func prefixToDir(s []string) string {
 type fileCheckFn func(os.FileInfo) bool
 
 func createFsDirCompleter(ctx *ShellCtxt) func([]string) []string {
-	return createFsCompleter(ctx, func(e os.FileInfo) bool { return e.IsDir() })
+	return createFsCompleter(func(e os.FileInfo) bool { return e.IsDir() })
 }
 
 func createFsFileCompleter(ctx *ShellCtxt) func([]string) []string {
-	return createFsCompleter(ctx, func(e os.FileInfo) bool { return !e.IsDir() })
+	return createFsCompleter(func(e os.FileInfo) bool { return !e.IsDir() })
 }
 
-func createFsEntryCompleter(ctx *ShellCtxt) func([]string) []string {
-	return createFsCompleter(ctx, func(e os.FileInfo) bool { return true })
+func createFsEntryCompleter() func([]string) []string {
+	return createFsCompleter(func(e os.FileInfo) bool { return true })
 }
 
-func createFsCompleter(ctx *ShellCtxt, check fileCheckFn) func([]string) []string {
+func createFsCompleter(check fileCheckFn) func([]string) []string {
 	return func(s []string) []string {
 		options := make([]string, 0)
 
