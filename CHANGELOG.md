@@ -1,3 +1,9 @@
+## rmapi master
+
+* Windows fixes
+
+* Add autocompleter for local files that is used by "put"
+
 ## rmapi 0.0.3 (February 25, 2018)
 
 * Update doc
