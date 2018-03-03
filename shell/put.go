@@ -9,8 +9,9 @@ import (
 
 func putCmd(ctx *ShellCtxt) *ishell.Cmd {
 	return &ishell.Cmd{
-		Name: "put",
-		Help: "copy a local document to cloud",
+		Name:      "put",
+		Help:      "copy a local document to cloud",
+		Completer: createFsFileCompleter(ctx),
 		Func: func(c *ishell.Context) {
 			if len(c.Args) == 0 {
 				c.Println("missing source file")
