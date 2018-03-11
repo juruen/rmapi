@@ -174,6 +174,7 @@ func (ctx *ApiCtx) MoveEntry(src, dstDir *model.Node, name string) (*model.Node,
 	metaDoc := src.Document.ToMetaDocument()
 	metaDoc.Version = metaDoc.Version + 1
 	metaDoc.VissibleName = name
+	metaDoc.Parent = dstDir.Id()
 
 	err := ctx.Http.Put(transport.UserBearer, updateStatus, metaDoc, nil)
 
