@@ -28,9 +28,21 @@ func putCmd(ctx *ShellCtxt) *ishell.Cmd {
 				return
 			}
 
+			dstDir := ctx.node.Id()
+			if len(c.Args) == 2 {
+				node, err := ctx.api.Filetree.NodeByPath(c.Args[1], ctx.node)
+
+				if err != nil || node.IsFile() {
+					c.Println("directory doesn't exist")
+					return
+				}
+
+				dstDir = node.Id()
+			}
+
 			c.Println(fmt.Sprintf("uploading: [%s]...", srcName))
 
-			document, err := ctx.api.UploadDocument(ctx.node.Id(), srcName)
+			document, err := ctx.api.UploadDocument(dstDir, srcName)
 
 			if err != nil {
 				c.Println("Failed to upload file: %s", err.Error())

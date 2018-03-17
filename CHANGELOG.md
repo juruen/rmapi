@@ -6,6 +6,8 @@
 
 * Fix mv command
 
+* Put may take a second argument as destination
+
 ## rmapi 0.0.3 (February 25, 2018)
 
 * Update doc

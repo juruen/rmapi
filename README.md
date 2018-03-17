@@ -57,6 +57,12 @@ Use `cd` to change the current directory to any other directory in the hiearchy.
 
 Use `put path_to_local_file` to upload a file  to the current dirctory.
 
+You can also specify the destination directory:
+
+```
+put book.pdf /books
+```
+
 ## Download a file
 
 Use `get path_to_file` to download a file from the cloud to your local computer.
