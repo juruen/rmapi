@@ -110,6 +110,10 @@ func createFsCompleter(check fileCheckFn) func([]string) []string {
 
 			entry = escapeSpaces(entry)
 
+			if !n.IsDir() && !strings.HasSuffix(entry, ".pdf") {
+				continue
+			}
+
 			options = append(options, entry)
 		}
 

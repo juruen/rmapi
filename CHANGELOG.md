@@ -8,11 +8,15 @@
 
 * Put may take a second argument as destination
 
+* Autocomplete for "put" command only shows ".pdf" files
+
 ## rmapi 0.0.3 (February 25, 2018)
 
 * Update doc
 
 * Fix file upload
+
+   *Javier Uruen Val*
 
 ## rmapi 0.0.2 (February 25, 2018)
 
