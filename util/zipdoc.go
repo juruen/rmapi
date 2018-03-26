@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"github.com/juruen/rmapi/log"
 )
@@ -23,7 +24,7 @@ func CreateZipDocument(id, srcPath string) (string, error) {
 	pdf, err := ioutil.ReadFile(srcPath)
 
 	if err != nil {
-		log.Error.Println("failed to open source PDF file to read", err)
+		log.Error.Println("failed to open source document file to read", err)
 		return "", err
 	}
 
@@ -39,10 +40,15 @@ func CreateZipDocument(id, srcPath string) (string, error) {
 	w := zip.NewWriter(tmp)
 	defer w.Close()
 
-	// Create PDF file
-	f, err := w.Create(fmt.Sprintf("%s.pdf", id))
+	// Create document (pdf or epub) file
+	ext := "pdf"
+	if strings.HasSuffix(srcPath, "epub") {
+		ext = "epub"
+	}
+
+	f, err := w.Create(fmt.Sprintf("%s.%s", id, ext))
 	if err != nil {
-		log.Error.Println("failed to create pdf entry in zip file", err)
+		log.Error.Println("failed to create doc entry in zip file", err)
 		return "", err
 	}
 
@@ -64,7 +70,7 @@ func CreateZipDocument(id, srcPath string) (string, error) {
 		return "", err
 	}
 
-	c, err := createZipContent()
+	c, err := createZipContent(ext)
 	if err != nil {
 		return "", err
 	}
@@ -99,10 +105,10 @@ func CreateZipDirectory(id string) (string, error) {
 	return tmp.Name(), nil
 }
 
-func createZipContent() (string, error) {
+func createZipContent(ext string) (string, error) {
 	c := zipDocumentContent{
 		make(map[string]string),
-		"pdf",
+		ext,
 		0,
 		-1,
 		180,

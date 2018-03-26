@@ -189,7 +189,7 @@ func (ctx *ApiCtx) MoveEntry(src, dstDir *model.Node, name string) (*model.Node,
 }
 
 func (ctx *ApiCtx) UploadDocument(parent string, pdfpath string) (*model.Document, error) {
-	name := util.PdfPathToName(pdfpath)
+	name := util.DocPathToName(pdfpath)
 
 	if name == "" {
 		return nil, errors.New("file name is invalid")

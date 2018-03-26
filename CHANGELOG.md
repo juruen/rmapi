@@ -10,6 +10,8 @@
 
 * Autocomplete for "put" command only shows ".pdf" files
 
+* Add support to upload epub files
+
 ## rmapi 0.0.3 (February 25, 2018)
 
 * Update doc
