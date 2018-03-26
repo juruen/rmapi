@@ -20,7 +20,7 @@ func putCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			srcName := c.Args[0]
 
-			docName := util.PdfPathToName(srcName)
+			docName := util.DocPathToName(srcName)
 
 			_, err := ctx.api.Filetree.NodeByPath(docName, ctx.node)
 			if err == nil {
