@@ -1,6 +1,7 @@
 package shell
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/abiosoft/ishell"
@@ -13,7 +14,7 @@ func getCmd(ctx *ShellCtxt) *ishell.Cmd {
 		Completer: createEntryCompleter(ctx),
 		Func: func(c *ishell.Context) {
 			if len(c.Args) == 0 {
-				c.Println("missing source file")
+				c.Err(errors.New("missing source file"))
 				return
 			}
 
@@ -22,7 +23,7 @@ func getCmd(ctx *ShellCtxt) *ishell.Cmd {
 			node, err := ctx.api.Filetree.NodeByPath(srcName, ctx.node)
 
 			if err != nil || node.IsDirectory() {
-				c.Println("file doesn't exist")
+				c.Err(errors.New("file doesn't exist"))
 				return
 			}
 
@@ -35,7 +36,7 @@ func getCmd(ctx *ShellCtxt) *ishell.Cmd {
 				return
 			}
 
-			c.Println("Failed to downlaod file: %s", err.Error())
+			c.Err(errors.New(fmt.Sprintf("Failed to download file %s with %s", srcName, err.Error())))
 		},
 	}
 }

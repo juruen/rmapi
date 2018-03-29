@@ -1,6 +1,8 @@
 package shell
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"path"
 
@@ -16,7 +18,7 @@ func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 		Completer: createDirCompleter(ctx),
 		Func: func(c *ishell.Context) {
 			if len(c.Args) == 0 {
-				c.Println("missing source dir")
+				c.Err(errors.New(("missing source dir")))
 				return
 			}
 
@@ -25,7 +27,7 @@ func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 			node, err := ctx.api.Filetree.NodeByPath(srcName, ctx.node)
 
 			if err != nil || node.IsFile() {
-				c.Println("directory doesn't exist")
+				c.Err(errors.New("directory doesn't exist"))
 				return
 			}
 
@@ -55,7 +57,7 @@ func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 						return filetree.ContinueVisiting
 					}
 
-					c.Println("Failed to downlaod file: %s", err)
+					c.Err(errors.New(fmt.Sprintf("Failed to downlaod file %s", currentNode.Name())))
 
 					return filetree.ContinueVisiting
 				},

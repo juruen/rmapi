@@ -1,6 +1,8 @@
 package shell
 
 import (
+	"errors"
+
 	"github.com/abiosoft/ishell"
 )
 
@@ -19,14 +21,14 @@ func cdCmd(ctx *ShellCtxt) *ishell.Cmd {
 			node, err := ctx.api.Filetree.NodeByPath(target, ctx.node)
 
 			if err != nil || node.IsFile() {
-				c.Println("directory doesn't exist")
+				c.Err(errors.New("directory doesn't exist"))
 				return
 			}
 
 			path, err := ctx.api.Filetree.NodeToPath(node)
 
 			if err != nil || node.IsFile() {
-				c.Println("directory doesn't exist")
+				c.Err(errors.New("directory doesn't exist"))
 				return
 			}
 

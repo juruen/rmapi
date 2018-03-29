@@ -1,6 +1,7 @@
 package shell
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/abiosoft/ishell"
@@ -24,7 +25,7 @@ func putCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			_, err := ctx.api.Filetree.NodeByPath(docName, ctx.node)
 			if err == nil {
-				c.Println("entry already exists")
+				c.Err(errors.New("entry already exists"))
 				return
 			}
 
@@ -33,19 +34,19 @@ func putCmd(ctx *ShellCtxt) *ishell.Cmd {
 				node, err := ctx.api.Filetree.NodeByPath(c.Args[1], ctx.node)
 
 				if err != nil || node.IsFile() {
-					c.Println("directory doesn't exist")
+					c.Err(errors.New("directory doesn't exist"))
 					return
 				}
 
 				dstDir = node.Id()
 			}
 
-			c.Println(fmt.Sprintf("uploading: [%s]...", srcName))
+			c.Printf("uploading: [%s]...", srcName)
 
 			document, err := ctx.api.UploadDocument(dstDir, srcName)
 
 			if err != nil {
-				c.Println("Failed to upload file: %s", err.Error())
+				c.Err(errors.New(fmt.Sprint("Failed to upload file", srcName, err.Error())))
 				return
 			}
 

@@ -14,6 +14,8 @@
 
 * rm supports multiple files
 
+* Return exit code for non-interactivly commands
+
 ## rmapi 0.0.3 (February 25, 2018)
 
 * Update doc
