@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/juruen/rmapi/api"
 	"github.com/juruen/rmapi/log"
 	"github.com/juruen/rmapi/shell"
@@ -24,5 +27,10 @@ func main() {
 		log.Error.Fatal("failed to build documents tree")
 	}
 
-	shell.RunShell(ctx)
+	err := shell.RunShell(ctx)
+
+	if err != nil {
+		fmt.Println("Error: ", err)
+		os.Exit(1)
+	}
 }

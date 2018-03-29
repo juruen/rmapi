@@ -1,6 +1,11 @@
 package shell
 
-import "github.com/abiosoft/ishell"
+import (
+	"errors"
+	"fmt"
+
+	"github.com/abiosoft/ishell"
+)
 
 func rmCmd(ctx *ShellCtxt) *ishell.Cmd {
 	return &ishell.Cmd{
@@ -12,14 +17,14 @@ func rmCmd(ctx *ShellCtxt) *ishell.Cmd {
 				node, err := ctx.api.Filetree.NodeByPath(target, ctx.node)
 
 				if err != nil {
-					c.Println("entry doesn't exist")
+					c.Err(errors.New("entry doesn't exist"))
 					return
 				}
 
 				err = ctx.api.DeleteEntry(node)
 
 				if err != nil {
-					c.Println("failed to delete entry", err)
+					c.Err(errors.New(fmt.Sprint("failed to delete entry", err)))
 					return
 				}
 

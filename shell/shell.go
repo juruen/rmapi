@@ -29,7 +29,7 @@ func setCustomCompleter(shell *ishell.Shell) {
 	shell.CustomCompleter(completer)
 }
 
-func RunShell(apiCtx *api.ApiCtx) {
+func RunShell(apiCtx *api.ApiCtx) error {
 	shell := ishell.New()
 	ctx := &ShellCtxt{apiCtx.Filetree.Root(), apiCtx, apiCtx.Filetree.Root().Name()}
 
@@ -51,8 +51,10 @@ func RunShell(apiCtx *api.ApiCtx) {
 	setCustomCompleter(shell)
 
 	if len(os.Args) > 1 {
-		shell.Process(os.Args[1:]...)
+		return shell.Process(os.Args[1:]...)
 	} else {
 		shell.Run()
+
+		return nil
 	}
 }

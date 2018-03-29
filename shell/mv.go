@@ -1,6 +1,8 @@
 package shell
 
 import (
+	"errors"
+	"fmt"
 	"path"
 
 	"github.com/abiosoft/ishell"
@@ -21,7 +23,7 @@ func mvCmd(ctx *ShellCtxt) *ishell.Cmd {
 			srcNode, err := ctx.api.Filetree.NodeByPath(src, ctx.node)
 
 			if err != nil {
-				c.Println("source entry doesn't exist")
+				c.Err(errors.New("source entry doesn't exist"))
 				return
 			}
 
@@ -30,7 +32,7 @@ func mvCmd(ctx *ShellCtxt) *ishell.Cmd {
 			dstNode, err := ctx.api.Filetree.NodeByPath(dst, ctx.node)
 
 			if dstNode != nil && dstNode.IsFile() {
-				c.Println("destination entry already exists")
+				c.Err(errors.New("destination entry already exists"))
 				return
 			}
 
@@ -39,7 +41,7 @@ func mvCmd(ctx *ShellCtxt) *ishell.Cmd {
 				n, err := ctx.api.MoveEntry(srcNode, dstNode, srcNode.Name())
 
 				if err != nil {
-					c.Println("failed to move entry", err)
+					c.Err(errors.New(fmt.Sprint("failed to move entry", err)))
 					return
 				}
 
@@ -54,14 +56,14 @@ func mvCmd(ctx *ShellCtxt) *ishell.Cmd {
 			parentNode, err := ctx.api.Filetree.NodeByPath(parentDir, ctx.node)
 
 			if err != nil || parentNode.IsFile() {
-				c.Println("directory doesn't exist")
+				c.Err(errors.New("directory doesn't exist"))
 				return
 			}
 
 			n, err := ctx.api.MoveEntry(srcNode, parentNode, newEntry)
 
 			if err != nil {
-				c.Println("failed to move entry", err)
+				c.Err(errors.New(fmt.Sprint("failed to move entry", err)))
 				return
 			}
 

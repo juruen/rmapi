@@ -1,6 +1,8 @@
 package shell
 
 import (
+	"errors"
+	"fmt"
 	"path"
 
 	"github.com/abiosoft/ishell"
@@ -13,7 +15,7 @@ func mkdirCmd(ctx *ShellCtxt) *ishell.Cmd {
 		Completer: createDirCompleter(ctx),
 		Func: func(c *ishell.Context) {
 			if len(c.Args) == 0 {
-				c.Println("missing directory")
+				c.Err(errors.New("missing directory"))
 				return
 			}
 
@@ -30,14 +32,14 @@ func mkdirCmd(ctx *ShellCtxt) *ishell.Cmd {
 			newDir := path.Base(target)
 
 			if newDir == "/" || newDir == "." {
-				c.Println("invalid directory name")
+				c.Err(errors.New("invalid directory name"))
 				return
 			}
 
 			parentNode, err := ctx.api.Filetree.NodeByPath(parentDir, ctx.node)
 
 			if err != nil || parentNode.IsFile() {
-				c.Println("directory doesn't exist")
+				c.Err(errors.New("directory doesn't exist"))
 				return
 			}
 
@@ -49,7 +51,7 @@ func mkdirCmd(ctx *ShellCtxt) *ishell.Cmd {
 			document, err := ctx.api.CreateDir(parentId, newDir)
 
 			if err != nil {
-				c.Println("failed to create directory", err)
+				c.Err(errors.New(fmt.Sprint("failed to create directory", err)))
 				return
 			}
 

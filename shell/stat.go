@@ -1,6 +1,8 @@
 package shell
 
 import (
+	"errors"
+
 	"github.com/abiosoft/ishell"
 )
 
@@ -11,7 +13,7 @@ func statCmd(ctx *ShellCtxt) *ishell.Cmd {
 		Completer: createEntryCompleter(ctx),
 		Func: func(c *ishell.Context) {
 			if len(c.Args) == 0 {
-				c.Println("missing source file")
+				c.Err(errors.New("missing source file"))
 				return
 			}
 
@@ -20,7 +22,7 @@ func statCmd(ctx *ShellCtxt) *ishell.Cmd {
 			node, err := ctx.api.Filetree.NodeByPath(srcName, ctx.node)
 
 			if err != nil {
-				c.Println("file doesn't exist")
+				c.Err(errors.New("file doesn't exist"))
 				return
 			}
 
