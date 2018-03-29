@@ -12,6 +12,8 @@
 
 * Add support to upload epub files
 
+* rm supports multiple files
+
 ## rmapi 0.0.3 (February 25, 2018)
 
 * Update doc

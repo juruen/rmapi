@@ -85,6 +85,8 @@ Use `mkdir path_to_new_dir` to create a new directory
 
 Use `rm directory_or_file` to remove. If it's directory, it needs to be empty in order to be deleted.
 
+You can remove multiple entries at the same time.
+
 ##  Move/rename a directory or a file
 
 Use `mv source destination` to move or rename a file or directory.
