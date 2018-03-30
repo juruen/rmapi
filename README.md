@@ -1,8 +1,10 @@
 # rMAPI
 
-rmapi is a Go app that allows you to acces the ReMarkable Cloud API programmatically.
+rMAPI is a Go app that allows you to acces the ReMarkable Cloud API programmatically.
 
-You can interact with the different API endpoints through a shell. However, you can run the command non-interactively. This may come in handy to script certian workflows such as taking automatic backups or upload documents automatically.
+You can interact with the different API end-points through a shell. However, you can also
+run commandis non-interactively. This may come in handy to script certian workflows such as
+taking automatic backups or uploading documents programmatically.
 
 ![Console Capture](docs/console.gif)
 
@@ -91,6 +93,10 @@ You can remove multiple entries at the same time.
 
 Use `mv source destination` to move or rename a file or directory.
 
+## Stat a directory or file
+
+Use `stat entry` to dump its metadata as reported by the Cloud API.
+
 # Run command non-interactively
 
 Add the commands you want to execute to the arguments of the binary.
@@ -100,3 +106,5 @@ E.g: simple script to download all files from the cloud to your local machine
 ```bash
 $ rmapi mget .
 ```
+
+rMAPI will set he exit code to `0` if the command succeedes, or `1` if it fails.
