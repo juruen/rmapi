@@ -35,6 +35,18 @@ func (ctx *FileTreeCtx) Root() *model.Node {
 	return ctx.root
 }
 
+func (ctx *FileTreeCtx) NodeById(id string) *model.Node {
+	if len(id) == 0 {
+		return ctx.Root()
+	}
+
+	if n, ok := ctx.idToNode[id]; ok {
+		return n
+	} else {
+		return nil
+	}
+}
+
 func (ctx *FileTreeCtx) AddDocument(document model.Document) {
 	node := model.CreateNode(document)
 	nodeId := document.ID
