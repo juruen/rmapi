@@ -123,7 +123,7 @@ This support is very alpha and only a few operations are supported by now:
 - [x] Rename
 - [x] Rmdir
 - [x] Unlink 
-- [ ] Read files
+- [x] Read files
 - [ ] Write files
 - [ ] Live update
 
