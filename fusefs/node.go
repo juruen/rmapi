@@ -1,8 +1,11 @@
 package fusefs
 
 import (
+	"fmt"
+	"os"
 	"time"
 
+	"github.com/juruen/rmapi/config"
 	"github.com/juruen/rmapi/log"
 	"github.com/juruen/rmapi/model"
 
@@ -12,13 +15,20 @@ import (
 )
 
 type fuseFs struct {
-	apiCtx *api.ApiCtx
-	root   *fuseNode
+	apiCtx    *api.ApiCtx
+	root      *fuseNode
+	backedDir string
 }
 
 func NewFuseFsRoot(ctx *api.ApiCtx) nodefs.Node {
+
+	backedDirPath := config.ConfigPath() + "-cache"
+
+	os.Mkdir(backedDirPath, 0700)
+
 	fs := &fuseFs{
-		apiCtx: ctx,
+		apiCtx:    ctx,
+		backedDir: backedDirPath,
 	}
 
 	fs.root = fs.newNode("")
@@ -135,8 +145,18 @@ func (n *fuseNode) OpenDir(context *fuse.Context) ([]fuse.DirEntry, fuse.Status)
 }
 
 func (n *fuseNode) GetAttr(out *fuse.Attr, file nodefs.File, context *fuse.Context) (code fuse.Status) {
+	cNode := n.modelNode()
+
+	log.Trace.Println("GetAttr (fuseNode) file", file, "name", cNode.Name())
+
 	if file != nil {
 		return file.GetAttr(out)
+	}
+
+	stat, err := os.Stat(n.Fs.backedDir + "/" + cNode.Id())
+
+	if err == nil {
+		out.Size = uint64(stat.Size())
 	}
 
 	out.Mode = nodeMode(n.modelNode())
@@ -146,7 +166,6 @@ func (n *fuseNode) GetAttr(out *fuse.Attr, file nodefs.File, context *fuse.Conte
 
 func (n *fuseNode) Rename(oldName string, newParent nodefs.Node, newName string, context *fuse.Context) (code fuse.Status) {
 	log.Trace.Println("Rename ", oldName, "from", n.modelNode().Name(), "to", newName)
-	log.Trace.Printf("%+v\n", n)
 
 	srcParent := n.modelNode()
 
@@ -242,7 +261,25 @@ func (n *fuseNode) Create(name string, flags uint32, mode uint32, context *fuse.
 }
 
 func (n *fuseNode) Open(flags uint32, context *fuse.Context) (file nodefs.File, code fuse.Status) {
-	return nil, fuse.ENOSYS
+	cNode := n.modelNode()
+	log.Trace.Println("Open ", cNode.Name())
+
+	backedFile := fmt.Sprintf("%s/%s", n.Fs.backedDir, cNode.Id())
+
+	err := n.Fs.apiCtx.FetchDocument(cNode.Id(), backedFile)
+
+	if err != nil {
+		log.Error.Println("Failed to fetch", cNode.Name(), cNode.Id(), err)
+		return nil, fuse.EIO
+	}
+
+	f, err := os.Open(backedFile)
+	if err != nil {
+		log.Error.Println("Failed to open", cNode.Name(), cNode.Id(), err)
+		return nil, fuse.EIO
+	}
+
+	return NewFuseFile(f), fuse.OK
 }
 
 func (n *fuseNode) Flush(file nodefs.File, openFlags uint32, context *fuse.Context) (code fuse.Status) {
@@ -293,8 +330,5 @@ func (n *fuseNode) Read(file nodefs.File, dest []byte, off int64, context *fuse.
 }
 
 func (n *fuseNode) Write(file nodefs.File, data []byte, off int64, context *fuse.Context) (written uint32, code fuse.Status) {
-	if file != nil {
-		return file.Write(data, off)
-	}
 	return 0, fuse.ENOSYS
 }
