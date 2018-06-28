@@ -3,6 +3,8 @@ package shell
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"strings"
 
 	"github.com/abiosoft/ishell"
 	"github.com/juruen/rmapi/util"
@@ -38,7 +40,7 @@ func putDoc(pC *ishell.Context, ctx *ShellCtxt, pSrcName string, pDstDir string)
 }
 
 func printUsage(pC *ishell.Context) {
-	pC.Println("Usage:\n")
+	pC.Println("\nUsage:\n")
 	pC.Println("    [/]> put <file-list>")
 	pC.Println("    [/]> put <file-list> -d <dst-dir>\n")
 	pC.Println("<file-list> can be * (all files) or, 1 or more files separated by spaces\n")
@@ -51,7 +53,7 @@ func putCmd(ctx *ShellCtxt) *ishell.Cmd {
 		Completer: createFsEntryCompleter(),
 		Func: func(c *ishell.Context) {
 			if len(c.Args) == 0 {
-				c.Println("missing source files\n")
+				c.Println("too few arguments for command 'put'\n")
 
 				printUsage(c)
 				return
@@ -66,11 +68,23 @@ func putCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			// Check if -d option is present.
 			for index, str := range c.Args {
-				if str == "-d" {
-					userDir = true
-					dIndex = index
-					break
+				if str[0] == '-' {
+					if str == "-d" {
+						userDir = true
+						dIndex = index
+						break
+					} else {
+						c.Err(errors.New(fmt.Sprint("invalid option ", str, " for command 'put'")))
+
+						printUsage(c)
+						return
+					}
 				}
+			}
+
+			if dIndex == 0 {
+				c.Err(errors.New("missing source files"))
+				return
 			}
 
 			dstDir := ctx.node.Id()
@@ -92,28 +106,37 @@ func putCmd(ctx *ShellCtxt) *ishell.Cmd {
 				dstDir = node.Id()
 			}
 
-			putDoc(c, ctx, c.Args[0], dstDir)
+			// Last index of doc list.
+			listMaxIndex := argsLen - 1
+			if dIndex != -1 {
+				listMaxIndex = dIndex - 1
+			}
 
-			// ioutil.
+			// is * (all files) ?.
+			if listMaxIndex == 0 && c.Args[0] == "*" {
+				// Upload all files
+				fileList, err := ioutil.ReadDir("./")
 
-			// srcName := c.Args[0]
+				if err != nil {
+					c.Err(errors.New("could not read current directory"))
+					return
+				}
 
-			// docName := util.DocPathToName(srcName)
+				for _, f := range fileList {
+					fName := f.Name()
+					if strings.Contains(fName, ".pdf") || strings.Contains(fName, ".epub") {
+						// If the file has a '.pdf' or a '.epub' extension, then upload
+						putDoc(c, ctx, fName, dstDir)
+					}
+				}
 
-			// c.Printf("uploading: [%s]...", srcName)
+			} else {
+				// Upload the listed files one by one.
+				for i := 0; i <= listMaxIndex; i++ {
+					putDoc(c, ctx, c.Args[i], dstDir)
+				}
+			}
 
-			// document, err := ctx.api.UploadDocument(dstDir, srcName)
-
-			// if err != nil {
-			// 	c.Err(errors.New(fmt.Sprint("Failed to upload file", srcName, err.Error())))
-			// 	return
-			// }
-
-			// c.Println(" complete")
-
-			// ctx.api.Filetree.AddDocument(*document)
-
-			// End of function
 		},
 	}
 }
