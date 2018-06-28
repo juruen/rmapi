@@ -16,3 +16,7 @@ rmapi
 
 # Vendor sources
 vendor/*/
+
+# Test docs
+*.pdf
+*.epub
