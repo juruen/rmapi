@@ -39,8 +39,8 @@ func putDoc(pC *ishell.Context, ctx *ShellCtxt, pSrcName string, pDstDir string)
 
 func printUsage(pC *ishell.Context) {
 	pC.Println("Usage:\n")
-	pC.Println("    [/]> put  <file-list>")
-	pC.Println("    [/]> put  <file-list> <dst-dir>\n")
+	pC.Println("    [/]> put <file-list>")
+	pC.Println("    [/]> put <file-list> -d <dst-dir>\n")
 	pC.Println("<file-list> can be * (all files) or, 1 or more files separated by spaces\n")
 }
 
@@ -60,17 +60,31 @@ func putCmd(ctx *ShellCtxt) *ishell.Cmd {
 			// Total number of arguments.
 			argsLen := len(c.Args)
 
-			// Check if last argument is a directory.
-			
+			// Bool to flag if last argument is a dir (default -> true)
+			userDir := false
+			dIndex := -1
 
-			// Extract the destination directory data if available.
+			// Check if -d option is present.
+			for index, str := range c.Args {
+				if str == "-d" {
+					userDir = true
+					dIndex = index
+					break
+				}
+			}
+
 			dstDir := ctx.node.Id()
 
-			if len(c.Args) > 1 {
+			if userDir {
+				// Number of arguments for option -d must be 1
+				if argsLen > dIndex+2 {
+					c.Err(errors.New("too many arguments for option -d"))
+					return
+				}
+
 				node, err := ctx.api.Filetree.NodeByPath(c.Args[(argsLen-1)], ctx.node)
 
 				if err != nil || node.IsFile() {
-					// Make one?
 					c.Err(errors.New("directory doesn't exist"))
 					return
 				}
