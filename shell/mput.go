@@ -35,28 +35,25 @@ func mputCmd(ctx *ShellCtxt) *ishell.Cmd {
 			node, err := ctx.api.Filetree.NodeByPath(c.Args[0], ctx.node)
 
 			if err != nil || node.IsFile() {
-				c.Err(errors.New("directory doesn't exist"))
+				c.Err(errors.New("remote directory does not exist"))
 				return
 			}
 
 			path, err := ctx.api.Filetree.NodeToPath(node)
 
 			if err != nil || node.IsFile() {
-				c.Err(errors.New("directory doesn't exist"))
+				c.Err(errors.New("remote directory does not exist"))
 				return
 			}
 
-			// dstDir := node.Id()
-
-			// back up
+			// Back up current remote location.
 			currCtxPath := ctx.path
 			currCtxNode := ctx.node
-
 			// Change to requested directory.
 			ctx.path = path
 			ctx.node = node
 
-			putFilesAndDirs(ctx, c, "./")
+			putFilesAndDirs(ctx, c, "./", 0)
 
 			// Reset.
 			ctx.path = currCtxPath
@@ -74,19 +71,42 @@ func checkFileType(fName string) bool {
 		strings.Contains(fName, ".epub"))
 }
 
-func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string) bool {
+// Print the required number of spaces
+func treeFormat(pC *ishell.Context, num int) {
 
-	os.Chdir(localDir) // Change to the local source directory
+	if num != 0 {
+		pC.Printf("│")
+	} else {
+		pC.Printf("├")
+	}
+
+	for i := 0; i < 2*num; i++ {
+		pC.Printf(" ")
+	}
+
+	if num != 0 {
+		pC.Printf("  └── ")
+	} else {
+		pC.Printf("── ")
+	}
+}
+
+func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth int) bool {
+
+	if localDir == "./" {
+		pC.Println(".")
+	}
+
+	os.Chdir(localDir) // Change to the local source directory.
 
 	wd, _ := os.Getwd()
+	// pC.Println("DEBUG: changing to directory", wd)
 	dirList, err := ioutil.ReadDir(wd)
 
 	if err != nil {
 		pC.Err(fmt.Errorf("could not read the directory: ", wd))
 		return false
 	}
-
-	// Directory has been read.
 
 	for _, d := range dirList {
 		name := d.Name()
@@ -99,7 +119,8 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string) bool 
 
 			if err != nil {
 				// Directory does not exist. Create directory.
-				pC.Printf("creating directory [%s] ...", name)
+				treeFormat(pC, depth)
+				pC.Printf("creating directory [%s]...", name)
 				doc, err := pCtx.api.CreateDir(pCtx.node.Id(), name)
 
 				if err != nil {
@@ -111,8 +132,28 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string) bool 
 				}
 			} else {
 				// Directory already exists.
+				treeFormat(pC, depth)
 				pC.Printf("directory [%s] already exists\n", name)
 			}
+
+			// Error checking not required? Unless, someone deletes
+			// or renames the directory meanwhile.
+
+			node, _ := pCtx.api.Filetree.NodeByPath(name, pCtx.node)
+			path, _ := pCtx.api.Filetree.NodeToPath(node)
+
+			// Back up current remote location.
+			currCtxPath := pCtx.path
+			currCtxNode := pCtx.node
+
+			pCtx.path = path
+			pCtx.node = node
+
+			putFilesAndDirs(pCtx, pC, name, depth+1)
+
+			// Reset.
+			pCtx.path = currCtxPath
+			pCtx.node = currCtxNode
 
 		case mode.IsRegular():
 
@@ -125,11 +166,11 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string) bool 
 
 				if err == nil {
 					// Document already exists.
-
+					treeFormat(pC, depth)
 					pC.Printf("document [%s] already exists\n", name)
 				} else {
 					// Document does not exist.
-
+					treeFormat(pC, depth)
 					pC.Printf("uploading: [%s]...", name)
 					doc, err := pCtx.api.UploadDocument(pCtx.node.Id(), name)
 
@@ -143,6 +184,11 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string) bool 
 				}
 			}
 		}
+	}
+
+	if localDir != "./" {
+		// pC.Println("DEBUG: exiting directory", wd)
+		os.Chdir("..")
 	}
 
 	return true
