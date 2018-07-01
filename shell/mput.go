@@ -100,7 +100,6 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 	os.Chdir(localDir) // Change to the local source directory.
 
 	wd, _ := os.Getwd()
-	// pC.Println("DEBUG: changing to directory", wd)
 	dirList, err := ioutil.ReadDir(wd)
 
 	if err != nil {
@@ -187,7 +186,6 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 	}
 
 	if localDir != "./" {
-		// pC.Println("DEBUG: exiting directory", wd)
 		os.Chdir("..")
 	}
 
