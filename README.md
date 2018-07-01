@@ -43,7 +43,7 @@ You can download an already built version for either Linux or OSX from [releases
 
 - [x] autocomplete
 - [ ] globbing
-- [ ] upload a directory and all its files and subdirectories recursively
+- [x] upload a directory and all its files and subdirectories recursively
 
 # Commands
 
@@ -66,6 +66,16 @@ You can also specify the destination directory:
 
 ```
 put book.pdf /books
+```
+
+## Recursively upload directories and files
+
+Use `mput path_to_dir` to recursively upload all the local files to that directory.
+
+E.g: upload all the files
+
+```
+mput /Papers/
 ```
 
 ## Download a file
