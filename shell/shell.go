@@ -45,6 +45,7 @@ func RunShell(apiCtx *api.ApiCtx) error {
 	shell.AddCmd(rmCmd(ctx))
 	shell.AddCmd(mvCmd(ctx))
 	shell.AddCmd(putCmd(ctx))
+	shell.AddCmd(mputCmd(ctx))
 	shell.AddCmd(versionCmd(ctx))
 	shell.AddCmd(statCmd(ctx))
 
