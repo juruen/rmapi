@@ -46,6 +46,8 @@ func mputCmd(ctx *ShellCtxt) *ishell.Cmd {
 				return
 			}
 
+			treeFormatStr := "├"
+
 			// Back up current remote location.
 			currCtxPath := ctx.path
 			currCtxNode := ctx.node
@@ -53,7 +55,9 @@ func mputCmd(ctx *ShellCtxt) *ishell.Cmd {
 			ctx.path = path
 			ctx.node = node
 
-			putFilesAndDirs(ctx, c, "./", 0)
+			c.Println()
+			putFilesAndDirs(ctx, c, "./", 0, &treeFormatStr)
+			c.Println()
 
 			// Reset.
 			ctx.path = currCtxPath
@@ -63,38 +67,55 @@ func mputCmd(ctx *ShellCtxt) *ishell.Cmd {
 }
 
 // Checks whether the file has a pdf or epub extension.
-// Input -> Valid file name.
-// Returns -> true if the file is a pdf or epub
-//		   -> false otherwise
+//
+// Input -> [string] Valid file name.
+// Returns -> true if the file is a pdf or epub, false otherwise
 func checkFileType(fName string) bool {
 	return (strings.Contains(fName, ".pdf") ||
 		strings.Contains(fName, ".epub"))
 }
 
-// Print the required number of spaces
-func treeFormat(pC *ishell.Context, num int) {
+// Print the required spaces and characters for tree formatting.
+//
+// Input -> [*ishell.Context]
+//			[int]				tree depth (0 ... N-1)
+//			[int]				Current item index in directory
+//			[int]				Current directory list length
+//			[*string]			Book keeping for tree formatting
+func treeFormat(pC *ishell.Context, num int, lIndex int, lSize int, tFS *string) {
 
-	if num != 0 {
-		pC.Printf("│")
-	} else {
-		pC.Printf("├")
+	tFStr := ""
+
+	for i := 0; i <= num; i++ {
+		if i == num {
+			if lIndex == lSize-1 {
+				tFStr += "└"
+				pC.Printf("└── ") // Last item in current directory.
+			} else if lSize > 1 {
+				tFStr += "├"
+				pC.Printf("├── ")
+			}
+		} else {
+			prevStr := string([]rune(*tFS)[i])
+			if prevStr == "│" || prevStr == "├" {
+				tFStr += "│"
+				pC.Printf("│")
+			} else {
+				tFStr += " "
+				pC.Printf(" ")
+			}
+
+			pC.Printf("   ")
+		}
 	}
 
-	for i := 0; i < 2*num; i++ {
-		pC.Printf(" ")
-	}
-
-	if num != 0 {
-		pC.Printf("  └── ")
-	} else {
-		pC.Printf("── ")
-	}
+	*tFS = tFStr
 }
 
-func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth int) bool {
+func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth int, tFS *string) bool {
 
-	if localDir == "./" {
-		pC.Println(".")
+	if depth == 0 {
+		pC.Println(pCtx.path)
 	}
 
 	os.Chdir(localDir) // Change to the local source directory.
@@ -107,7 +128,9 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 		return false
 	}
 
-	for _, d := range dirList {
+	lSize := len(dirList)
+	for index, d := range dirList {
+
 		name := d.Name()
 
 		switch mode := d.Mode(); {
@@ -118,7 +141,7 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 
 			if err != nil {
 				// Directory does not exist. Create directory.
-				treeFormat(pC, depth)
+				treeFormat(pC, depth, index, lSize, tFS)
 				pC.Printf("creating directory [%s]...", name)
 				doc, err := pCtx.api.CreateDir(pCtx.node.Id(), name)
 
@@ -131,7 +154,7 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 				}
 			} else {
 				// Directory already exists.
-				treeFormat(pC, depth)
+				treeFormat(pC, depth, index, lSize, tFS)
 				pC.Printf("directory [%s] already exists\n", name)
 			}
 
@@ -148,7 +171,7 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 			pCtx.path = path
 			pCtx.node = node
 
-			putFilesAndDirs(pCtx, pC, name, depth+1)
+			putFilesAndDirs(pCtx, pC, name, depth+1, tFS)
 
 			// Reset.
 			pCtx.path = currCtxPath
@@ -165,11 +188,11 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 
 				if err == nil {
 					// Document already exists.
-					treeFormat(pC, depth)
+					treeFormat(pC, depth, index, lSize, tFS)
 					pC.Printf("document [%s] already exists\n", name)
 				} else {
 					// Document does not exist.
-					treeFormat(pC, depth)
+					treeFormat(pC, depth, index, lSize, tFS)
 					pC.Printf("uploading: [%s]...", name)
 					doc, err := pCtx.api.UploadDocument(pCtx.node.Id(), name)
 
