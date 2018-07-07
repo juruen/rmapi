@@ -75,8 +75,10 @@ Use `mput path_to_dir` to recursively upload all the local files to that directo
 E.g: upload all the files
 
 ```
-mput /Papers/
+mput /Papers
 ```
+
+![Console Capture](docs/mput-console.png)
 
 ## Download a file
 
