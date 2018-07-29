@@ -4,6 +4,8 @@ import (
 	"log"
 	"time"
 
+	"crypto/md5"
+
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -11,6 +13,12 @@ const (
 	DirectoryType = "CollectionType"
 	DocumentType  = "DocumentType"
 )
+
+type HttpDocumentMeta struct {
+	LastModified string
+	Md5Hash      [md5.Size]byte
+	Size         int64
+}
 
 type Document struct {
 	ID                string

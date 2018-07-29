@@ -92,6 +92,16 @@ func (ctx HttpClientCtx) GetStream(authType AuthType, url string) (io.ReadCloser
 	return respBody, err
 }
 
+func (ctx HttpClientCtx) GetHeadResponse(authType AuthType, url string) (*http.Response, error) {
+	response, err := ctx.Request(authType, http.MethodHead, url, strings.NewReader(""))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return response, err
+}
+
 func (ctx HttpClientCtx) Post(authType AuthType, url string, reqBody, resp interface{}) error {
 	return ctx.httpRawReq(authType, http.MethodPost, url, reqBody, resp)
 }

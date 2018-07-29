@@ -27,6 +27,16 @@ func statCmd(ctx *ShellCtxt) *ishell.Cmd {
 			}
 
 			c.Printf("%+v\n", node.Document)
+
+			httpMeta, err := ctx.api.FetchHttpMetaDocument(node.Id())
+
+			if err != nil {
+				c.Err(err)
+				return
+			}
+
+			c.Printf("%+v\n", httpMeta)
+
 		},
 	}
 }
