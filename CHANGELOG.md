@@ -16,6 +16,10 @@
 
 * Return exit code for non-interactivly commands
 
+* Vendorize fuse dependencies
+
+* Use new auth endpoints
+
 ## rmapi 0.0.3 (February 25, 2018)
 
 * Update doc
