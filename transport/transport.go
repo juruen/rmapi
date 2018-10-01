@@ -164,6 +164,7 @@ func (ctx HttpClientCtx) Request(authType AuthType, verb, url string, body io.Re
 	request, _ := http.NewRequest(verb, url, body)
 
 	ctx.addAuthorization(request, authType)
+	request.Header.Add("User-Agent", "rmapi")
 
 	drequest, err := httputil.DumpRequest(request, true)
 	log.Trace.Printf("request: %s", string(drequest))
