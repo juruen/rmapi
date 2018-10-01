@@ -3,9 +3,12 @@
 This tuorial wil show you how to leverage [rmapi](https://github.com/juruen/rmapi) and `Automator` to print
  to your ReMarkable tablet from your Mac using the Cloud API.
 
- This way you won't need to take the extra step of using the desktop app.
+This way you won't need to take the extra step of using the desktop app.
 
 You can see a demo of it [here](https://youtu.be/gOGTYI15VxY).
+
+*Warning*: If you installed _rmapi_ before (October 1, 2018), you will need to install the latest version,
+otherwise _rmapi_ will fail to authenticate after the changes in the server API that were introduced in November 28, 2018.
 
 # Steps
 
@@ -16,7 +19,7 @@ Use `terminal` or `iterm` to get a terminal to run commands from it.
 Download `rmapi` with the following command:
 
 ```bash
-curl -L -H 'Accept: application/octet-stream' https://api.github.com/repos/juruen/rmapi/releases/assets/6320697 -o rmapi.zip
+curl -L https://github.com/juruen/rmapi/releases/download/v0.0.4/rmapi-macosx-v0.0.4.zip -o rmapi.zip
 ```
 
 Alternatively, you can build it from sources.
