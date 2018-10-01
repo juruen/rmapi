@@ -1,5 +1,8 @@
 # rMAPI
 
+*Warning*: If you installed _rmapi_ before (October 1, 2018), you will need to install the latest version,
+otherwise _rmapi_ will fail to authenticate after the changes in the server API that were introduced in November 28, 2018.
+
 rMAPI is a Go app that allows you to access the ReMarkable Cloud API programmatically.
 
 You can interact with the different API end-points through a shell. However, you can also
@@ -8,6 +11,7 @@ taking automatic backups or uploading documents programmatically.
 
 *Experimental*: Apart from the interactive shell, there's some work happing to access the
 documents through a FUSE system. You can read further at the bottom of this file.
+
 
 ![Console Capture](docs/console.gif)
 
