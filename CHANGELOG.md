@@ -1,3 +1,7 @@
+## rmapi 0.0.5 (???)
+
+* Increased http timeout to 5 minutes to enable upload of larger files
+
 ## rmapi 0.0.4 (October 1, 2018)
 
 * Windows fixes
