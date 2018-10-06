@@ -4,6 +4,7 @@
 
 * Add user-agent header to be a good reMarkable citezen
 
+* Ls may take a directory as an argument
 
 ## rmapi 0.0.4 (October 1, 2018)
 
