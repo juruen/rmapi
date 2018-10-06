@@ -40,7 +40,7 @@ type HttpClientCtx struct {
 }
 
 func CreateHttpClientCtx(tokens model.AuthTokens) HttpClientCtx {
-	var httpClient = &http.Client{Timeout: 60 * time.Second}
+	var httpClient = &http.Client{Timeout: 5 * 60 * time.Second}
 
 	return HttpClientCtx{httpClient, tokens}
 }
