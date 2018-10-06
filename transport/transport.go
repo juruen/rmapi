@@ -24,6 +24,8 @@ type BodyString struct {
 
 var UnAuthorizedError = errors.New("401 Unauthorized Error")
 
+var RmapiUserAGent = "rmapi"
+
 const (
 	EmptyBearer AuthType = iota
 	DeviceBearer
@@ -164,7 +166,7 @@ func (ctx HttpClientCtx) Request(authType AuthType, verb, url string, body io.Re
 	request, _ := http.NewRequest(verb, url, body)
 
 	ctx.addAuthorization(request, authType)
-	request.Header.Add("User-Agent", "rmapi")
+	request.Header.Add("User-Agent", RmapiUserAGent)
 
 	drequest, err := httputil.DumpRequest(request, true)
 	log.Trace.Printf("request: %s", string(drequest))
