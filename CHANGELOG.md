@@ -1,6 +1,10 @@
-## rmapi 0.0.5 (???)
+## rmapi master
 
 * Increased http timeout to 5 minutes to enable upload of larger files
+
+* Add user-agent header to be a good reMarkable citezen
+
+* Ls may take a directory as an argument
 
 ## rmapi 0.0.4 (October 1, 2018)
 
