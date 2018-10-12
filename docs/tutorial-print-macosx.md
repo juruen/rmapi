@@ -8,7 +8,7 @@ This way you won't need to take the extra step of using the desktop app.
 You can see a demo of it [here](https://youtu.be/gOGTYI15VxY).
 
 *Warning*: If you installed _rmapi_ before (October 1, 2018), you will need to install the latest version,
-otherwise _rmapi_ will fail to authenticate after the changes in the server API that were introduced in November 28, 2018.
+otherwise _rmapi_ will fail to authenticate after the changes in the server API that were introduced in September 28, 2018.
 
 # Steps
 

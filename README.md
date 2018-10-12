@@ -1,7 +1,7 @@
 # rMAPI
 
 *Warning*: If you installed _rmapi_ before (October 1, 2018), you will need to install the latest version,
-otherwise _rmapi_ will fail to authenticate after the changes in the server API that were introduced in November 28, 2018.
+otherwise _rmapi_ will fail to authenticate after the changes in the server API that were introduced in September 28, 2018.
 
 rMAPI is a Go app that allows you to access the ReMarkable Cloud API programmatically.
 
