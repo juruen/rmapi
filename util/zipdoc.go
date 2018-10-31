@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/juruen/rmapi/log"
+	"github.com/peerdavid/rmapi/log"
 )
 
 type zipDocumentContent struct {

@@ -6,8 +6,8 @@ import (
 	"os"
 	"os/user"
 
-	"github.com/juruen/rmapi/log"
-	"github.com/juruen/rmapi/model"
+	"github.com/peerdavid/rmapi/log"
+	"github.com/peerdavid/rmapi/model"
 	"gopkg.in/yaml.v2"
 )
 

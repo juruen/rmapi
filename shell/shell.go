@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/abiosoft/ishell"
-	"github.com/juruen/rmapi/api"
-	"github.com/juruen/rmapi/model"
+	"github.com/peerdavid/rmapi/api"
+	"github.com/peerdavid/rmapi/model"
 )
 
 type ShellCtxt struct {
@@ -41,6 +41,7 @@ func RunShell(apiCtx *api.ApiCtx) error {
 	shell.AddCmd(cdCmd(ctx))
 	shell.AddCmd(getCmd(ctx))
 	shell.AddCmd(mgetCmd(ctx))
+	shell.AddCmd(getCmdA(ctx))
 	shell.AddCmd(mkdirCmd(ctx))
 	shell.AddCmd(rmCmd(ctx))
 	shell.AddCmd(mvCmd(ctx))

@@ -8,7 +8,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/juruen/rmapi/model"
+	"github.com/peerdavid/rmapi/model"
 )
 
 func DocPathToName(p string) string {

@@ -6,7 +6,7 @@ import (
 
 	"github.com/hanwen/go-fuse/fuse"
 	"github.com/hanwen/go-fuse/fuse/nodefs"
-	"github.com/juruen/rmapi/log"
+	"github.com/peerdavid/rmapi/log"
 )
 
 type fuseFile struct {

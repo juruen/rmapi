@@ -1,5 +1,7 @@
 # rMAPI
 
+IMPORTANT: This is a fork of https://github.com/juruen/rmapi
+
 *Warning*: If you installed _rmapi_ before (October 1, 2018), you will need to install the latest version,
 otherwise _rmapi_ will fail to authenticate after the changes in the server API that were introduced in September 28, 2018.
 
@@ -25,11 +27,11 @@ documents through a FUSE system. You can read further at the bottom of this file
 
 Install and build the project:
 
-`go get -u github.com/juruen/rmapi`
+`go get -u github.com/peerdavid/rmapi`
 
 ## Binary
 
-You can download an already built version for either Linux or OSX from [releases](https://github.com/juruen/rmapi/releases).
+You can download an already built version for either Linux or OSX from [releases](https://github.com/peerdavid/rmapi/releases).
 
 # API support
 
@@ -148,3 +150,9 @@ If you want to give it a go, you can run:
 ```bash
 rmapi --fuse-mount mount_point
 ```
+
+
+# References
+[1] Original rmapi, https://github.com/juruen/rmapi
+[1] Original rM2svg, https://github.com/reHackable/maxio
+[2] Original exportNotebooks, https://github.com/reHackable/maxio
