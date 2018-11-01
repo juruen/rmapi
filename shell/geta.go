@@ -10,6 +10,7 @@ import (
 	"io"
 	"github.com/abiosoft/ishell"
 	"path/filepath"
+	"github.com/peerdavid/rmapi/model"
 )
 
 
@@ -50,31 +51,63 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 				return
 			}
 			
-			
+			// Convert to annotated pdf
 			pdfFile := fmt.Sprintf("%s/%s.pdf", tmpFolder, node.Document.ID)
 			if contains(docFiles, pdfFile){
-				// Convert notebook
-				c.Err(errors.New("PDF not supported"))
-				return
-			} else {
-				// Convert lines file
-				c.Println(fmt.Sprintf("converting to svg: [%s]...", srcName))
-				linesFile := fmt.Sprintf("%s/%s.lines", tmpFolder, node.Document.ID)
-				svgFiles := fmt.Sprintf("%s/%s", node.Name(), node.Name())
-				os.MkdirAll(node.Name(), 0755)
-				rM2svg := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/rM2svg"
-				_, err = exec.Command(rM2svg, "-i", linesFile, "-o", svgFiles).CombinedOutput()
+				// Convert lines file to svg foreground
+				svgFiles := fmt.Sprintf("%s/foreground", node.Document.ID)
+				err = linesToSvg(tmpFolder, node, svgFiles, false)
 				if err != nil {
 					c.Err(err)
+					os.Remove(zipFile)
+					os.RemoveAll(tmpFolder)
+					return
+				}
+
+				// Convert to pdf
+				c.Println(fmt.Sprintf("creating annotated pdf: [%s]...", srcName))
+				exportPdf := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/exportAnnotatedPdf"
+				_, err = exec.Command("/bin/sh", exportPdf, node.Document.ID, node.Document.ID, node.Name()).CombinedOutput()
+				if err != nil {
+					c.Err(err)
+					os.Remove(zipFile)
+					os.RemoveAll(tmpFolder)
+					return
+				}
+
+			} else {
+				c.Println(fmt.Sprintf("creating svg: [%s]...", srcName))
+				os.MkdirAll(node.Name(), 0755)
+				svgFiles := fmt.Sprintf("%s/%s", node.Name(), node.Name())
+				err = linesToSvg(tmpFolder, node, svgFiles, true)
+				if err != nil {
+					c.Err(err)
+					os.Remove(zipFile)
+					os.RemoveAll(tmpFolder)
+					return
 				}
 			}
 
 			// Cleanup
 			os.Remove(zipFile)
 			os.RemoveAll(tmpFolder)
-			c.Println("OK")
 		},
 	}
+}
+
+
+func linesToSvg(tmpFolder string, node *model.Node, outName string, background bool) error{
+	linesFile := fmt.Sprintf("%s/%s.lines", tmpFolder, node.Document.ID)
+	rM2svg := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/rM2svg"
+
+	var err error
+	if background{
+		_, err = exec.Command(rM2svg, "-i", linesFile, "-o", outName, "-b").CombinedOutput()
+	} else {
+		_, err = exec.Command(rM2svg, "-i", linesFile, "-o", outName).CombinedOutput()
+		return err
+	}
+	return err
 }
 
 

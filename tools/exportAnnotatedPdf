@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 # Needs:
 # - ssh and scp (openssh)
@@ -13,25 +13,12 @@ if [[ $# -eq 0 ]] ; then
     exit 0
 fi
 
-# Make sure we have rM2svg
-command -v rM2svg >/dev/null 2>&1
-if [[ $? -ne 0 ]]; then
-    if [[ -x rM2svg ]]; then
-        rM2svg_cmd="$(dirname `readlink -f $0`)/rM2svg"
-    else
-        print "Cannot find rM2svg"
-        exit 1
-    fi
-else
-    rM2svg_cmd="rM2svg"
-fi
-
 # Getting the notebook prefix (Newest notebook matching the name)
-id="17aba1c7-6c11-4b56-b272-95e93535f6cc"
+id=$1
+tmpfolder=$2
+filename=$3
 
 test -z "$id" && exit 1
-
-tmpfolder="tmp"
 
 # Fix for single page notebooks with no template (empty pagedata file by default)
 if [ ! -s "${tmpfolder}"/*.pagedata ]
@@ -41,19 +28,16 @@ fi
 
 # Fix empty lines in pagedata files
 sed -i -e "s/^[[:blank:]]*$/Blank/" "${tmpfolder}"/*.pagedata
-
-filename="mozilla"
 echo "Exporting notebook ${filename} ($(wc -l "${tmpfolder}"/*.pagedata | cut -d\  -f1) pages)"
 
 if [ -f "${tmpfolder}"/*.pdf ]
 then
-    ln -s "${id}".pdf "${tmpfolder}/background_original.pdf"
     echo "Found underlying document PDF, using as background."
 
     if command -v "gs" > /dev/null && command -v "pdfinfo" > /dev/null
     then
         # Read PDF dimensions for scale correction
-        size=$(pdfinfo ${tmpfolder}/background_original.pdf | grep "Page size" | awk '{print $3,$5}')
+        size=$(pdfinfo ${tmpfolder}/${id}.pdf | grep "Page size" | awk '{print $3,$5}')
         width=$(echo ${size} | cut -f1 -d " ")
         height=$(echo ${size} | cut -f2 -d " ")
 
@@ -67,34 +51,24 @@ then
         gs -q -sDEVICE=pdfwrite -dBATCH -dNOPAUSE -sOutputFile=${tmpfolder}/background_with_offset.pdf \
         -dDEVICEWIDTHPOINTS=${new_width} -dDEVICEHEIGHTPOINTS=${height} -dFIXEDMEDIA \
         -c "{${offset} 0 translate}" \
-        -f "${tmpfolder}/background_original.pdf"
+        -f "${tmpfolder}/${id}.pdf"
 
         ln -s background_with_offset.pdf ${tmpfolder}/background.pdf
     else
-        ln -s background_original.pdf ${tmpfolder}/background.pdf
+        ln -s ${id}.pdf ${tmpfolder}/background.pdf
     fi
 else
-    # Getting template files
-    sort -u "${tmpfolder}"/*.pagedata | while read -r tpl; do
-    scp $control_options -q ${SSH_IP}:"'/usr/share/remarkable/templates/${tpl}.png'" "${tmpfolder}"/
-    done
-
-    # Generate a PDF file out of the templates
-    sed -e "s|^|\"${tmpfolder}\"/\"|" -e 's|$|.png"|' "${tmpfolder}"/*.pagedata | tr '\n' ' ' | sed -e "s|$|-transparent white \"${tmpfolder}\"/background.pdf|" | xargs convert
+    echo "No pdf file found"
+    exit 1
 fi
 
 # Extract annotations and create a PDF
-$rM2svg_cmd --input "${tmpfolder}"/*.lines --output "${tmpfolder}/foreground" $2
-
 if command -v "rsvg-convert" > /dev/null
 then
     rsvg-convert -a -f pdf "${tmpfolder}"/foreground*.svg -o "${tmpfolder}"/foreground.pdf
 else
     convert -density 100 "${tmpfolder}"/foreground*.svg -transparent white "${tmpfolder}"/foreground.pdf
 fi
-
-# Strip .pdf suffix if it already exists (document vs. notebook)
-filename=$(basename -s .pdf ${filename//\"/})
 
 # Use multistamp instead of multibackground to preserve transparency
 pdftk "${tmpfolder}"/background.pdf multistamp "${tmpfolder}"/foreground.pdf output "${filename}.pdf"

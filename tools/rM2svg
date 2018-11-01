@@ -53,6 +53,11 @@ def main():
                         help="Colour annotations for document markup.",
                         action='store_true',
                         )
+    parser.add_argument("-b",
+                    "--background_color",
+                    help="White background color",
+                    action='store_true',
+                    )
     parser.add_argument('--version',
                         action='version',
                         version='%(prog)s {version}'.format(version=__version__))
@@ -70,7 +75,7 @@ def main():
             3: "yellow"
         }
 
-    lines2svg(args.input, args.output, args.singlefile, args.coloured_annotations)
+    lines2svg(args.input, args.output, args.singlefile, args.coloured_annotations, args.background_color)
 
 
 def abort(msg):
@@ -78,7 +83,7 @@ def abort(msg):
     sys.exit(1)
 
 
-def lines2svg(input_file, output_name, singlefile, coloured_annotations=False):
+def lines2svg(input_file, output_name, singlefile, coloured_annotations=False, background_color=False):
     # Read the file in memory. Consider optimising by reading chunks.
     with open(input_file, 'rb') as f:
         data = f.read()
@@ -118,7 +123,9 @@ def lines2svg(input_file, output_name, singlefile, coloured_annotations=False):
         else:
             output = open("{}_{:02}.svg".format(output_name, page+1), 'w')
             output.write('<svg xmlns="http://www.w3.org/2000/svg" height="{}" width="{}">\n'.format(y_width, x_width)) # BEGIN page
-        # output.write('<rect width="100%" height="100%" fill="white"/>')
+        
+        if background_color:
+            output.write('<rect width="100%" height="100%" fill="white"/>')
 
         fmt = '<BBH' # TODO might be 'I'
         nlayers, b_unk, h_unk = struct.unpack_from(fmt, data, offset); offset += struct.calcsize(fmt)
