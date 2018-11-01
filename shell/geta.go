@@ -26,16 +26,6 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 			}
 			srcName := c.Args[0]
 
-			fileType := "svg"
-			if len(c.Args) == 2 {
-				fileType = c.Args[1]
-			}
-
-			if(fileType != "png" && fileType != "svg"){
-				c.Err(errors.New("filetype note supported"))
-				return
-			}
-
 			// Download document as zip
 			node, err := ctx.api.Filetree.NodeByPath(srcName, ctx.node)
 			if err != nil || node.IsDirectory() {
