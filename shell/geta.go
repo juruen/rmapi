@@ -70,7 +70,7 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 
 				// Convert lines file to svg foreground
 				svgFiles := fmt.Sprintf("%s/foreground", node.Document.ID)
-				err = linesToSvg(tmpFolder, node, svgFiles, false)
+				err = linesToSvg(tmpFolder, node, svgFiles)
 				if err != nil {
 					c.Err(err)
 					os.Remove(zipFile)
@@ -99,7 +99,7 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 				}
 
 				svgFiles := fmt.Sprintf("%s/%s", svgTmpFolder, node.Name())
-				err = linesToSvg(tmpFolder, node, svgFiles, true)
+				err = linesToSvg(tmpFolder, node, svgFiles)
 				if err != nil {
 					c.Err(err)
 					os.Remove(zipFile)
@@ -128,17 +128,10 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 }
 
 
-func linesToSvg(tmpFolder string, node *model.Node, outName string, background bool) error{
-	linesFile := fmt.Sprintf("%s/%s.lines", tmpFolder, node.Document.ID)
-	rM2svg := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/rM2svg"
-
-	var err error
-	if background{
-		_, err = exec.Command(rM2svg, "-i", linesFile, "-o", outName, "-b").CombinedOutput()
-	} else {
-		_, err = exec.Command(rM2svg, "-i", linesFile, "-o", outName).CombinedOutput()
-		return err
-	}
+func linesToSvg(tmpFolder string, node *model.Node, outName string) error{
+	linesFile := fmt.Sprintf("%s/%s", tmpFolder, node.Document.ID)
+	lines2Svg := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/lines2svg"
+	_, err := exec.Command(lines2Svg, linesFile, outName).CombinedOutput()
 	return err
 }
 
