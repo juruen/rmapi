@@ -53,7 +53,9 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 
 			// Convert lines file
 			linesFile := fmt.Sprintf("%s/%s.lines", tmpFolder, node.Document.ID)
-			_, err = exec.Command("tools/rM2svg", "-i", linesFile, "-o", node.Name()).CombinedOutput()
+			svgFiles := fmt.Sprintf("%s/%s", node.Name(), node.Name())
+			os.MkdirAll(node.Name(), 0755)
+			_, err = exec.Command("tools/rM2svg", "-i", linesFile, "-o", svgFiles).CombinedOutput()
 			if err != nil {
 				c.Err(err)
 			}
