@@ -90,6 +90,11 @@ mput /Papers
 
 Use `get path_to_file` to download a file from the cloud to your local computer.
 
+## Download a file with annotations
+
+Use `geta path_to_file` to download a file from the cloud to your local computer.
+Use `geta path_to_file svg` to download a notebook from the cloud to your local computer with multiple svg files.
+
 ## Recursively download directories and files
 
 Use `mget path_to_dir` to recursively download all the files in that directory.
@@ -153,6 +158,6 @@ rmapi --fuse-mount mount_point
 
 
 # References
-[1] Original rmapi, https://github.com/juruen/rmapi
-[1] Original rM2svg, https://github.com/reHackable/maxio
-[2] Original exportNotebooks, https://github.com/reHackable/maxio
+[1] Original rmapi, https://github.com/juruen/rmapi <br />
+[1] Original rM2svg, https://github.com/reHackable/maxio <br />
+[2] Original exportNotebooks, https://github.com/reHackable/maxio <br />
