@@ -55,7 +55,8 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 			linesFile := fmt.Sprintf("%s/%s.lines", tmpFolder, node.Document.ID)
 			svgFiles := fmt.Sprintf("%s/%s", node.Name(), node.Name())
 			os.MkdirAll(node.Name(), 0755)
-			_, err = exec.Command("tools/rM2svg", "-i", linesFile, "-o", svgFiles).CombinedOutput()
+			rM2svg := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/rM2svg"
+			_, err = exec.Command(rM2svg, "-i", linesFile, "-o", svgFiles).CombinedOutput()
 			if err != nil {
 				c.Err(err)
 			}
