@@ -32,7 +32,6 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 				c.Err(errors.New("file doesn't exist"))
 				return
 			}
-
 			c.Println(fmt.Sprintf("downlading: [%s]...", srcName))
 
 			zipFile := fmt.Sprintf("%s.zip", node.Name())
@@ -44,21 +43,30 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 			
 			// Unzip document
 			tmpFolder := node.Document.ID
-			_, err = unzip(zipFile, tmpFolder)
+			docFiles, err := unzip(zipFile, tmpFolder)
 			if err != nil {
 				c.Err(err)
 				os.Remove(zipFile)
 				return
 			}
-
-			// Convert lines file
-			linesFile := fmt.Sprintf("%s/%s.lines", tmpFolder, node.Document.ID)
-			svgFiles := fmt.Sprintf("%s/%s", node.Name(), node.Name())
-			os.MkdirAll(node.Name(), 0755)
-			rM2svg := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/rM2svg"
-			_, err = exec.Command(rM2svg, "-i", linesFile, "-o", svgFiles).CombinedOutput()
-			if err != nil {
-				c.Err(err)
+			
+			
+			pdfFile := fmt.Sprintf("%s/%s.pdf", tmpFolder, node.Document.ID)
+			if contains(docFiles, pdfFile){
+				// Convert notebook
+				c.Err(errors.New("PDF not supported"))
+				return
+			} else {
+				// Convert lines file
+				c.Println(fmt.Sprintf("converting to svg: [%s]...", srcName))
+				linesFile := fmt.Sprintf("%s/%s.lines", tmpFolder, node.Document.ID)
+				svgFiles := fmt.Sprintf("%s/%s", node.Name(), node.Name())
+				os.MkdirAll(node.Name(), 0755)
+				rM2svg := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/rM2svg"
+				_, err = exec.Command(rM2svg, "-i", linesFile, "-o", svgFiles).CombinedOutput()
+				if err != nil {
+					c.Err(err)
+				}
 			}
 
 			// Cleanup
@@ -67,6 +75,16 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 			c.Println("OK")
 		},
 	}
+}
+
+
+func contains(a []string, e string) bool {
+    for _, v := range a {
+        if v == e {
+            return true
+        }
+    }
+    return false
 }
 
 

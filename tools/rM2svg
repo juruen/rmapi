@@ -118,7 +118,7 @@ def lines2svg(input_file, output_name, singlefile, coloured_annotations=False):
         else:
             output = open("{}_{:02}.svg".format(output_name, page+1), 'w')
             output.write('<svg xmlns="http://www.w3.org/2000/svg" height="{}" width="{}">\n'.format(y_width, x_width)) # BEGIN page
-        output.write('<rect width="100%" height="100%" fill="white"/>')
+        # output.write('<rect width="100%" height="100%" fill="white"/>')
 
         fmt = '<BBH' # TODO might be 'I'
         nlayers, b_unk, h_unk = struct.unpack_from(fmt, data, offset); offset += struct.calcsize(fmt)
