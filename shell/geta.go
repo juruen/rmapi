@@ -17,7 +17,7 @@ import (
 func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 	return &ishell.Cmd{
 		Name:      "geta",
-		Help:      "copy remote file annotated to local",
+		Help:      "copy remote file to local with annotations. Optional [svg, pdf]",
 		Completer: createEntryCompleter(ctx),
 		Func: func(c *ishell.Context) {
 			// Parse cmd args
@@ -26,6 +26,11 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 				return
 			}
 			srcName := c.Args[0]
+
+			fileType := "pdf"
+			if len(c.Args) == 2 {
+				fileType = c.Args[1]
+			}
 
 			// Download document as zip
 			node, err := ctx.api.Filetree.NodeByPath(srcName, ctx.node)
@@ -54,6 +59,15 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 			// Convert to annotated pdf
 			pdfFile := fmt.Sprintf("%s/%s.pdf", tmpFolder, node.Document.ID)
 			if contains(docFiles, pdfFile){
+				c.Println(fmt.Sprintf("creating annoated pdf: [%s]...", srcName))
+
+				if(fileType == "svg"){
+					c.Err(errors.New("svg export not supported for annotated pdf."))
+					os.Remove(zipFile)
+					os.RemoveAll(tmpFolder)
+					return
+				}
+
 				// Convert lines file to svg foreground
 				svgFiles := fmt.Sprintf("%s/foreground", node.Document.ID)
 				err = linesToSvg(tmpFolder, node, svgFiles, false)
@@ -76,9 +90,15 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 				}
 
 			} else {
-				c.Println(fmt.Sprintf("creating svg: [%s]...", srcName))
-				os.MkdirAll(node.Name(), 0755)
-				svgFiles := fmt.Sprintf("%s/%s", node.Name(), node.Name())
+				c.Println(fmt.Sprintf("creating notebook: [%s]...", srcName))
+
+				svgTmpFolder := tmpFolder
+				if(fileType == "svg"){
+					svgTmpFolder = node.Name()
+					os.MkdirAll(svgTmpFolder, 0755)
+				}
+
+				svgFiles := fmt.Sprintf("%s/%s", svgTmpFolder, node.Name())
 				err = linesToSvg(tmpFolder, node, svgFiles, true)
 				if err != nil {
 					c.Err(err)
@@ -86,11 +106,23 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 					os.RemoveAll(tmpFolder)
 					return
 				}
+
+				if(fileType == "pdf"){
+					svgToPdf := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/svgToPdf"
+					_, err = exec.Command("/bin/sh", svgToPdf, svgFiles, node.Name()).CombinedOutput()
+					if err != nil {
+						c.Err(err)
+						os.Remove(zipFile)
+						os.RemoveAll(tmpFolder)
+						return
+					}
+				}
 			}
 
 			// Cleanup
 			os.Remove(zipFile)
 			os.RemoveAll(tmpFolder)
+			c.Println("Ok")
 		},
 	}
 }
