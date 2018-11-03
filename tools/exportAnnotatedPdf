@@ -14,8 +14,8 @@ if [[ $# -eq 0 ]] ; then
 fi
 
 # Getting the notebook prefix (Newest notebook matching the name)
-id=$1
-tmpfolder=$2
+tmpfolder=$1
+id=$2
 filename=$3
 
 test -z "$id" && exit 1
