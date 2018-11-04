@@ -106,6 +106,17 @@ E.g: download all the files
 mget .
 ```
 
+## Recursively download directories and files with annotations
+
+Use `mgeta path_to_dir` to recursively download all the annotated files in that directory.
+
+E.g: download all the files
+
+```
+mgeta .
+```
+
+
 ## Create a directoy
 
 Use `mkdir path_to_new_dir` to create a new directory
