@@ -12,6 +12,7 @@
 base=$1
 id=$2
 output=$3
+rM2svg=$4
 
 # Open folder that contains the .rm files
 cd ${base}
@@ -24,10 +25,11 @@ then
     width=$(pdfinfo ${doc} | grep 'Page size:' | awk '{print $3}')
     height=$(pdfinfo ${doc} | grep 'Page size:' | awk '{print $5}')
 
-    # Special handling if rotated
-    if (( $(echo "$height > $width" | bc -l) ))
-    then
+    echo "width is $width and height is $height"
+    # comparing floating point numbers in bash directly is not possible
+    if (( $(echo "$height > $width" |bc -l) )); then
         rotated="no"
+        echo "asdfasdfasdfsdf"
     else
         echo 'PDF file is rotated'
         rotated="yes"
@@ -41,16 +43,17 @@ else
     height=1872
 fi
 
-# Create svg files
-../rM2svg -c -i "${id}" --width ${width} --height ${height} -o ""
 
+# Create svg files
+$rM2svg -c -i ${id} --width ${width} --height ${height} -o ""
 
 page=0
 for svg in *.svg 
 do
     p=$(basename $svg .svg)
     rsvg-convert -f pdf -o ${id}_$p.pdf $p.svg
-    if [ "$rotated" == "yes" ]
+
+    if [ "$rotated" == "yes" ] 
     then
         pdf270 $p.pdf 2>/dev/null
         mv $p-rotated270.pdf $p.pdf
@@ -60,9 +63,9 @@ done
 
 pdfunite ${id}_*.pdf ${id}_annotations.pdf
 if [ -f ${doc} ]; then
-    pdftk ${doc} multistamp ${id}_annotations.pdf output ${output}.pdf
+    pdftk ${doc} multistamp ${id}_annotations.pdf output ../"${output}.pdf"
 else
-    mv ${id}_annotations.pdf annotated_${id}.pdf
+    mv ${id}_annotations.pdf ../"${output}.pdf"
 fi
 
 rm ${id}_*.pdf

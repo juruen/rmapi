@@ -27,11 +27,6 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 			}
 			srcName := c.Args[0]
 
-			fileType := "pdf"
-			if len(c.Args) == 2 {
-				fileType = c.Args[1]
-			}
-
 			// Download document as zip
 			node, err := ctx.api.Filetree.NodeByPath(srcName, ctx.node)
 			if err != nil || node.IsDirectory() {
@@ -48,8 +43,8 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 			}
 			
 			// Unzip document
-			tmpFolder := fmt.Sprintf("%s", node.Document.ID)
-			docFiles, err := unzip(zipFile, tmpFolder)
+			tmpFolder := fmt.Sprintf(".%s", node.Document.ID)
+			_, err = unzip(zipFile, tmpFolder)
 			if err != nil {
 				c.Err(err)
 				os.Remove(zipFile)
@@ -57,69 +52,28 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 			}
 			
 			// Convert to annotated pdf
-			pdfFile := fmt.Sprintf("%s/%s.pdf", tmpFolder, node.Document.ID)
-			if contains(docFiles, pdfFile){
-				c.Println(fmt.Sprintf("creating annoated pdf: [%s]...", srcName))
+			c.Println(fmt.Sprintf("creating annoated pdf: [%s]...", srcName))
 
-				if(fileType == "svg"){
-					c.Err(errors.New("svg export not supported for annotated pdf."))
-					os.Remove(zipFile)
-					os.RemoveAll(tmpFolder)
-					return
-				}
-
-				// Convert lines file to svg foreground
-				svgFiles := fmt.Sprintf("%s/foreground", tmpFolder)
-				_, err = linesToSvg(tmpFolder, node, svgFiles)
-				if err != nil {
-					c.Err(err)
-					os.Remove(zipFile)
-					os.RemoveAll(tmpFolder)
-					return
-				}
-
-				// Convert to pdf
-				c.Println(fmt.Sprintf("creating annotated pdf: [%s]...", srcName))
-				exportPdf := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/exportAnnotatedPdf"
-				output, err := exec.Command("/bin/sh", exportPdf, tmpFolder, node.Document.ID, node.Name()).CombinedOutput()
-				c.Println(fmt.Sprintf("%s", output))
-				if err != nil {
-					c.Err(err)
-					os.Remove(zipFile)
-					os.RemoveAll(tmpFolder)
-					return
-				}
-
-			} else {
-				c.Println(fmt.Sprintf("creating notebook: [%s]...", srcName))
-
-				svgTmpFolder := tmpFolder
-				if(fileType == "svg"){
-					svgTmpFolder = node.Name()
-					os.MkdirAll(svgTmpFolder, 0755)
-				}
-
-				svgFiles := fmt.Sprintf("%s/%s", svgTmpFolder, node.Name())
-				output, err := linesToSvg(tmpFolder, node, svgFiles)
-				c.Println(fmt.Sprintf("%s", output))
-				if err != nil {
-					c.Err(err)
-					os.Remove(zipFile)
-					os.RemoveAll(tmpFolder)
-					return
-				}
-
-				if(fileType == "pdf"){
-					svgToPdf := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/svgToPdf"
-					_, err = exec.Command("/bin/sh", svgToPdf, svgFiles, node.Name()).CombinedOutput()
-					if err != nil {
-						c.Err(err)
-						os.Remove(zipFile)
-						os.RemoveAll(tmpFolder)
-						return
-					}
-				}
+			// Convert to pdf
+			c.Println(fmt.Sprintf("creating annotated pdf: [%s]...", srcName))
+			exportPdf := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/exportAnnotatedPdf"
+			rM2svg := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/rM2svg"
+			output, err := exec.Command(
+				"/bin/bash", 
+				exportPdf, 
+				tmpFolder,
+				node.Document.ID, 
+				node.Name(), 
+				rM2svg).CombinedOutput()
+				
+			c.Println(fmt.Sprintf("%s", output))
+			if err != nil {
+				c.Err(err)
+				os.Remove(zipFile)
+				os.RemoveAll(tmpFolder)
+				return
 			}
+
 
 			// Cleanup
 			os.Remove(zipFile)

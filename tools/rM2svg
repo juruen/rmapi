@@ -209,6 +209,9 @@ def lines2svg(path, output_name, coloured_annotations=False,
 
 
     # For every intermediate page that is empty create a blank page
+    if len(used_pages) == 0:
+        return
+
     for page in range(max(used_pages)+2):   # Note: last page is iterated by pdftk, so also add blank there
         if page in used_pages:
             continue
