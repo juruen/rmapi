@@ -10,10 +10,11 @@ import (
 	"io"
 	"github.com/abiosoft/ishell"
 	"path/filepath"
+	"github.com/peerdavid/rmapi/model"
 )
 
 
-func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
+func getaCmd(ctx *ShellCtxt) *ishell.Cmd {
 	return &ishell.Cmd{
 		Name:      "geta",
 		Help:      "copy remote file to local with annotations. Optional [svg, pdf]",
@@ -32,52 +33,63 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 				c.Err(errors.New("file doesn't exist"))
 				return
 			}
-			c.Println(fmt.Sprintf("downlading: [%s]...", srcName))
 
-			zipFile := fmt.Sprintf(".%s.zip", node.Name())
-			err = ctx.api.FetchDocument(node.Document.ID, zipFile)
-			if err != nil {
-				c.Err(errors.New(fmt.Sprintf("Failed to download file %s with %s", srcName, err.Error())))
-				return
-			}
-			
-			// Unzip document
-			tmpFolder := fmt.Sprintf(".%s", node.Document.ID)
-			_, err = unzip(zipFile, tmpFolder)
+			err = getAnnotatedDocument(ctx, node, "")
 			if err != nil {
 				c.Err(err)
-				os.Remove(zipFile)
-				return
-			}
-			
-			// Convert to pdf
-			c.Println(fmt.Sprintf("creating annotated pdf: [%s]...", srcName))
-			exportPdf := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/exportAnnotatedPdf"
-			rM2svg := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/rM2svg"
-			output, err := exec.Command(
-				"/bin/bash", 
-				exportPdf, 
-				tmpFolder,
-				node.Document.ID, 
-				node.Name(), 
-				rM2svg).CombinedOutput()
-				
-			c.Println(fmt.Sprintf("%s", output))
-			if err != nil {
-				c.Err(err)
-				os.Remove(zipFile)
-				os.RemoveAll(tmpFolder)
 				return
 			}
 
-			// Cleanup
-			os.Remove(zipFile)
-			os.RemoveAll(tmpFolder)
+			
 			c.Println("Ok")
 		},
 	}
 }
 
+
+func getAnnotatedDocument(ctx *ShellCtxt, node *model.Node, path string) error {
+	zipFile := fmt.Sprintf(".%s.zip", node.Name())
+	err := ctx.api.FetchDocument(node.Document.ID, zipFile)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Failed to download file %s with %s", node.Name(), err.Error()))
+	}
+	
+	// Unzip document
+	tmpFolder := fmt.Sprintf(".%s", node.Document.ID)
+	_, err = unzip(zipFile, tmpFolder)
+	if err != nil {
+		os.Remove(zipFile)
+		return err
+	}
+	
+	// Set output name
+	ouput := node.Name()
+	if(path != ""){
+		ouput = fmt.Sprintf("%s/%s", path, node.Name())
+	}
+
+	// Convert to pdf
+	exportPdf := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/exportAnnotatedPdf"
+	rM2svg := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/rM2svg"
+	_, err = exec.Command(
+		"/bin/bash", 
+		exportPdf, 
+		tmpFolder,
+		node.Document.ID, 
+		ouput, 
+		rM2svg).CombinedOutput()
+		
+	if err != nil {
+		os.Remove(zipFile)
+		os.RemoveAll(tmpFolder)
+		return err
+	}
+
+	// Cleanup
+	os.Remove(zipFile)
+	os.RemoveAll(tmpFolder)
+	return nil
+}
 
 // From https://golangcode.com/unzip-files-in-go/
 func unzip(src string, dest string) ([]string, error) {
