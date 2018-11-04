@@ -77,8 +77,8 @@ def main():
     if args.coloured_annotations:
         global stroke_colour
         stroke_colour = {
-            0: "darkblue",
-            1: "darkgreen",
+            0: "black",
+            1: "gray",
             2: "white",
             3: "yellow"
         }

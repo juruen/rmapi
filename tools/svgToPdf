@@ -1,9 +1,0 @@
-#!/bin/bash
-
-
-# Getting the notebook prefix (Newest notebook matching the name)
-svgFile=$1
-output=$2
-
-# Extract annotations and create a PDF
-rsvg-convert -a -f pdf "${svgFile}"*.svg -o "${output}.pdf"
