@@ -10,6 +10,7 @@
 # of the file.
 #
 # Changed by Eric S Fraga; see log of changes at end.
+# Changed by Peer David; see log of changes at end.
 import sys
 import struct
 import os.path
@@ -224,6 +225,11 @@ def lines2svg(path, output_name, coloured_annotations=False,
 
 if __name__ == "__main__":
     main()
+
+#
+# revision 1.8
+# Changed for usage of rmapi
+#
 # $Log: rM2svg,v $
 # Revision 1.7  2018/09/26 11:08:52  ucecesf
 # Summary: allow for floating point numbers for geometry

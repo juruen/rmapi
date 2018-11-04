@@ -1,10 +1,10 @@
 #!/bin/bash 
 #
-# Updated script to annotate remarkable files. Original created by:
+# Script to annotate remarkable notebooks. Based on the work of:
+#   Copyright © 2018, Eric S Fraga, e.fraga@ucl.ac.uk
+#   $Id: rmannotated.sh,v 1.12 2018/10/07 15:19:09 ucecesf Exp $  
 #
-# Copyright © 2018, Eric S Fraga, e.fraga@ucl.ac.uk
-# $Id: rmannotated.sh,v 1.12 2018/10/07 15:19:09 ucecesf Exp $
-# Log at the end of this file.
+# Changed by peer david for the usage of rmapi
 #
 
 
@@ -26,13 +26,10 @@ then
     width=$(pdfinfo ${doc} | grep 'Page size:' | awk '{print $3}')
     height=$(pdfinfo ${doc} | grep 'Page size:' | awk '{print $5}')
 
-    echo "width is $width and height is $height"
     # comparing floating point numbers in bash directly is not possible
     if (( $(echo "$height > $width" |bc -l) )); then
         rotated="no"
-        echo "asdfasdfasdfsdf"
     else
-        echo 'PDF file is rotated'
         rotated="yes"
         swap=$width
         width=$height
