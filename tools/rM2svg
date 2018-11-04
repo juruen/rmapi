@@ -78,7 +78,7 @@ def main():
     if args.coloured_annotations:
         global stroke_colour
         stroke_colour = {
-            0: "black",
+            0: "darkblue",
             1: "gray",
             2: "white",
             3: "yellow"
@@ -143,6 +143,8 @@ def lines2svg(path, output_name, coloured_annotations=False,
                     pass # Dynamic width, will be truncated into several strokes
                 elif pen == 2 or pen == 4: # Pen / Fineliner
                     width = 32 * width * width - 116 * width + 107
+                    if(x_width == default_x_width and y_width == default_y_width):
+                        width *= 1.8
                 elif pen == 3: # Marker
                     width = 64 * width - 112
                     opacity = 0.9
