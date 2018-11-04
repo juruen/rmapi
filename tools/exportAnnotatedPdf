@@ -38,8 +38,9 @@ then
     then
         # Read PDF dimensions for scale correction
         size=$(pdfinfo ${tmpfolder}/${id}.pdf | grep "Page size" | awk '{print $3,$5}')
-        width=$(echo ${size} | cut -f1 -d " ")
-        height=$(echo ${size} | cut -f2 -d " ")
+        width=$(pdfinfo ${doc} | grep 'Page size:' | awk '{print $3}')
+        height=$(pdfinfo ${doc} | grep 'Page size:' | awk '{print $5}')
+        
         # Calculate new width and necessary offset (rM dimensions: 1404x1872)
         new_width=$(echo "scale=5; ${height} / 1872 * 1404" | bc)
         offset=$(echo "scale=5; ${new_width} - ${width}" | bc)
