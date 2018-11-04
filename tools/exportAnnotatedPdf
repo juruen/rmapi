@@ -1,72 +1,68 @@
-#!/bin/bash
+#!/bin/bash 
+#
+# Updated script to annotate remarkable files. Original created by:
+#
+# Copyright © 2018, Eric S Fraga, e.fraga@ucl.ac.uk
+# $Id: rmannotated.sh,v 1.12 2018/10/07 15:19:09 ucecesf Exp $
+# Log at the end of this file.
+#
 
-# Needs:
-# - ssh and scp (openssh)
-# - convert (imagemagick)
-# - pdftk (pdftk)
-# - rsvg-convert (optional, to avoid rasterizing of lines)
-# - gs & pdfinfo (optional, to account for original pdf size)
 
-if [[ $# -eq 0 ]] ; then
-    echo "Usage: ./exportNotebook (Partial)NotebookName AdditionalrM2svgArguments"
-    echo "You can additionally append the -c argument for coloured annotations."
-    exit 0
-fi
-
-# Getting the notebook prefix (Newest notebook matching the name)
-tmpfolder=$1
+# Parse input
+base=$1
 id=$2
-filename=$3
+output=$3
 
-test -z "$id" && exit 1
+# Open folder that contains the .rm files
+cd ${base}
 
-# Fix for single page notebooks with no template (empty pagedata file by default)
-if [ ! -s "${tmpfolder}"/*.pagedata ]
+# Write annotated pdf
+doc="${id}.pdf"
+if [ -f ${doc} ]
 then
-  echo "Blank" > "${tmpfolder}"/*.pagedata
-fi
+    # Get width and height of pdf
+    width=$(pdfinfo ${doc} | grep 'Page size:' | awk '{print $3}')
+    height=$(pdfinfo ${doc} | grep 'Page size:' | awk '{print $5}')
 
-# Fix empty lines in pagedata files
-sed -i -e "s/^[[:blank:]]*$/Blank/" "${tmpfolder}"/*.pagedata
-echo "Exporting notebook ${filename} ($(wc -l "${tmpfolder}"/*.pagedata | cut -d\  -f1) pages)"
-
-if [ -f "${tmpfolder}"/*.pdf ]
-then
-    echo "Found underlying document PDF, using as background."
-
-    if command -v "gs" > /dev/null && command -v "pdfinfo" > /dev/null
+    # Special handling if rotated
+    if (( $(echo "$height > $width" | bc -l) ))
     then
-        # Read PDF dimensions for scale correction
-        size=$(pdfinfo ${tmpfolder}/${id}.pdf | grep "Page size" | awk '{print $3,$5}')
-        width=$(pdfinfo ${doc} | grep 'Page size:' | awk '{print $3}')
-        height=$(pdfinfo ${doc} | grep 'Page size:' | awk '{print $5}')
-        
-        # Calculate new width and necessary offset (rM dimensions: 1404x1872)
-        new_width=$(echo "scale=5; ${height} / 1872 * 1404" | bc)
-        offset=$(echo "scale=5; ${new_width} - ${width}" | bc)
-
-        echo "Original PDF dimensions are (${width}x${height}), correcting by offset of ${offset} to fit rM foreground."
-
-        # Add offset to background.pdf to match foreground dimensions
-        gs -q -sDEVICE=pdfwrite -dBATCH -dNOPAUSE -sOutputFile=${tmpfolder}/background_with_offset.pdf \
-        -dDEVICEWIDTHPOINTS=${new_width} -dDEVICEHEIGHTPOINTS=${height} -dFIXEDMEDIA \
-        -c "{${offset} 0 translate}" \
-        -f "${tmpfolder}/${id}.pdf"
-
-        ln -s background_with_offset.pdf ${tmpfolder}/background.pdf
+        rotated="no"
     else
-        ln -s ${id}.pdf ${tmpfolder}/background.pdf
+        echo 'PDF file is rotated'
+        rotated="yes"
+        swap=$width
+        width=$height
+        height=$swap
     fi
 else
-    echo "No pdf file found"
-    exit 1
+    rotate="no"
+    width=1404
+    height=1872
 fi
 
-# Extract annotations and create a PDF
-rsvg-convert -a -f pdf "${tmpfolder}"/foreground*.svg -o "${tmpfolder}"/foreground.pdf
+# Create svg files
+../rM2svg -c -i "${id}" --width ${width} --height ${height} -o ""
 
-# Use multistamp instead of multibackground to preserve transparency
-pdftk "${tmpfolder}"/background.pdf multistamp "${tmpfolder}"/foreground.pdf output "${filename}.pdf"
 
-filesize=$(ls -la "${filename}.pdf" | awk '{print $5}' | numfmt --to=iec-i --suffix=B --format="%.3f")
-echo "Written ${filesize} to ${filename}.pdf"
+page=0
+for svg in *.svg 
+do
+    p=$(basename $svg .svg)
+    rsvg-convert -f pdf -o ${id}_$p.pdf $p.svg
+    if [ "$rotated" == "yes" ]
+    then
+        pdf270 $p.pdf 2>/dev/null
+        mv $p-rotated270.pdf $p.pdf
+    fi
+done
+
+
+pdfunite ${id}_*.pdf ${id}_annotations.pdf
+if [ -f ${doc} ]; then
+    pdftk ${doc} multistamp ${id}_annotations.pdf output ${output}.pdf
+else
+    mv ${id}_annotations.pdf annotated_${id}.pdf
+fi
+
+rm ${id}_*.pdf

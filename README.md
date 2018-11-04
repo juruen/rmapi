@@ -157,8 +157,6 @@ rmapi --fuse-mount mount_point
 ```
 
 
-# References
+# Thanks to
 [1] rmapi, https://github.com/juruen/rmapi <br />
 [1] rM2svg, https://github.com/reHackable/maxio <br />
-[2] exportNotebooks, https://github.com/reHackable/maxio <br />
-[3] lines2svg, https://github.com/ax3l/lines-are-beautiful
