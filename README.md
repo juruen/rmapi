@@ -1,6 +1,7 @@
 # rMAPI
 
-IMPORTANT: This is a fork of https://github.com/juruen/rmapi
+IMPORTANT: This is a fork of https://github.com/juruen/rmapi that supports geta to download annotated files.
+
 
 *Warning*: If you installed _rmapi_ before (October 1, 2018), you will need to install the latest version,
 otherwise _rmapi_ will fail to authenticate after the changes in the server API that were introduced in September 28, 2018.
@@ -91,9 +92,9 @@ mput /Papers
 Use `get path_to_file` to download a file from the cloud to your local computer.
 
 ## Download a file with annotations
-
 Use `geta path_to_file` to download a file from the cloud to your local computer.
-Use `geta path_to_file svg` to download a notebook from the cloud to your local computer with multiple svg files.
+If there exists a template folder under `%HOME/Documents/Remarkable/Templates/`, then those 
+are used for notebooks. Otherwise the background is white.
 
 ## Recursively download directories and files
 
