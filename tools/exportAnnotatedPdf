@@ -40,7 +40,6 @@ then
         size=$(pdfinfo ${tmpfolder}/${id}.pdf | grep "Page size" | awk '{print $3,$5}')
         width=$(echo ${size} | cut -f1 -d " ")
         height=$(echo ${size} | cut -f2 -d " ")
-
         # Calculate new width and necessary offset (rM dimensions: 1404x1872)
         new_width=$(echo "scale=5; ${height} / 1872 * 1404" | bc)
         offset=$(echo "scale=5; ${new_width} - ${width}" | bc)
@@ -64,13 +63,6 @@ fi
 
 # Extract annotations and create a PDF
 rsvg-convert -a -f pdf "${tmpfolder}"/foreground*.svg -o "${tmpfolder}"/foreground.pdf
-
-# Add one empty page to foreground.pdf because last page is replicated
-# https://stackoverflow.com/questions/12942486/insert-a-blank-page-between-each-existing-page-in-a-pdf-document
-pdftk *-up.pdf cat end-1 output reverted.pdf
-pdftk reverted.pdf cat 2-end output reverted2.pdf
-pdftk reverted2.pdf  cat end-1 output originalfilename-up.pdf
-
 
 # Use multistamp instead of multibackground to preserve transparency
 pdftk "${tmpfolder}"/background.pdf multistamp "${tmpfolder}"/foreground.pdf output "${filename}.pdf"

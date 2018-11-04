@@ -48,7 +48,7 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 			}
 			
 			// Unzip document
-			tmpFolder := fmt.Sprintf("%s", node.Document.ID)
+			tmpFolder := fmt.Sprintf(".%s", node.Document.ID)
 			docFiles, err := unzip(zipFile, tmpFolder)
 			if err != nil {
 				c.Err(err)
@@ -69,7 +69,7 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 				}
 
 				// Convert lines file to svg foreground
-				svgFiles := fmt.Sprintf("%s/foreground", node.Document.ID)
+				svgFiles := fmt.Sprintf("%s/foreground", tmpFolder)
 				err = linesToSvg(tmpFolder, node, svgFiles)
 				if err != nil {
 					c.Err(err)
@@ -81,7 +81,8 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 				// Convert to pdf
 				c.Println(fmt.Sprintf("creating annotated pdf: [%s]...", srcName))
 				exportPdf := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/exportAnnotatedPdf"
-				_, err = exec.Command("/bin/sh", exportPdf, tmpFolder, node.Document.ID, node.Name()).CombinedOutput()
+				output, err := exec.Command("/bin/sh", exportPdf, tmpFolder, node.Document.ID, node.Name()).CombinedOutput()
+				c.Println(fmt.Sprintf("%s", output))
 				if err != nil {
 					c.Err(err)
 					os.Remove(zipFile)
