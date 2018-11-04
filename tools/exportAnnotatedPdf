@@ -8,11 +8,12 @@
 #
 
 
-# Parse input
+# Parse input and set defaults
 base=$1
 id=$2
 output=$3
 rM2svg=$4
+templatesdir="${HOME}/Documents/Remarkable/Templates"
 
 # Open folder that contains the .rm files
 cd ${base}
@@ -37,27 +38,54 @@ then
         width=$height
         height=$swap
     fi
+
+    usetemplates="no"
 else
     rotate="no"
     width=1404
     height=1872
-fi
 
+    if [ -d "${templatesdir}" ];
+    then
+        usetemplates="yes"
+    else
+        usetemplates="no"
+    fi
+fi
 
 # Create svg files
 $rM2svg -c -i ${id} --width ${width} --height ${height} -o ""
 
+# Read possible templates 
+if [ "$usetemplates" == "yes" ];
+then
+    readarray -t templates < "$id.pagedata"
+fi
+
+# Create a pdf for every svg file
 page=0
 for svg in *.svg 
 do
     p=$(basename $svg .svg)
-    rsvg-convert -f pdf -o ${id}_$p.pdf $p.svg
+
+    if [ "$usetemplates" == "yes" ] && [ "${page}" -lt "${#templates[@]}" ];
+    then    
+        rsvg-convert -f pdf -o template.pdf "${templatesdir}/${templates[$page]}.svg"
+        rsvg-convert -f pdf -o "${id}_$p_tmp.pdf" "$p.svg"
+
+        # Merge
+        pdftk "${id}_$p_tmp.pdf" background "template.pdf" output "${id}_$p.pdf"
+        rm "${id}_$p_tmp.pdf"
+    else
+        rsvg-convert -f pdf -o ${id}_$p.pdf $p.svg
+    fi
 
     if [ "$rotated" == "yes" ] 
     then
         pdf270 $p.pdf 2>/dev/null
         mv $p-rotated270.pdf $p.pdf
     fi
+    page=$((page+1))
 done
 
 

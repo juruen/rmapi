@@ -10,7 +10,6 @@ import (
 	"io"
 	"github.com/abiosoft/ishell"
 	"path/filepath"
-	"github.com/peerdavid/rmapi/model"
 )
 
 
@@ -51,9 +50,6 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 				return
 			}
 			
-			// Convert to annotated pdf
-			c.Println(fmt.Sprintf("creating annoated pdf: [%s]...", srcName))
-
 			// Convert to pdf
 			c.Println(fmt.Sprintf("creating annotated pdf: [%s]...", srcName))
 			exportPdf := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/exportAnnotatedPdf"
@@ -74,38 +70,12 @@ func getCmdA(ctx *ShellCtxt) *ishell.Cmd {
 				return
 			}
 
-
 			// Cleanup
 			os.Remove(zipFile)
 			os.RemoveAll(tmpFolder)
 			c.Println("Ok")
 		},
 	}
-}
-
-
-
-// func linesToSvg(tmpFolder string, node *model.Node, outName string) error{
-// 	linesFile := fmt.Sprintf("%s/%s", tmpFolder, node.Document.ID)
-// 	lines2Svg := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/lines2svg"
-// 	_, err := exec.Command(lines2Svg, linesFile, outName).CombinedOutput()
-// 	return err
-// }
-
-func linesToSvg(tmpFolder string, node *model.Node, outName string) ([]byte, error){
-	// linesFile := fmt.Sprintf("%s/%s.lines", tmpFolder, node.Document.ID)
-	rM2svg := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/rM2svg"
-	return exec.Command(rM2svg, "-i", node.Document.ID, "-o", outName).CombinedOutput()
-}
-
-
-func contains(a []string, e string) bool {
-    for _, v := range a {
-        if v == e {
-            return true
-        }
-    }
-    return false
 }
 
 
