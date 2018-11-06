@@ -67,12 +67,16 @@ do
 
     if [ "$usetemplates" == "yes" ] && [ "${page}" -lt "${#templates[@]}" ];
     then    
+        # Convert template to pdf
         #rsvg-convert -f pdf -o template.pdf "${templatesdir}/${templates[$page]}.svg"
+        #inkscape "${templatesdir}/${templates[$page]}.svg" --export-pdf=template.pdf
+        convert "${templatesdir}/${templates[$page]}.png" template.pdf
+
+        # Convert notes to pdf
         #rsvg-convert -f pdf -o "${id}_$p_tmp.pdf" "$p.svg"
-        inkscape "${templatesdir}/${templates[$page]}.svg" --export-pdf=template.pdf
         inkscape "$p.svg" --export-pdf="${id}_$p_tmp.pdf"
 
-        # Merge
+        # Merge template and notes
         pdftk "${id}_$p_tmp.pdf" background "template.pdf" output "${id}_$p.pdf"
         rm "${id}_$p_tmp.pdf"
     else
