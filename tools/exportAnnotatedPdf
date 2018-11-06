@@ -67,14 +67,17 @@ do
 
     if [ "$usetemplates" == "yes" ] && [ "${page}" -lt "${#templates[@]}" ];
     then    
-        rsvg-convert -f pdf -o template.pdf "${templatesdir}/${templates[$page]}.svg"
-        rsvg-convert -f pdf -o "${id}_$p_tmp.pdf" "$p.svg"
+        #rsvg-convert -f pdf -o template.pdf "${templatesdir}/${templates[$page]}.svg"
+        #rsvg-convert -f pdf -o "${id}_$p_tmp.pdf" "$p.svg"
+        inkscape "${templatesdir}/${templates[$page]}.svg" --export-pdf=template.pdf
+        inkscape "$p.svg" --export-pdf="${id}_$p_tmp.pdf"
 
         # Merge
         pdftk "${id}_$p_tmp.pdf" background "template.pdf" output "${id}_$p.pdf"
         rm "${id}_$p_tmp.pdf"
     else
-        rsvg-convert -f pdf -o ${id}_$p.pdf $p.svg
+        #rsvg-convert -f pdf -o ${id}_$p.pdf $p.svg
+        inkscape "$p.svg" --export-pdf="${id}_$p.pdf"
     fi
 
     if [ "$rotated" == "yes" ] 
