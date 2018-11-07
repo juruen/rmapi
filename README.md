@@ -101,7 +101,7 @@ Use `get path_to_file` to download a file from the cloud to your local computer.
 
 ## Download a file with annotations
 Use `geta path_to_file` to download a file from the cloud to your local computer.
-If there exists a template folder under `%HOME/Documents/Remarkable/Templates/`, then those 
+If there exists a template folder under `%HOME/Templates/Remarkable`, then those 
 are used for notebooks. Otherwise the background is white.
 
 ## Recursively download directories and files

@@ -13,7 +13,7 @@ base=$1
 id=$2
 output=$3
 rM2svg=$4
-templatesdir="${HOME}/Documents/Remarkable/Templates"
+templatesdir="${HOME}/Templates/Remarkable"
 
 # Open folder that contains the .rm files
 cd ${base}
@@ -70,18 +70,21 @@ do
         # Convert template to pdf
         #rsvg-convert -f pdf -o template.pdf "${templatesdir}/${templates[$page]}.svg"
         #inkscape "${templatesdir}/${templates[$page]}.svg" --export-pdf=template.pdf
-        convert "${templatesdir}/${templates[$page]}.png" template.pdf
+        if [ ! -f "${templatesdir}/${templates[$page]}.pdf" ]
+        then
+            convert "${templatesdir}/${templates[$page]}.png" "${templatesdir}/${templates[$page]}.pdf"
+        fi
 
         # Convert notes to pdf
         #rsvg-convert -f pdf -o "${id}_$p_tmp.pdf" "$p.svg"
-        inkscape "$p.svg" --export-pdf="${id}_$p_tmp.pdf"
+        inkscape "$p.svg" -z --export-pdf="${id}_$p_tmp.pdf"
 
         # Merge template and notes
-        pdftk "${id}_$p_tmp.pdf" background "template.pdf" output "${id}_$p.pdf"
+        pdftk "${id}_$p_tmp.pdf" background "${templatesdir}/${templates[$page]}.pdf" output "${id}_$p.pdf"
         rm "${id}_$p_tmp.pdf"
     else
         #rsvg-convert -f pdf -o ${id}_$p.pdf $p.svg
-        inkscape "$p.svg" --export-pdf="${id}_$p.pdf"
+        inkscape "$p.svg" -z --export-pdf="${id}_$p.pdf"
     fi
 
     if [ "$rotated" == "yes" ] 
