@@ -31,7 +31,7 @@ Install and build the project:
 
 Also the following tools are needed to read annotated notebooks:
  - convert (Note: Policy must be set to read|write for pdfs: https://stackoverflow.com/questions/42928765/convertnot-authorized-aaaa-error-constitute-c-readimage-453)
- - rsvgconvert
+ - rsvg-convert
  - pdf270
  - pdftk
  - pdfunite
