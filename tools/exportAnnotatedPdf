@@ -68,23 +68,21 @@ do
     if [ "$usetemplates" == "yes" ] && [ "${page}" -lt "${#templates[@]}" ];
     then    
         # Convert template to pdf
-        #rsvg-convert -f pdf -o template.pdf "${templatesdir}/${templates[$page]}.svg"
-        #inkscape "${templatesdir}/${templates[$page]}.svg" --export-pdf=template.pdf
         if [ ! -f "${templatesdir}/${templates[$page]}.pdf" ]
         then
             convert "${templatesdir}/${templates[$page]}.png" "${templatesdir}/${templates[$page]}.pdf"
         fi
 
         # Convert notes to pdf
-        #rsvg-convert -f pdf -o "${id}_$p_tmp.pdf" "$p.svg"
-        inkscape "$p.svg" -z --export-pdf="${id}_$p_tmp.pdf"
+        rsvg-convert -f pdf -o "${id}_$p_tmp.pdf" "$p.svg"
+        #inkscape "$p.svg" --without-gui --export-pdf="${id}_$p_tmp.pdf"
 
         # Merge template and notes
         pdftk "${id}_$p_tmp.pdf" background "${templatesdir}/${templates[$page]}.pdf" output "${id}_$p.pdf"
         rm "${id}_$p_tmp.pdf"
     else
-        #rsvg-convert -f pdf -o ${id}_$p.pdf $p.svg
-        inkscape "$p.svg" -z --export-pdf="${id}_$p.pdf"
+        rsvg-convert -f pdf -o ${id}_$p.pdf $p.svg
+        #inkscape "$p.svg" --without-gui --export-pdf="${id}_$p.pdf"
     fi
 
     if [ "$rotated" == "yes" ] 
