@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/peerdavid/rmapi/config"
-	"github.com/peerdavid/rmapi/log"
-	"github.com/peerdavid/rmapi/model"
-	"github.com/peerdavid/rmapi/transport"
+	"github.com/juruen/rmapi/config"
+	"github.com/juruen/rmapi/log"
+	"github.com/juruen/rmapi/model"
+	"github.com/juruen/rmapi/transport"
 	uuid "github.com/satori/go.uuid"
 )
 

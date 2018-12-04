@@ -2,7 +2,7 @@ package shell
 
 import (
 	"github.com/abiosoft/ishell"
-	"github.com/peerdavid/rmapi/version"
+	"github.com/juruen/rmapi/version"
 )
 
 func versionCmd(ctx *ShellCtxt) *ishell.Cmd {

@@ -1,5 +1,7 @@
 ## rmapi master
 
+* Added geta and mgeta command to read annotated notebooks
+
 * Increased http timeout to 5 minutes to enable upload of larger files
 
 * Add user-agent header to be a good reMarkable citezen

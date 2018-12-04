@@ -10,7 +10,7 @@ import (
 	"io"
 	"github.com/abiosoft/ishell"
 	"path/filepath"
-	"github.com/peerdavid/rmapi/model"
+	"github.com/juruen/rmapi/model"
 )
 
 
@@ -69,8 +69,8 @@ func getAnnotatedDocument(ctx *ShellCtxt, node *model.Node, path string) error {
 	}
 
 	// Convert to pdf
-	exportPdf := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/exportAnnotatedPdf"
-	rM2svg := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/rM2svg"
+	exportPdf := os.Getenv("GOPATH") + "/src/github.com/juruen/rmapi/tools/exportAnnotatedPdf"
+	rM2svg := os.Getenv("GOPATH") + "/src/github.com/juruen/rmapi/tools/rM2svg"
 	_, err = exec.Command(
 		"/bin/bash", 
 		exportPdf, 

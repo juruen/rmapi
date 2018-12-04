@@ -5,13 +5,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/peerdavid/rmapi/config"
-	"github.com/peerdavid/rmapi/log"
-	"github.com/peerdavid/rmapi/model"
+	"github.com/juruen/rmapi/config"
+	"github.com/juruen/rmapi/log"
+	"github.com/juruen/rmapi/model"
 
 	"github.com/hanwen/go-fuse/fuse"
 	"github.com/hanwen/go-fuse/fuse/nodefs"
-	"github.com/peerdavid/rmapi/api"
+	"github.com/juruen/rmapi/api"
 )
 
 type fuseFs struct {

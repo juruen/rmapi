@@ -7,11 +7,11 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/peerdavid/rmapi/filetree"
-	"github.com/peerdavid/rmapi/log"
-	"github.com/peerdavid/rmapi/model"
-	"github.com/peerdavid/rmapi/transport"
-	"github.com/peerdavid/rmapi/util"
+	"github.com/juruen/rmapi/filetree"
+	"github.com/juruen/rmapi/log"
+	"github.com/juruen/rmapi/model"
+	"github.com/juruen/rmapi/transport"
+	"github.com/juruen/rmapi/util"
 )
 
 type ApiCtx struct {

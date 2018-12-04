@@ -1,7 +1,5 @@
 # rMAPI
 
-*Warning*: This is a fork of https://github.com/juruen/rmapi that supports geta to download annotated files.
-
 *Warning*: If you installed _rmapi_ before (October 1, 2018), you will need to install the latest version,
 otherwise _rmapi_ will fail to authenticate after the changes in the server API that were introduced in September 28, 2018.
 
@@ -27,20 +25,19 @@ documents through a FUSE system. You can read further at the bottom of this file
 
 Install and build the project:
 
-`go get -u github.com/peerdavid/rmapi`
+`go get -u github.com/juruen/rmapi`
 
 Also the following tools are needed to read annotated notebooks:
  - convert
- - inkscape
  - pdf270
  - pdftk
  - pdfunite
- - python
+ - python3
 
 
 ## Binary
 
-You can download an already built version for either Linux or OSX from [releases](https://github.com/peerdavid/rmapi/releases).
+You can download an already built version for either Linux or OSX from [releases](https://github.com/juruen/rmapi/releases).
 
 # API support
 

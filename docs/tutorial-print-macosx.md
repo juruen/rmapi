@@ -1,6 +1,6 @@
 # How to directly print to your ReMarkable on Mac
 
-This tuorial wil show you how to leverage [rmapi](https://github.com/peerdavid/rmapi) and `Automator` to print
+This tuorial wil show you how to leverage [rmapi](https://github.com/juruen/rmapi) and `Automator` to print
  to your ReMarkable tablet from your Mac using the Cloud API.
 
 This way you won't need to take the extra step of using the desktop app.
@@ -19,7 +19,7 @@ Use `terminal` or `iterm` to get a terminal to run commands from it.
 Download `rmapi` with the following command:
 
 ```bash
-curl -L https://github.com/peerdavid/rmapi/releases/download/v0.0.4/rmapi-macosx-v0.0.4.zip -o rmapi.zip
+curl -L https://github.com/juruen/rmapi/releases/download/v0.0.4/rmapi-macosx-v0.0.4.zip -o rmapi.zip
 ```
 
 Alternatively, you can build it from sources.

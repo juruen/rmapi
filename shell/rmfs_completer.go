@@ -5,8 +5,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/peerdavid/rmapi/log"
-	"github.com/peerdavid/rmapi/model"
+	"github.com/juruen/rmapi/log"
+	"github.com/juruen/rmapi/model"
 )
 
 func prefixToNodeDir(ctx *ShellCtxt, s []string) (*model.Node, string) {
