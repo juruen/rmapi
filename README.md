@@ -28,7 +28,8 @@ Install and build the project:
 `go get -u github.com/juruen/rmapi`
 
 Also the following tools are needed to read annotated notebooks:
- - convert
+ - convert (Note: Policy must be set to read|write for pdfs: https://stackoverflow.com/questions/42928765/convertnot-authorized-aaaa-error-constitute-c-readimage-453)
+ - rsvg-convert
  - pdf270
  - pdftk
  - pdfunite
