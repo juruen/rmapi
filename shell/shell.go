@@ -13,6 +13,7 @@ type ShellCtxt struct {
 	node *model.Node
 	api  *api.ApiCtx
 	path string
+	useHiddenFiles bool
 }
 
 func (ctx *ShellCtxt) prompt() string {
@@ -29,9 +30,23 @@ func setCustomCompleter(shell *ishell.Shell) {
 	shell.CustomCompleter(completer)
 }
 
+func useHiddenFiles() bool {
+	val, ok := os.LookupEnv("RMAPI_USE_HIDDEN_FILES")
+
+	if ! ok {
+		return false
+	}
+
+	return val != "0"
+}
+
 func RunShell(apiCtx *api.ApiCtx) error {
 	shell := ishell.New()
-	ctx := &ShellCtxt{apiCtx.Filetree.Root(), apiCtx, apiCtx.Filetree.Root().Name()}
+	ctx := &ShellCtxt{
+		node:apiCtx.Filetree.Root(),
+		api: apiCtx,
+		path: apiCtx.Filetree.Root().Name(),
+	    useHiddenFiles: useHiddenFiles()}
 
 	shell.Println("ReMarkable Cloud API Shell")
 	shell.SetPrompt(ctx.prompt())
