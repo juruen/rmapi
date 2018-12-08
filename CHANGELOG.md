@@ -6,6 +6,8 @@
 
 * Ls may take a directory as an argument
 
+* Ignore hidden files/directories by default
+
 ## rmapi 0.0.4 (October 1, 2018)
 
 * Windows fixes
