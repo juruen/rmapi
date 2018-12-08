@@ -128,6 +128,11 @@ $ rmapi mget .
 
 rMAPI will set the exit code to `0` if the command succeedes, or `1` if it fails.
 
+# Environment variables
+
+- `RMAPI_TRACE=1`: enable trace logging.
+- `RMAPI_USE_HIDDEN_FILES=1`: use and traverse hidden files/directories (they are ignored by default).
+
 # Access documents through a mounted FUSE file system
 
 We have started to add support to access your rM documents through a FUSE file system.

@@ -133,6 +133,10 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 
 		name := d.Name()
 
+		if ! pCtx.useHiddenFiles && strings.HasPrefix(d.Name(), ".") {
+			continue
+		}
+
 		switch mode := d.Mode(); {
 		case mode.IsDir():
 
