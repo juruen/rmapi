@@ -97,11 +97,11 @@ Please, note that you will have to adjust your `/Users/javier/rmapi` path to mat
 
 ![Automator III](run-shell-script-2.png)
 
-Go to file and save your pluging as `Print to ReMarkable`.
+Go to file and save your plugin as `Print to ReMarkable`.
 
 ## Use it
 
-Go to any application that supports printing and open the print dialog. Note that `Chrome` is slightly different because it has its own print dialog.
+Go to any application that supports printing and open the print dialog. Note that `Chrome` is slightly different because it has its own print dialog. From `Chrome` system print dialog can be triggered with ⌘+option+P.
 
 In the bottom-left corner there's a `PDF` menu that you can click, and one of the options you should see is `Print to ReMarkable`. If you click it, you should see your document uploaded to your tablet in  a few seconds.
 
