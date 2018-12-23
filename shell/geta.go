@@ -3,6 +3,7 @@ package shell
 import (
 	"errors"
 	"fmt"
+	"time"
 	"os/exec"
 	"strings"
 	"archive/zip"
@@ -53,19 +54,41 @@ func getAnnotatedDocument(ctx *ShellCtxt, node *model.Node, path string) error {
 	if err != nil {
 		return errors.New(fmt.Sprintf("Failed to download file %s with %s", node.Name(), err.Error()))
 	}
-	
+
+	// Set output name and output file name
+	output := node.Name()
+	if(path != ""){
+		output = fmt.Sprintf("%s/%s", path, node.Name())
+	}
+	outputFileName := fmt.Sprintf("%s.pdf", output)
+
+	// Parse last modified time of document on api
+	modifiedClientTime, err := time.Parse(time.RFC3339Nano, node.Document.ModifiedClient)
+	if err != nil {
+		// If we could not parse the time correctly, we still continue 
+		// with the execution such that the pdf is downloaded...
+		fmt.Println(err)
+		fmt.Println("(Warning) Could not parse modified time. Overwrite existing file.")
+		modifiedClientTime = time.Now().Local()
+	}
+
+	// If document has not changed since last update skip pdf convertion
+	outputFile, err := os.Stat(outputFileName)
+	if !os.IsNotExist(err) {
+		outputFileModTime := outputFile.ModTime()
+		if(outputFileModTime.Equal(modifiedClientTime)){
+			fmt.Println("File has not changed since last download. Skip pdf creation.")
+			os.Remove(zipFile)
+			return nil
+		}
+	}
+
 	// Unzip document
 	tmpFolder := fmt.Sprintf(".%s", node.Document.ID)
 	_, err = unzip(zipFile, tmpFolder)
 	if err != nil {
 		os.Remove(zipFile)
 		return err
-	}
-	
-	// Set output name
-	ouput := node.Name()
-	if(path != ""){
-		ouput = fmt.Sprintf("%s/%s", path, node.Name())
 	}
 
 	// Convert to pdf
@@ -76,13 +99,23 @@ func getAnnotatedDocument(ctx *ShellCtxt, node *model.Node, path string) error {
 		exportPdf, 
 		tmpFolder,
 		node.Document.ID, 
-		ouput, 
+		output, 
 		rM2svg).CombinedOutput()
-		
+
+	if err != nil {
+	   fmt.Println(err)
+	}
+
 	if err != nil {
 		os.Remove(zipFile)
 		os.RemoveAll(tmpFolder)
 		return err
+	}
+
+	// Set creation time
+	err = os.Chtimes(outputFileName, modifiedClientTime, modifiedClientTime)
+	if err != nil {
+		fmt.Println("(Warning) Could not set modified time of pdf file.")
 	}
 
 	// Cleanup
