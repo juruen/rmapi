@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strings"
 	"archive/zip"
+	"github.com/juruen/rmapi/log"
 	"os"
 	"io"
 	"github.com/abiosoft/ishell"
@@ -40,6 +41,8 @@ func getaCmd(ctx *ShellCtxt) *ishell.Cmd {
 				c.Err(err)
 				return
 			}
+
+			fmt.Println("OK")
 		},
 	}
 }
@@ -60,8 +63,7 @@ func getAnnotatedDocument(ctx *ShellCtxt, node *model.Node, path string) error {
 	if err != nil {
 		// If we could not parse the time correctly, we still continue 
 		// with the execution such that the pdf is downloaded...
-		fmt.Println(err)
-		fmt.Println("(Warning) Could not parse modified time. Overwrite existing file.")
+		log.Warning.Println("Could not parse modified time. Overwrite existing file.")
 		modifiedClientTime = time.Now().Local()
 	}
 
@@ -70,7 +72,7 @@ func getAnnotatedDocument(ctx *ShellCtxt, node *model.Node, path string) error {
 	if !os.IsNotExist(err) {
 		outputFileModTime := outputFile.ModTime()
 		if(outputFileModTime.Equal(modifiedClientTime)){
-			fmt.Println("Nothing changed since last download. Skip. ")
+			log.Trace.Println("Nothing changed since last download. Skip. ")
 			os.Remove(zipFile)
 			return nil
 		}
@@ -120,7 +122,6 @@ func getAnnotatedDocument(ctx *ShellCtxt, node *model.Node, path string) error {
 	// Cleanup
 	os.Remove(zipFile)
 	os.RemoveAll(tmpFolder)
-	fmt.Println("Ok.")
 	return nil
 }
 

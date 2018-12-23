@@ -51,6 +51,7 @@ func mgetaCmd(ctx *ShellCtxt) *ishell.Cmd {
 					err = getAnnotatedDocument(ctx, currentNode, fmt.Sprintf("%s", dir))
 
 					if err == nil {
+						c.Println(" OK")
 						return filetree.ContinueVisiting
 					}
 
