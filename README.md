@@ -27,13 +27,6 @@ Install and build the project:
 
 `go get -u github.com/juruen/rmapi`
 
-Also the following tools are needed to read annotated notebooks:
- - convert (Note: Policy must be set to read|write for pdfs: https://stackoverflow.com/questions/42928765/convertnot-authorized-aaaa-error-constitute-c-readimage-453)
- - rsvg-convert
- - pdf270
- - pdftk
- - python3
-
 
 ## Binary
 
@@ -96,10 +89,20 @@ mput /Papers
 
 Use `get path_to_file` to download a file from the cloud to your local computer.
 
-## Download a file with annotations
+## [optional] Download a file with annotations
 Use `geta path_to_file` to download a file from the cloud to your local computer.
-If there exists a template folder under `%HOME/Templates/Remarkable`, then those 
-are used for notebooks. Otherwise the background is white.
+This command is only available, if all necessary tools are installed:
+ - convert (Note: Policy must be set to read|write for pdfs: https://stackoverflow.com/questions/42928765/convertnot-authorized-aaaa-error-constitute-c-readimage-453)
+ - rsvg-convert
+ - pdf270
+ - pdftk
+ - python3
+
+
+Note: If there exists a template folder under `%HOME/Templates/Remarkable`, 
+then those are used for notebook backgrounds. Otherwise the background is 
+simply white.
+
 
 ## Recursively download directories and files
 
@@ -111,9 +114,10 @@ E.g: download all the files
 mget .
 ```
 
-## Recursively download directories and files with annotations
+## [optional] Recursively download directories and files with annotations
 
 Use `mgeta path_to_dir` to recursively download all the annotated files in that directory.
+Note: This command is only available if the geta command is also available.
 
 E.g: download all the files
 

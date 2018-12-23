@@ -3,10 +3,12 @@ package shell
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/abiosoft/ishell"
 	"github.com/juruen/rmapi/api"
 	"github.com/juruen/rmapi/model"
+	"github.com/juruen/rmapi/log"
 )
 
 type ShellCtxt struct {
@@ -41,8 +43,6 @@ func RunShell(apiCtx *api.ApiCtx) error {
 	shell.AddCmd(cdCmd(ctx))
 	shell.AddCmd(getCmd(ctx))
 	shell.AddCmd(mgetCmd(ctx))
-	shell.AddCmd(getaCmd(ctx))
-	shell.AddCmd(mgetaCmd(ctx))
 	shell.AddCmd(mkdirCmd(ctx))
 	shell.AddCmd(rmCmd(ctx))
 	shell.AddCmd(mvCmd(ctx))
@@ -50,6 +50,18 @@ func RunShell(apiCtx *api.ApiCtx) error {
 	shell.AddCmd(mputCmd(ctx))
 	shell.AddCmd(versionCmd(ctx))
 	shell.AddCmd(statCmd(ctx))
+
+	// Add geta and mgeta if all necessary tools are installed
+	missingTools := verifyGetaCmdTools()
+	hasAllToolsForGetaInstalled := len(missingTools) <= 0
+	if(hasAllToolsForGetaInstalled){
+		shell.AddCmd(getaCmd(ctx))
+		shell.AddCmd(mgetaCmd(ctx))
+	} else {
+		log.Warning.Println(fmt.Sprintf("Commands geta and mgeta are disabled" + 
+			" because the following tools are not installed: \n %v", 
+			strings.Join(missingTools, "\n ")))
+	}
 
 	setCustomCompleter(shell)
 

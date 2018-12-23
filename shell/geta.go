@@ -16,10 +16,33 @@ import (
 )
 
 
+func verifyGetaCmdTools() [] string {
+	var missingTools [] string
+
+	missingTools = verifyCommand("python3", missingTools)
+	missingTools = verifyCommand("convert", missingTools)
+	missingTools = verifyCommand("rsvg-convert", missingTools)
+	missingTools = verifyCommand("pdftk", missingTools)
+	missingTools = verifyCommand("pdf270", missingTools)
+
+	return missingTools
+}
+
+
+// See also https://siongui.github.io/2018/03/16/go-check-if-command-exists/
+func verifyCommand(name string, missingTools [] string) [] string {
+	cmd := exec.Command("/bin/sh", "-c", "command -v "+name)
+	if err := cmd.Run(); err != nil {
+		return append(missingTools, name)
+	}
+	return missingTools
+}
+
+
 func getaCmd(ctx *ShellCtxt) *ishell.Cmd {
 	return &ishell.Cmd{
 		Name:      "geta",
-		Help:      "copy remote file to local with annotations. Optional [svg, pdf]",
+		Help:      "copy remote file to local with annotations.",
 		Completer: createEntryCompleter(ctx),
 		Func: func(c *ishell.Context) {
 			// Parse cmd args
