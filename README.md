@@ -32,7 +32,6 @@ Also the following tools are needed to read annotated notebooks:
  - rsvg-convert
  - pdf270
  - pdftk
- - pdfunite
  - python3
 
 

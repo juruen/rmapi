@@ -102,13 +102,15 @@ func getAnnotatedDocument(ctx *ShellCtxt, node *model.Node, path string) error {
 	if(documentIsAnnotated(tmpFolder, node)){
 		exportPdf := os.Getenv("GOPATH") + "/src/github.com/juruen/rmapi/tools/exportAnnotatedPdf"
 		rM2svg := os.Getenv("GOPATH") + "/src/github.com/juruen/rmapi/tools/rM2svg"
-		_, err = exec.Command(
+		output, err := exec.Command(
 			"/bin/bash", 
 			exportPdf, 
 			tmpFolder,
 			node.Document.ID, 
 			output, 
 			rM2svg).CombinedOutput()
+		
+		log.Trace.Println(fmt.Sprintf("%s", output))
 
 		if err != nil {
 			cleanup(tmpFolder, zipFile);

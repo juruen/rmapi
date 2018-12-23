@@ -93,8 +93,8 @@ do
     page=$((page+1))
 done
 
+pdftk  ${id}_*.pdf cat output ${id}_annotations.pdf
 
-pdfunite ${id}_*.pdf ${id}_annotations.pdf
 if [ -f ${doc} ]; then
     pdftk ${doc} multistamp ${id}_annotations.pdf output ../"${output}.pdf"
 else
