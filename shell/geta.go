@@ -40,9 +40,6 @@ func getaCmd(ctx *ShellCtxt) *ishell.Cmd {
 				c.Err(err)
 				return
 			}
-
-			
-			c.Println("Ok")
 		},
 	}
 }
@@ -50,10 +47,6 @@ func getaCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 func getAnnotatedDocument(ctx *ShellCtxt, node *model.Node, path string) error {
 	zipFile := fmt.Sprintf(".%s.zip", node.Name())
-	err := ctx.api.FetchDocument(node.Document.ID, zipFile)
-	if err != nil {
-		return errors.New(fmt.Sprintf("Failed to download file %s with %s", node.Name(), err.Error()))
-	}
 
 	// Set output name and output file name
 	output := node.Name()
@@ -77,10 +70,16 @@ func getAnnotatedDocument(ctx *ShellCtxt, node *model.Node, path string) error {
 	if !os.IsNotExist(err) {
 		outputFileModTime := outputFile.ModTime()
 		if(outputFileModTime.Equal(modifiedClientTime)){
-			fmt.Print("File has not changed since last download. ")
+			fmt.Println("Nothing changed since last download. Skip. ")
 			os.Remove(zipFile)
 			return nil
 		}
+	}
+
+	// Download document if content has changed
+	err = ctx.api.FetchDocument(node.Document.ID, zipFile)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Failed to download file %s with %s", node.Name(), err.Error()))
 	}
 
 	// Unzip document
@@ -121,6 +120,7 @@ func getAnnotatedDocument(ctx *ShellCtxt, node *model.Node, path string) error {
 	// Cleanup
 	os.Remove(zipFile)
 	os.RemoveAll(tmpFolder)
+	fmt.Println("Ok.")
 	return nil
 }
 
