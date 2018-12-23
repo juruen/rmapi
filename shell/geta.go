@@ -77,7 +77,7 @@ func getAnnotatedDocument(ctx *ShellCtxt, node *model.Node, path string) error {
 	if !os.IsNotExist(err) {
 		outputFileModTime := outputFile.ModTime()
 		if(outputFileModTime.Equal(modifiedClientTime)){
-			fmt.Println("File has not changed since last download. Skip pdf creation.")
+			fmt.Print("File has not changed since last download. ")
 			os.Remove(zipFile)
 			return nil
 		}
