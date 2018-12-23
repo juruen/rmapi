@@ -73,7 +73,7 @@ func getAnnotatedDocument(ctx *ShellCtxt, node *model.Node, path string) error {
 		outputFileModTime := outputFile.ModTime()
 		if(outputFileModTime.Equal(modifiedClientTime)){
 			log.Trace.Println("Nothing changed since last download. Skip. ")
-			os.Remove(zipFile)
+			cleanup("", zipFile);
 			return nil
 		}
 	}
@@ -88,29 +88,46 @@ func getAnnotatedDocument(ctx *ShellCtxt, node *model.Node, path string) error {
 	tmpFolder := fmt.Sprintf(".%s", node.Document.ID)
 	_, err = unzip(zipFile, tmpFolder)
 	if err != nil {
-		os.Remove(zipFile)
+		cleanup(tmpFolder, zipFile);
 		return err
 	}
 
-	// Convert to pdf
-	exportPdf := os.Getenv("GOPATH") + "/src/github.com/juruen/rmapi/tools/exportAnnotatedPdf"
-	rM2svg := os.Getenv("GOPATH") + "/src/github.com/juruen/rmapi/tools/rM2svg"
-	_, err = exec.Command(
-		"/bin/bash", 
-		exportPdf, 
-		tmpFolder,
-		node.Document.ID, 
-		output, 
-		rM2svg).CombinedOutput()
-
-	if err != nil {
-	   fmt.Println(err)
+	// Currently we don't support the annotation of epub files
+	if(isEpub(tmpFolder, node)){
+		cleanup(tmpFolder, zipFile);
+		return errors.New("Could not annotate epub files.");
 	}
 
-	if err != nil {
-		os.Remove(zipFile)
-		os.RemoveAll(tmpFolder)
-		return err
+	// If pdf is annotated convert it, otherwise move the pdf file
+	if(documentIsAnnotated(tmpFolder, node)){
+		exportPdf := os.Getenv("GOPATH") + "/src/github.com/juruen/rmapi/tools/exportAnnotatedPdf"
+		rM2svg := os.Getenv("GOPATH") + "/src/github.com/juruen/rmapi/tools/rM2svg"
+		_, err = exec.Command(
+			"/bin/bash", 
+			exportPdf, 
+			tmpFolder,
+			node.Document.ID, 
+			output, 
+			rM2svg).CombinedOutput()
+
+		if err != nil {
+			cleanup(tmpFolder, zipFile);
+			return err
+		}
+
+	} else {
+		log.Trace.Println("Document is not annotated. Move original file.")
+
+		// Two cases exist: Pdf file or a notebook. The second case 
+		// Could not occur because a notebook has always at least one page.
+		// Therefore we know that its a pdf file.
+		plainPdfFile := fmt.Sprintf("%s/%s.pdf", tmpFolder, node.Document.ID)
+		err := os.Rename(plainPdfFile, outputFileName)
+		if err != nil {
+			log.Error.Println("Could not move pdf file.")
+			cleanup(tmpFolder, zipFile);
+			return err
+		}
 	}
 
 	// Set creation time
@@ -120,10 +137,23 @@ func getAnnotatedDocument(ctx *ShellCtxt, node *model.Node, path string) error {
 	}
 
 	// Cleanup
-	os.Remove(zipFile)
-	os.RemoveAll(tmpFolder)
+	cleanup(tmpFolder, zipFile);
 	return nil
 }
+
+
+func cleanup(tmpFolder string, zipFile string) {
+	_, err := os.Stat(tmpFolder); 
+	if(!os.IsNotExist(err)){
+		os.RemoveAll(tmpFolder)
+	}
+
+	_, err = os.Stat(zipFile);
+	if(!os.IsNotExist(err)){
+		os.Remove(zipFile)
+	}
+}
+
 
 // From https://golangcode.com/unzip-files-in-go/
 func unzip(src string, dest string) ([]string, error) {
@@ -183,4 +213,18 @@ func unzip(src string, dest string) ([]string, error) {
         }
     }
     return filenames, nil
+}
+
+
+func documentIsAnnotated(tmpFolder string, node *model.Node) bool {
+	annotationFolder := fmt.Sprintf("%s/%s", tmpFolder, node.Document.ID)
+	_, err := os.Stat(annotationFolder); 
+	return !os.IsNotExist(err)
+}
+
+
+func isEpub(tmpFolder string, node *model.Node) bool {
+	annotationFolder := fmt.Sprintf("%s/%s.epub", tmpFolder, node.Document.ID)
+	_, err := os.Stat(annotationFolder); 
+	return !os.IsNotExist(err)
 }
