@@ -87,8 +87,8 @@ do
 
     if [ "$rotated" == "yes" ] 
     then
-        pdf270 $p.pdf 2>/dev/null
-        mv $p-rotated270.pdf $p.pdf
+        pdf270 ${id}_$p.pdf 2>/dev/null
+        mv ${id}_$p-rotated270.pdf ${id}_$p.pdf
     fi
     page=$((page+1))
 done
