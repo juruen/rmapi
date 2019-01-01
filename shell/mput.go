@@ -124,7 +124,7 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 	dirList, err := ioutil.ReadDir(wd)
 
 	if err != nil {
-		pC.Err(fmt.Errorf("could not read the directory: ", wd))
+		pC.Err(fmt.Errorf("could not read the directory: %s", wd))
 		return false
 	}
 
@@ -201,7 +201,7 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 					doc, err := pCtx.api.UploadDocument(pCtx.node.Id(), name)
 
 					if err != nil {
-						pC.Err(fmt.Errorf("Failed to upload file ", name))
+						pC.Err(fmt.Errorf("failed to upload file %s", name))
 					} else {
 						// Document uploaded successfully.
 						pC.Println(" complete")
