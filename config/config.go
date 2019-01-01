@@ -30,21 +30,21 @@ func LoadTokens(path string) model.AuthTokens {
 	tokens := model.AuthTokens{}
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		log.Trace.Printf("config fail %s doesn't exist", path)
+		log.Trace.Printf("config fail %s doesn't exist/n", path)
 		return tokens
 	}
 
 	content, err := ioutil.ReadFile(path)
 
 	if err != nil {
-		log.Warning.Println("failed to open %s with %s", path, err)
+		log.Warning.Printf("failed to open %s with %s/n", path, err)
 		return tokens
 	}
 
 	err = yaml.Unmarshal(content, &tokens)
 
 	if err != nil {
-		log.Error.Fatalln("failed to parse %s", path)
+		log.Error.Fatalln("failed to parse", path)
 	}
 
 	return tokens
@@ -54,12 +54,12 @@ func SaveTokens(path string, tokens model.AuthTokens) {
 	content, err := yaml.Marshal(tokens)
 
 	if err != nil {
-		log.Warning.Println("failed to marsha tokens %s", err)
+		log.Warning.Println("failed to marsha tokens", err)
 	}
 
 	ioutil.WriteFile(path, content, 0600)
 
 	if err != nil {
-		log.Warning.Println("failed to save config to %s", path)
+		log.Warning.Println("failed to save config to", path)
 	}
 }

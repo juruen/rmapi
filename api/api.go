@@ -31,7 +31,7 @@ func DocumentsFileTree(http *transport.HttpClientCtx) *filetree.FileTreeCtx {
 	documents := make([]model.Document, 0)
 
 	if err := http.Get(transport.UserBearer, listDocs, nil, &documents); err != nil {
-		log.Error.Println("failed to fetch documents %s", err.Error())
+		log.Error.Println("failed to fetch documents", err.Error())
 		return nil
 	}
 
@@ -55,7 +55,7 @@ func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
 	url := fmt.Sprintf("%s?withBlob=true&doc=%s", listDocs, docId)
 
 	if err := ctx.Http.Get(transport.UserBearer, url, nil, &documents); err != nil {
-		log.Error.Println("failed to fetch document BlobURLGet %s", err)
+		log.Error.Println("failed to fetch document BlobURLGet", err)
 		return err
 	}
 
