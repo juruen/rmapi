@@ -238,7 +238,7 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model
 		return nil, err
 	}
 
-	metaDoc := model.CreateUploadDocumentMeta(uploadRsp.ID, model.DocumentType, parent, name)
+	metaDoc := model.CreateUploadDocumentMeta(uploadRsp.ID, model.DocumentType, parentId, name)
 
 	err = ctx.Http.Put(transport.UserBearer, updateStatus, metaDoc, nil)
 
