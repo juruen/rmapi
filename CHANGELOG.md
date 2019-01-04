@@ -8,6 +8,8 @@
 
 * Ignore hidden files/directories by default
 
+* Initial support for annotations
+
 ## rmapi 0.0.4 (October 1, 2018)
 
 * Windows fixes
