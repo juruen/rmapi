@@ -52,6 +52,12 @@
 			"revisionTime": "2018-03-16T17:07:08Z"
 		},
 		{
+			"checksumSHA1": "8nXZhgX+GKWIWD1599+g9geMAW4=",
+			"path": "github.com/jung-kurt/gofpdf",
+			"revision": "8baf016b4b802d4dfcc5819a4d101a7c5c858981",
+			"revisionTime": "2018-12-27T15:00:23Z"
+		},
+		{
 			"checksumSHA1": "MrqRXuqj5suGXqcRUUwi+YA7PmE=",
 			"origin": "github.com/fatih/color/vendor/github.com/mattn/go-colorable",
 			"path": "github.com/mattn/go-colorable",
