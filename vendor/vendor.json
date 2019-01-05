@@ -34,24 +34,6 @@
 			"revisionTime": "2015-05-15T14:53:56Z"
 		},
 		{
-			"checksumSHA1": "+lvH0l3yxwZofaskCl45Cphx0n8=",
-			"path": "github.com/hanwen/go-fuse/fuse",
-			"revision": "a9ddcb8a4b609500fc59c89ccc9ee05f00a5fefd",
-			"revisionTime": "2018-03-16T17:07:08Z"
-		},
-		{
-			"checksumSHA1": "B87QMUppMqGTnXayUBzaqiBUFIY=",
-			"path": "github.com/hanwen/go-fuse/fuse/nodefs",
-			"revision": "a9ddcb8a4b609500fc59c89ccc9ee05f00a5fefd",
-			"revisionTime": "2018-03-16T17:07:08Z"
-		},
-		{
-			"checksumSHA1": "LGZoiRA8d9hxjq6srm8u+dGcIto=",
-			"path": "github.com/hanwen/go-fuse/splice",
-			"revision": "a9ddcb8a4b609500fc59c89ccc9ee05f00a5fefd",
-			"revisionTime": "2018-03-16T17:07:08Z"
-		},
-		{
 			"checksumSHA1": "8nXZhgX+GKWIWD1599+g9geMAW4=",
 			"path": "github.com/jung-kurt/gofpdf",
 			"revision": "8baf016b4b802d4dfcc5819a4d101a7c5c858981",
