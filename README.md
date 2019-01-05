@@ -9,10 +9,6 @@ You can interact with the different API end-points through a shell. However, you
 run commands non-interactively. This may come in handy to script certian workflows such as
 taking automatic backups or uploading documents programmatically.
 
-*Experimental*: Apart from the interactive shell, there's some work happing to access the
-documents through a FUSE system. You can read further at the bottom of this file.
-
-
 *Warning*: If you installed _rmapi_ before (October 1, 2018), you will need to install the latest version,
 otherwise _rmapi_ will fail to authenticate after the changes in the server API that were introduced in September 28, 2018.
 
@@ -148,24 +144,3 @@ rMAPI will set the exit code to `0` if the command succeedes, or `1` if it fails
 
 - `RMAPI_TRACE=1`: enable trace logging.
 - `RMAPI_USE_HIDDEN_FILES=1`: use and traverse hidden files/directories (they are ignored by default).
-
-# Access documents through a mounted FUSE file system
-
-We have started to add support to access your rM documents through a FUSE file system.
-
-This support is very alpha and only a few operations are supported by now:
-
-- [x] Mount/umount
-- [x] Lookup entry
-- [x] Rename
-- [x] Rmdir
-- [x] Unlink 
-- [x] Read files
-- [ ] Write files
-- [ ] Live update
-
-If you want to give it a go, you can run:
-
-```bash
-rmapi --fuse-mount mount_point
-```
