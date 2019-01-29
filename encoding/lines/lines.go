@@ -43,7 +43,7 @@ const (
 )
 
 // BrushColor defines the 3 colors of the brush.
-type BrushColor int
+type BrushColor uint32
 
 // Mapping of the three colors.
 const (
@@ -56,7 +56,7 @@ const (
 //
 // The different types of brush are explained here:
 // https://blog.remarkable.com/how-to-find-your-perfect-writing-instrument-for-notetaking-on-remarkable-f53c8faeab77
-type BrushType int
+type BrushType uint32
 
 // Mappings for brush types.
 const (
@@ -101,6 +101,7 @@ type Layer struct {
 type Line struct {
 	BrushType  BrushType
 	BrushColor BrushColor
+	Padding    uint32
 	BrushSize  BrushSize
 	Points     []Point
 }
@@ -121,4 +122,12 @@ type Point struct {
 // TODO
 func New(n string) *Notebook {
 	return &Notebook{}
+}
+
+// String implements the fmt.Stringer interface
+// The aim is to create a textual representation of a notebook as in the following image.
+// https://plasma.ninja/blog/assets/reMarkable/2017_12_21_reMarkableAll.png
+// TODO
+func (n Notebook) String() string {
+	return ""
 }
