@@ -1,5 +1,5 @@
-// Package lines provides primitives for encoding and decoding
-// the .lines format which is a proprietary format created by
+// Package rm provides primitives for encoding and decoding
+// the .rm format which is a proprietary format created by
 // Remarkable to store the data of a drawing made with the device.
 //
 // Axel Huebl has made a great job of understanding this binary format and
@@ -8,6 +8,9 @@
 // As well, he has its own implementation of this decoder in C++ at this repository.
 // https://github.com/ax3l/lines-are-beautiful
 //
+// To mention that the format has since evolve to a new version labeled as v3 in the
+// header. This implementation is targeting this new version.
+//
 // As Ben Johnson says, "In the Go standard library, we use the term encoding
 // and marshaling for two separate but related ideas. An encoder in Go is an object
 // that applies structure to a stream of bytes while marshaling refers
@@ -15,24 +18,24 @@
 // https://medium.com/go-walkthrough/go-walkthrough-encoding-package-bc5e912232d
 //
 // We will follow this convention and refer to marshaling for this encoder/decoder
-// because we want to transform a .lines binary into a bounded in-memory representation
-// of a .lines file.
+// because we want to transform a .rm binary into a bounded in-memory representation
+// of a .rm file.
 //
 // To try to be as idiomatic as possible, this package implements the two following interfaces
 // of the default encoding package (https://golang.org/pkg/encoding/).
 //  - BinaryMarshaler
 //  - BinaryUnmarshaler
 //
-// The scope of this package is defined as just the encoding/decoding of the .lines format.
+// The scope of this package is defined as just the encoding/decoding of the .rm format.
 // It will only deal with bytes and not files (one must take care of unzipping the archive
-// taken from the device, extracting and providing the content of .lines file as bytes).
+// taken from the device, extracting and providing the content of .rm file as bytes).
 //
 // This package won't be used for retrieving metadata or attached PDF, ePub files.
-package lines
+package rm
 
-// Header starting a .lines binary file. This can help recognizing a .lines file.
+// Header starting a .rm binary file. This can help recognizing a .rm file.
 const (
-	Header    = "reMarkable lines with selections and layers"
+	Header    = "reMarkable .lines file, version=3          "
 	HeaderLen = 43
 )
 
@@ -81,14 +84,9 @@ const (
 	Large  BrushSize = 2.125
 )
 
-// A Notebook represents an entire note.
-type Notebook struct {
-	Pages []Page
-}
-
-// A Page contains information regarding a single page
+// A Rm represents an entire .rm file
 // and is composed of layers.
-type Page struct {
+type Rm struct {
 	Layers []Layer
 }
 
@@ -103,31 +101,32 @@ type Line struct {
 	BrushColor BrushColor
 	Padding    uint32
 	BrushSize  BrushSize
-	Points     []Point
+	Segments   []Segment
 }
 
 // A Point has coordinates.
 type Point struct {
-	X           float32
-	Y           float32
-	PenPressure float32
-	XRotation   float32
-	YRotation   float32
+	X         float32
+	Y         float32
+	Speed     float32
+	Direction float32
+	Width     float32
+	Pressure  float32
 }
 
-// New helps creating an empty note.
-// By mashaling an empty Notebook and exporting it
-// to the device, we should generate an empty note
+// New helps creating an empty Rm page.
+// By mashaling an empty Rm page and exporting it
+// to the device, we should generate an empty page
 // as if it were created using the device itself.
 // TODO
-func New(n string) *Notebook {
-	return &Notebook{}
+func New(n string) *Rm {
+	return &Rm{}
 }
 
 // String implements the fmt.Stringer interface
-// The aim is to create a textual representation of a notebook as in the following image.
+// The aim is to create a textual representation of a page as in the following image.
 // https://plasma.ninja/blog/assets/reMarkable/2017_12_21_reMarkableAll.png
 // TODO
-func (n Notebook) String() string {
+func (rm Rm) String() string {
 	return ""
 }
