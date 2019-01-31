@@ -101,7 +101,7 @@ type Line struct {
 	BrushColor BrushColor
 	Padding    uint32
 	BrushSize  BrushSize
-	Segments   []Segment
+	Points     []Point
 }
 
 // A Point has coordinates.
@@ -119,7 +119,7 @@ type Point struct {
 // to the device, we should generate an empty page
 // as if it were created using the device itself.
 // TODO
-func New(n string) *Rm {
+func New() *Rm {
 	return &Rm{}
 }
 
