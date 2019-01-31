@@ -9,7 +9,7 @@ import (
 // UnmarshalBinary implements encoding.MarshalBinary for
 // transforming bytes into a Rm page
 func (rm Rm) UnmarshalBinary(data []byte) error {
-	lr := newLinesReader(data)
+	lr := newRmReader(data)
 	if err := lr.checkHeader(); err != nil {
 		return err
 	}
@@ -19,20 +19,20 @@ func (rm Rm) UnmarshalBinary(data []byte) error {
 		return err
 	}
 
-	rm.Pages[i].Layers = make([]Layer, nbLayers)
+	rm.Layers = make([]Layer, nbLayers)
 	for i := uint32(0); i < nbLayers; i++ {
 		nbLines, err := lr.readNumber()
 		if err != nil {
 			return err
 		}
 
-		rm.Pages[i].Layers[i].Lines = make([]Line, nbLines)
+		rm.Layers[i].Lines = make([]Line, nbLines)
 		for k := uint32(0); i < nbLines; i++ {
 			line, err := lr.readLine()
 			if err != nil {
 				return err
 			}
-			rm.Pages[i].Layers[i].Lines[k] = line
+			rm.Layers[i].Lines[k] = line
 		}
 	}
 
@@ -121,13 +121,16 @@ func (r *rmReader) readPoint() (Point, error) {
 	if err := binary.Read(r, binary.LittleEndian, &point.Y); err != nil {
 		return point, fmt.Errorf("Failed to read point")
 	}
-	if err := binary.Read(r, binary.LittleEndian, &point.PenPressure); err != nil {
+	if err := binary.Read(r, binary.LittleEndian, &point.Speed); err != nil {
 		return point, fmt.Errorf("Failed to read point")
 	}
-	if err := binary.Read(r, binary.LittleEndian, &point.XRotation); err != nil {
+	if err := binary.Read(r, binary.LittleEndian, &point.Direction); err != nil {
 		return point, fmt.Errorf("Failed to read point")
 	}
-	if err := binary.Read(r, binary.LittleEndian, &point.YRotation); err != nil {
+	if err := binary.Read(r, binary.LittleEndian, &point.Width); err != nil {
+		return point, fmt.Errorf("Failed to read point")
+	}
+	if err := binary.Read(r, binary.LittleEndian, &point.Pressure); err != nil {
 		return point, fmt.Errorf("Failed to read point")
 	}
 
