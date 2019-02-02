@@ -64,11 +64,19 @@ are directories, and `[f]` if they are files.
 
 ## Change current directory
 
-Use `cd` to change the current directory to any other directory in the hiearchy.
+Use `cd` to change the current directory to any other directory in the hierarchy.
+
+## Find a file
+
+The command  `find` takes one or two arguments.
+
+If only the first argument is passed, all entries from that point are printed recursively.
+
+When the second argument is also passed, a regexp is expected, and only those entries that match the regexp are printed.
 
 ## Upload a file
 
-Use `put path_to_local_file` to upload a file  to the current dirctory.
+Use `put path_to_local_file` to upload a file  to the current directory.
 
 You can also specify the destination directory:
 
