@@ -10,6 +10,8 @@
 
 * Initial support for annotations
 
+* Fix panic when autocompleting the "ls" command
+
 ## rmapi 0.0.4 (October 1, 2018)
 
 * Windows fixes
