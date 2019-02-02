@@ -64,6 +64,7 @@ func RunShell(apiCtx *api.ApiCtx) error {
 	shell.AddCmd(versionCmd(ctx))
 	shell.AddCmd(statCmd(ctx))
 	shell.AddCmd(getACmd(ctx))
+	shell.AddCmd(findCmd(ctx))
 
 	setCustomCompleter(shell)
 
