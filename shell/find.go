@@ -13,9 +13,14 @@ import (
 func findCmd(ctx *ShellCtxt) *ishell.Cmd {
 	return &ishell.Cmd{
 		Name:      "find",
-		Help:      "find files recursively, usage: find dir [regex]",
+		Help:      "find files recursively, usage: find dir [regexp]",
 		Completer: createDirCompleter(ctx),
 		Func: func(c *ishell.Context) {
+			if len(c.Args) != 1 && len(c.Args) != 2 {
+				c.Err(errors.New("missing arguments; usage find dir [regexp]"))
+				return
+			}
+
 			start := c.Args[0]
 
 			startNode, err := ctx.api.Filetree.NodeByPath(start, ctx.node)
@@ -27,8 +32,8 @@ func findCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			var matchRegexp *regexp.Regexp
 			if len(c.Args) == 2 {
-				matchRegexp = regexp.MustCompile(c.Args[1])
-				if matchRegexp == nil {
+				matchRegexp, err = regexp.Compile(c.Args[1])
+				if err != nil {
 					c.Err(errors.New("failed to compile regexp"))
 					return
 				}
