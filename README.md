@@ -74,6 +74,12 @@ If only the first argument is passed, all entries from that point are printed re
 
 When the second argument is also passed, a regexp is expected, and only those entries that match the regexp are printed.
 
+Golang standard regexps are used. For instance, to make the regexp case insensitve you can do:
+
+```
+find . (?i)foo
+```
+
 ## Upload a file
 
 Use `put path_to_local_file` to upload a file  to the current directory.
