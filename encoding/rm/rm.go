@@ -33,6 +33,11 @@
 // This package won't be used for retrieving metadata or attached PDF, ePub files.
 package rm
 
+import (
+	"fmt"
+	"strings"
+)
+
 // Header starting a .rm binary file. This can help recognizing a .rm file.
 const (
 	Header    = "reMarkable .lines file, version=3          "
@@ -128,5 +133,28 @@ func New() *Rm {
 // https://plasma.ninja/blog/assets/reMarkable/2017_12_21_reMarkableAll.png
 // TODO
 func (rm Rm) String() string {
-	return ""
+	var o strings.Builder
+
+	fmt.Fprintf(&o, "no of layers: %d\n", len(rm.Layers))
+	for i, layer := range rm.Layers {
+		fmt.Fprintf(&o, "layer %d\n", i)
+		fmt.Fprintf(&o, "  nb of lines: %d\n", len(layer.Lines))
+		for j, line := range layer.Lines {
+			fmt.Fprintf(&o, "  line %d\n", j)
+			fmt.Fprintf(&o, "    brush type: %d\n", line.BrushType)
+			fmt.Fprintf(&o, "    brush color: %d\n", line.BrushColor)
+			fmt.Fprintf(&o, "    padding: %d\n", line.Padding)
+			fmt.Fprintf(&o, "    brush size: %f\n", line.BrushSize)
+			fmt.Fprintf(&o, "    nb of points: %d\n", len(line.Points))
+			for k, point := range line.Points {
+				fmt.Fprintf(&o, "    point %d\n", k)
+				fmt.Fprintf(&o, "      coords: %f, %f\n", point.X, point.Y)
+				fmt.Fprintf(&o, "      speed: %f\n", point.Speed)
+				fmt.Fprintf(&o, "      direction: %f\n", point.Direction)
+				fmt.Fprintf(&o, "      width: %f\n", point.Width)
+				fmt.Fprintf(&o, "      pressure: %f\n", point.Pressure)
+			}
+		}
+	}
+	return o.String()
 }

@@ -6,9 +6,9 @@ import (
 	"fmt"
 )
 
-// UnmarshalBinary implements encoding.MarshalBinary for
+// UnmarshalBinary implements encoding.UnmarshalBinary for
 // transforming bytes into a Rm page
-func (rm Rm) UnmarshalBinary(data []byte) error {
+func (rm *Rm) UnmarshalBinary(data []byte) error {
 	lr := newRmReader(data)
 	if err := lr.checkHeader(); err != nil {
 		return err
@@ -27,12 +27,12 @@ func (rm Rm) UnmarshalBinary(data []byte) error {
 		}
 
 		rm.Layers[i].Lines = make([]Line, nbLines)
-		for k := uint32(0); i < nbLines; i++ {
+		for j := uint32(0); j < nbLines; j++ {
 			line, err := lr.readLine()
 			if err != nil {
 				return err
 			}
-			rm.Layers[i].Lines[k] = line
+			rm.Layers[i].Lines[j] = line
 		}
 	}
 
