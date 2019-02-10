@@ -2,8 +2,8 @@ package archive
 
 import "testing"
 
-func TestOpen(t *testing.T) {
-	r, err := Open("test.zip")
+func TestOpenReader(t *testing.T) {
+	r, err := OpenReader("test.zip")
 	if err != nil {
 		t.Error(err)
 	}
