@@ -7,6 +7,12 @@
 // 384327f5-133e-49c8-82ff-30aa19f3cfa4//0.rm
 // 384327f5-133e-49c8-82ff-30aa19f3cfa4.pagedata
 // 384327f5-133e-49c8-82ff-30aa19f3cfa4.thumbnails/0.jpg
+//
+// As the .zip file from remarkable is simply a normal .zip file
+// containing specific file formats, this package is only a wrapper
+// around the standard zip package that will follow the same
+// code architecture and that will help gathering one of
+// those specific files more easily.
 package archive
 
 import (
@@ -23,24 +29,25 @@ type Page struct {
 	Metadata *zip.File
 }
 
-// File is a structured representation of all files
-// located in a remarkable zip file.
-type File struct {
+// Reader will parse specific files of the remarkable zip file.
+type Reader struct {
 	Content    *zip.File
 	Pagedata   *zip.File
 	Thumbnails []*zip.File
 	Pages      []Page
 	Pdf        *zip.File
 	Epub       *zip.File
+	UUID       string
 }
 
-// Open a zip file and parse it to read its content.
-func Open(name string) (File, error) {
-	f := File{}
+// OpenReader opens a reader from a zip file name.
+// The UUID is taken from the Content or Pagadata file name.
+func OpenReader(name string) (*Reader, error) {
+	r := Reader{}
 
 	zipRead, err := zip.OpenReader(name)
 	if err != nil {
-		return f, err
+		return &r, err
 	}
 
 	for _, file := range zipRead.File {
@@ -53,75 +60,77 @@ func Open(name string) (File, error) {
 			switch ext {
 
 			case ".content":
-				f.Content = file
+				r.Content = file
+				r.UUID = name
 				continue
 
 			case ".pdf":
-				f.Pdf = file
+				r.Pdf = file
 				continue
 
 			case ".epub":
-				f.Epub = file
+				r.Epub = file
 				continue
 
 			case ".json":
 				idx, err := strconv.Atoi(strings.Split(name, "-")[0])
 				if err != nil {
-					return f, fmt.Errorf("error in .json filename")
+					return &r, fmt.Errorf("error in .json filename")
 				}
 
-				if len(f.Pages) <= idx {
-					f.Pages = append(f.Pages, Page{})
+				if len(r.Pages) <= idx {
+					r.Pages = append(r.Pages, Page{})
 				}
-				f.Pages[idx].Metadata = file
+				r.Pages[idx].Metadata = file
 				continue
 
 			case ".rm":
 				idx, err := strconv.Atoi(name)
 				if err != nil {
-					return f, fmt.Errorf("error in .rm filename")
+					return &r, fmt.Errorf("error in .rm filename")
 				}
 
-				if len(f.Pages) <= idx {
-					f.Pages = append(f.Pages, Page{})
+				if len(r.Pages) <= idx {
+					r.Pages = append(r.Pages, Page{})
 				}
-				f.Pages[idx].Data = file
+				r.Pages[idx].Data = file
 				continue
 
 			case ".pagedata":
-				f.Pagedata = file
+				r.Pagedata = file
+				r.UUID = name
 				continue
 
 			case ".jpg":
-				f.Thumbnails = append(f.Thumbnails, file)
+				r.Thumbnails = append(r.Thumbnails, file)
 				continue
 
 			default:
-				return f, fmt.Errorf("file unknown")
+				return &r, fmt.Errorf("file unknown")
 			}
 		}
 	}
-	return f, nil
+	return &r, nil
 }
 
-func (f File) String() string {
+func (r Reader) String() string {
 	var o strings.Builder
-	if f.Content != nil {
-		fmt.Fprintf(&o, "Content: %s\n", f.Content.FileInfo().Name())
+	if r.Content != nil {
+		fmt.Fprintf(&o, "Content: %s\n", r.Content.FileInfo().Name())
 	}
-	if f.Pagedata != nil {
-		fmt.Fprintf(&o, "Pagedata: %s\n", f.Pagedata.FileInfo().Name())
+	if r.Pagedata != nil {
+		fmt.Fprintf(&o, "Pagedata: %s\n", r.Pagedata.FileInfo().Name())
 	}
-	if f.Epub != nil {
-		fmt.Fprintf(&o, "Epub: %s\n", f.Epub.FileInfo().Name())
+	if r.Epub != nil {
+		fmt.Fprintf(&o, "Epub: %s\n", r.Epub.FileInfo().Name())
 	}
-	if f.Pdf != nil {
-		fmt.Fprintf(&o, "Pdf: %s\n", f.Pdf.FileInfo().Name())
+	if r.Pdf != nil {
+		fmt.Fprintf(&o, "Pdf: %s\n", r.Pdf.FileInfo().Name())
 	}
-	for i, thumb := range f.Thumbnails {
+	for i, thumb := range r.Thumbnails {
 		fmt.Fprintf(&o, "Thumb %d: %s\n", i, thumb.FileInfo().Name())
 	}
-	for i, page := range f.Pages {
+	for i, page := range r.Pages {
 		fmt.Fprintf(&o, "Page %d Data: %s\n", i, page.Data.FileInfo().Name())
 		fmt.Fprintf(&o, "Page %d Metadata: %s\n", i, page.Metadata.FileInfo().Name())
 	}
