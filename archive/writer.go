@@ -23,6 +23,11 @@ func NewWriter(w io.Writer, uuid string) *Writer {
 	return &Writer{archive, uuid}
 }
 
+// Close finishes writing the zip file.
+func (w *Writer) Close() error {
+	return w.zipw.Close()
+}
+
 // CreateContent is for writing a content file.
 func (w *Writer) CreateContent() (io.Writer, error) {
 	fn := fmt.Sprintf("%s.content", w.uuid)
@@ -47,26 +52,20 @@ func (w *Writer) CreateEpub() (io.Writer, error) {
 	return w.create(fn)
 }
 
-// CreatePage is for writing a page.
+// CreatePage is for writing a page data.
 // The argument idx serves for file names.
-// The functions returns two io.Writer.
-//  - The first one is for the data
-//  - The second is for metadata
-func (w *Writer) CreatePage(idx int) (io.Writer, io.Writer, error) {
-	data := fmt.Sprintf("%d.rm", idx)
-	metadata := fmt.Sprintf("%d-metadata.json", idx)
+func (w *Writer) CreatePage(idx int) (io.Writer, error) {
+	name := fmt.Sprintf("%d.rm", idx)
+	fn := filepath.Join(w.uuid, name)
+	return w.create(fn)
+}
 
-	dataWriter, err := w.create(filepath.Join(w.uuid, "", data))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	metadataWriter, err := w.create(filepath.Join(w.uuid, "", metadata))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return dataWriter, metadataWriter, nil
+// CreatePageMetadata is for writing a page metadata.
+// The argument idx serves for file names.
+func (w *Writer) CreatePageMetadata(idx int) (io.Writer, error) {
+	name := fmt.Sprintf("%d-metadata.json", idx)
+	fn := filepath.Join(w.uuid, name)
+	return w.create(fn)
 }
 
 // CreateThumbnail is for writing a thumbnail file.
