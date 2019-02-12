@@ -1,13 +1,17 @@
 package archive
 
 import (
+	"archive/zip"
+	"fmt"
 	"io"
+	"path/filepath"
+	"time"
 )
 
 // Writer is for writing a remarkable .zip
 // The uuid should be unique across notes.
 type Writer struct {
-	w    io.Writer
+	zipw *zip.Writer
 	uuid string
 }
 
@@ -15,31 +19,32 @@ type Writer struct {
 // The uuid will be used for file names as done by
 // the remarkable device.
 func NewWriter(w io.Writer, uuid string) *Writer {
-	return &Writer{w, uuid}
+	archive := zip.NewWriter(w)
+	return &Writer{archive, uuid}
 }
 
 // CreateContent is for writing a content file.
-// Content will be overriden if already existing.
 func (w *Writer) CreateContent() (io.Writer, error) {
-	return nil, nil
+	fn := fmt.Sprintf("%s.content", w.uuid)
+	return w.create(fn)
 }
 
 // CreatePagedata is for writing a pagedata file.
-// Pagedata will be overriden if already existing.
 func (w *Writer) CreatePagedata() (io.Writer, error) {
-	return nil, nil
+	fn := fmt.Sprintf("%s.pagedata", w.uuid)
+	return w.create(fn)
 }
 
 // CreatePdf is for writing a pdf file.
-// Pdf will be overriden if already existing.
 func (w *Writer) CreatePdf() (io.Writer, error) {
-	return nil, nil
+	fn := fmt.Sprintf("%s.pdf", w.uuid)
+	return w.create(fn)
 }
 
 // CreateEpub is for writing an epub file.
-// Epub will be overriden if already existing.
 func (w *Writer) CreateEpub() (io.Writer, error) {
-	return nil, nil
+	fn := fmt.Sprintf("%s.epub", w.uuid)
+	return w.create(fn)
 }
 
 // CreatePage is for writing a page.
@@ -47,14 +52,44 @@ func (w *Writer) CreateEpub() (io.Writer, error) {
 // The functions returns two io.Writer.
 //  - The first one is for the data
 //  - The second is for metadata
-// Data and metadata will be overriden if already existing.
 func (w *Writer) CreatePage(idx int) (io.Writer, io.Writer, error) {
-	return nil, nil, nil
+	data := fmt.Sprintf("%d.rm", idx)
+	metadata := fmt.Sprintf("%d-metadata.json", idx)
+
+	dataWriter, err := w.create(filepath.Join(w.uuid, "", data))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	metadataWriter, err := w.create(filepath.Join(w.uuid, "", metadata))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return dataWriter, metadataWriter, nil
 }
 
 // CreateThumbnail is for writing a thumbnail file.
 // The argument idx is used for file names.
-// Thumbnail will be overriden if already existing.
 func (w *Writer) CreateThumbnail(idx int) (io.Writer, error) {
-	return nil, nil
+	folder := fmt.Sprintf("%s.thumbnail", w.uuid)
+	name := fmt.Sprintf("%d.jpg", idx)
+	fn := filepath.Join(folder, name)
+	return w.create(fn)
+}
+
+func (w *Writer) create(name string) (io.Writer, error) {
+	h := &zip.FileHeader{
+		Name:         name,
+		Method:       zip.Store,
+		ModifiedTime: uint16(time.Now().UnixNano()),
+		ModifiedDate: uint16(time.Now().UnixNano()),
+	}
+
+	writer, err := w.zipw.CreateHeader(h)
+	if err != nil {
+		return nil, err
+	}
+
+	return writer, nil
 }
