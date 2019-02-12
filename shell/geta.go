@@ -3,11 +3,8 @@ package shell
 import (
 	"errors"
 	"fmt"
+
 	"github.com/juruen/rmapi/annotations"
-	"github.com/juruen/rmapi/util"
-	"io/ioutil"
-	"os"
-	"path"
 
 	"github.com/abiosoft/ishell"
 )
@@ -42,24 +39,9 @@ func getACmd(ctx *ShellCtxt) *ishell.Cmd {
 				return
 			}
 
-			tmp, err := ioutil.TempDir("", "rmapizip")
-			if err != nil {
-				c.Err(errors.New(fmt.Sprintf("Failed to create tmp dir  with %s", err.Error())))
-				return
-			}
-
-			defer os.RemoveAll(tmp)
-
-			err = util.Unzip(zipName, tmp)
-			if err != nil {
-				c.Err(errors.New(fmt.Sprintf("Failed to unzip %s with %s", srcName, err.Error())))
-				return
-			}
-
-			unzipDir := path.Join(tmp, node.Id())
 			pdfName := fmt.Sprintf("%s-annotations.pdf", node.Name())
 
-			generator := annotations.CreatePdfGenerator(unzipDir, pdfName)
+			generator := annotations.CreatePdfGenerator(zipName, pdfName)
 			err = generator.Generate()
 
 			if err != nil {
