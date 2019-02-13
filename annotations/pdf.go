@@ -35,6 +35,10 @@ func (p PdfGenerator) Generate() error {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 
 	for _, page := range reader.Pages {
+		if page.Data == nil {
+			continue
+		}
+
 		f, err := page.Data.Open()
 		if err != nil {
 			return err

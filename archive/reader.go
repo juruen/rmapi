@@ -25,25 +25,26 @@ import (
 
 // A Page represents a note page.
 type Page struct {
-	Data     *zip.File
-	Metadata *zip.File
+	Data      *zip.File
+	Metadata  *zip.File
+	Thumbnail *zip.File
 }
 
 // Reader will parse specific files of the remarkable zip file.
 type Reader struct {
-	Content    *zip.File
-	Pagedata   *zip.File
-	Thumbnails []*zip.File
-	Pages      []Page
-	Pdf        *zip.File
-	Epub       *zip.File
-	UUID       string
+	Content  *zip.File
+	Pagedata *zip.File
+	Pages    []Page
+	Pdf      *zip.File
+	Epub     *zip.File
+	UUID     string
 }
 
 // OpenReader opens a reader from a zip file name.
 // The UUID is taken from the Content or Pagadata file name.
 func OpenReader(name string) (*Reader, error) {
 	r := Reader{}
+	pages := make(map[int]Page)
 
 	zipRead, err := zip.OpenReader(name)
 	if err != nil {
@@ -53,9 +54,7 @@ func OpenReader(name string) (*Reader, error) {
 	for _, file := range zipRead.File {
 		if !file.FileInfo().IsDir() {
 
-			filename := file.FileInfo().Name()
-			ext := filepath.Ext(filename)
-			name := filename[0 : len(filename)-len(ext)]
+			name, ext := splitFilenameExtension(file.FileInfo().Name())
 
 			switch ext {
 
@@ -77,11 +76,11 @@ func OpenReader(name string) (*Reader, error) {
 				if err != nil {
 					return &r, fmt.Errorf("error in .json filename")
 				}
-
-				if len(r.Pages) <= idx {
-					r.Pages = append(r.Pages, Page{})
+				pages[idx] = Page{
+					Data:      pages[idx].Data,
+					Metadata:  file,
+					Thumbnail: pages[idx].Thumbnail,
 				}
-				r.Pages[idx].Metadata = file
 				continue
 
 			case ".rm":
@@ -89,11 +88,11 @@ func OpenReader(name string) (*Reader, error) {
 				if err != nil {
 					return &r, fmt.Errorf("error in .rm filename")
 				}
-
-				if len(r.Pages) <= idx {
-					r.Pages = append(r.Pages, Page{})
+				pages[idx] = Page{
+					Data:      file,
+					Metadata:  pages[idx].Metadata,
+					Thumbnail: pages[idx].Thumbnail,
 				}
-				r.Pages[idx].Data = file
 				continue
 
 			case ".pagedata":
@@ -102,7 +101,15 @@ func OpenReader(name string) (*Reader, error) {
 				continue
 
 			case ".jpg":
-				r.Thumbnails = append(r.Thumbnails, file)
+				idx, err := strconv.Atoi(name)
+				if err != nil {
+					return &r, fmt.Errorf("error in .jpg filename")
+				}
+				pages[idx] = Page{
+					Data:      pages[idx].Data,
+					Metadata:  pages[idx].Metadata,
+					Thumbnail: file,
+				}
 				continue
 
 			default:
@@ -110,6 +117,13 @@ func OpenReader(name string) (*Reader, error) {
 			}
 		}
 	}
+
+	// Flatten page map to slices
+	r.Pages = make([]Page, nbPages(pages))
+	for k, v := range pages {
+		r.Pages[k] = v
+	}
+
 	return &r, nil
 }
 
@@ -127,12 +141,34 @@ func (r Reader) String() string {
 	if r.Pdf != nil {
 		fmt.Fprintf(&o, "Pdf: %s\n", r.Pdf.FileInfo().Name())
 	}
-	for i, thumb := range r.Thumbnails {
-		fmt.Fprintf(&o, "Thumb %d: %s\n", i, thumb.FileInfo().Name())
-	}
 	for i, page := range r.Pages {
-		fmt.Fprintf(&o, "Page %d Data: %s\n", i, page.Data.FileInfo().Name())
-		fmt.Fprintf(&o, "Page %d Metadata: %s\n", i, page.Metadata.FileInfo().Name())
+		if page.Data != nil {
+			fmt.Fprintf(&o, "Page %d Data: %s\n", i, page.Data.FileInfo().Name())
+		}
+		if page.Metadata != nil {
+			fmt.Fprintf(&o, "Page %d Metadata: %s\n", i, page.Metadata.FileInfo().Name())
+		}
+		if page.Thumbnail != nil {
+			fmt.Fprintf(&o, "Page %d Thumbnail: %s\n", i, page.Thumbnail.FileInfo().Name())
+		}
 	}
 	return o.String()
+}
+
+func splitFilenameExtension(name string) (string, string) {
+	ext := filepath.Ext(name)
+	return name[0 : len(name)-len(ext)], ext
+}
+
+func nbPages(pages map[int]Page) int {
+	var maxNumber int
+	for maxNumber = range pages {
+		break
+	}
+	for n := range pages {
+		if n > maxNumber {
+			maxNumber = n
+		}
+	}
+	return maxNumber + 1
 }
