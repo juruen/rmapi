@@ -19,6 +19,7 @@ import (
 	"archive/zip"
 	"fmt"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -161,14 +162,14 @@ func splitFilenameExtension(name string) (string, string) {
 }
 
 func nbPages(pages map[int]Page) int {
-	var maxNumber int
-	for maxNumber = range pages {
-		break
+	if len(pages) == 0 {
+		return 0
 	}
-	for n := range pages {
-		if n > maxNumber {
-			maxNumber = n
-		}
+
+	sorted := make([]int, 0, len(pages))
+	for k := range pages {
+		sorted = append(sorted, k)
 	}
-	return maxNumber + 1
+	sort.Sort(sort.Reverse(sort.IntSlice(sorted)))
+	return sorted[0] + 1
 }
