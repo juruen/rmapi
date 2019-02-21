@@ -27,7 +27,7 @@ then
     height=$(pdfinfo ${doc} | grep 'Page size:' | awk '{print $5}')
 
     # comparing floating point numbers in bash directly is not possible
-    if (( $(echo "$height > $width" |bc -l) )); then
+    if (( $(echo "$height >= $width" |bc -l) )); then
         rotated="no"
     else
         rotated="yes"
