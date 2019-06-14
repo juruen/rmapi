@@ -13,6 +13,7 @@ import (
 type zipDocumentContent struct {
 	ExtraMetadata  map[string]string `json:"extraMetadata"`
 	FileType       string            `json:"fileType"`
+	PageCount      int               `json:"pageCount"`
 	LastOpenedPage int               `json:"lastOpenedPage"`
 	LineHeight     int               `json:"lineHeight"`
 	Margins        int               `json:"margins"`
@@ -109,6 +110,7 @@ func createZipContent(ext string) (string, error) {
 	c := zipDocumentContent{
 		make(map[string]string),
 		ext,
+		0,
 		0,
 		-1,
 		180,
