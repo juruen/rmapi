@@ -12,6 +12,7 @@ import (
 )
 
 const (
+	homeEnv           = "RMAPI_HOME"
 	defaultConfigFile = ".rmapi"
 )
 
@@ -21,7 +22,10 @@ func ConfigPath() string {
 		log.Error.Panicln("failed to get current user:", err)
 	}
 
-	home := user.HomeDir
+	home, ok := os.LookupEnv(homeEnv)
+	if !ok {
+		home = user.HomeDir
+	}
 
 	return fmt.Sprintf("%s/%s", home, defaultConfigFile)
 }
