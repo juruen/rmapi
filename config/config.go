@@ -13,9 +13,15 @@ import (
 
 const (
 	defaultConfigFile = ".rmapi"
+	configFileEnvVar = "RMAPI_CONFIG"
 )
 
 func ConfigPath() string {
+	configFile, ok := os.LookupEnv(configFileEnvVar)
+	if ok {
+		return configFile
+	}
+
 	user, err := user.Current()
 	if err != nil {
 		log.Error.Panicln("failed to get current user:", err)
