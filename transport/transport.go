@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/juruen/rmapi/log"
-	"github.com/juruen/rmapi/model"
-	"github.com/juruen/rmapi/util"
+	"github.com/peerdavid/rmapi/log"
+	"github.com/peerdavid/rmapi/model"
+	"github.com/peerdavid/rmapi/util"
 )
 
 type AuthType int

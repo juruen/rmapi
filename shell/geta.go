@@ -7,12 +7,12 @@ import (
 	"os/exec"
 	"strings"
 	"archive/zip"
-	"github.com/juruen/rmapi/log"
+	"github.com/peerdavid/rmapi/log"
 	"os"
 	"io"
 	"github.com/abiosoft/ishell"
 	"path/filepath"
-	"github.com/juruen/rmapi/model"
+	"github.com/peerdavid/rmapi/model"
 )
 
 
@@ -123,8 +123,8 @@ func getAnnotatedDocument(ctx *ShellCtxt, node *model.Node, path string) error {
 
 	// If pdf is annotated convert it, otherwise move the pdf file
 	if(documentIsAnnotated(tmpFolder, node)){
-		exportPdf := os.Getenv("GOPATH") + "/src/github.com/juruen/rmapi/tools/exportAnnotatedPdf"
-		rM2svg := os.Getenv("GOPATH") + "/src/github.com/juruen/rmapi/tools/rM2svg"
+		exportPdf := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/exportAnnotatedPdf"
+		rM2svg := os.Getenv("GOPATH") + "/src/github.com/peerdavid/rmapi/tools/rM2svg"
 		output, err := exec.Command(
 			"/bin/bash", 
 			exportPdf, 

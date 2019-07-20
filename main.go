@@ -5,10 +5,10 @@ import (
 
 	"github.com/hanwen/go-fuse/fuse"
 	"github.com/hanwen/go-fuse/fuse/nodefs"
-	"github.com/juruen/rmapi/api"
-	"github.com/juruen/rmapi/fusefs"
-	"github.com/juruen/rmapi/log"
-	"github.com/juruen/rmapi/shell"
+	"github.com/peerdavid/rmapi/api"
+	"github.com/peerdavid/rmapi/fusefs"
+	"github.com/peerdavid/rmapi/log"
+	"github.com/peerdavid/rmapi/shell"
 )
 
 const AUTH_RETRIES = 3

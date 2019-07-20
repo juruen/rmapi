@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/juruen/rmapi/model"
+	"github.com/peerdavid/rmapi/model"
 	"github.com/stretchr/testify/assert"
 )
 

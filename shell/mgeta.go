@@ -7,8 +7,8 @@ import (
 	"path"
 
 	"github.com/abiosoft/ishell"
-	"github.com/juruen/rmapi/filetree"
-	"github.com/juruen/rmapi/model"
+	"github.com/peerdavid/rmapi/filetree"
+	"github.com/peerdavid/rmapi/model"
 )
 
 func mgetaCmd(ctx *ShellCtxt) *ishell.Cmd {

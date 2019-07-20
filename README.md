@@ -25,12 +25,12 @@ documents through a FUSE system. You can read further at the bottom of this file
 
 Install and build the project:
 
-`go get -u github.com/juruen/rmapi`
+`go get -u github.com/peerdavid/rmapi`
 
 
 ## Binary
 
-You can download an already built version for either Linux or OSX from [releases](https://github.com/juruen/rmapi/releases).
+You can download an already built version for either Linux or OSX from [releases](https://github.com/peerdavid/rmapi/releases).
 
 # API support
 
@@ -179,5 +179,5 @@ rmapi --fuse-mount mount_point
 
 
 # Thanks to
-[1] rmapi, https://github.com/juruen/rmapi <br />
+[1] rmapi, https://github.com/peerdavid/rmapi <br />
 [1] rM2svg, https://github.com/reHackable/maxio <br />
