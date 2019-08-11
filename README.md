@@ -9,9 +9,6 @@ You can interact with the different API end-points through a shell. However, you
 run commands non-interactively. This may come in handy to script certian workflows such as
 taking automatic backups or uploading documents programmatically.
 
-*Warning*: If you installed _rmapi_ before (October 1, 2018), you will need to install the latest version,
-otherwise _rmapi_ will fail to authenticate after the changes in the server API that were introduced in September 28, 2018.
-
 
 ![Console Capture](docs/console.gif)
 
