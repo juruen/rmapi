@@ -19,7 +19,7 @@ Use `terminal` or `iterm` to get a terminal to run commands from it.
 Download `rmapi` with the following command:
 
 ```bash
-curl -L https://github.com/juruen/rmapi/releases/download/v0.0.4/rmapi-macosx-v0.0.4.zip -o rmapi.zip
+curl -L  https://github.com/juruen/rmapi/releases/download/v0.0.5/rmapi-macosx-v0.0.5.zip -o rmapi.zip
 ```
 
 Alternatively, you can build it from sources.
