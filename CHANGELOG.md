@@ -1,4 +1,4 @@
-## rmapi master
+## rmapi 0.0.5 (August 11, 2019)
 
 * Increased http timeout to 5 minutes to enable upload of larger files
 
