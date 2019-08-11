@@ -1,5 +1,7 @@
 ## rmapi 0.0.5 (August 11, 2019)
 
+* Fix issue to make document uploads work with reMarkable 1.7.x firmware upgrade
+
 * Increased http timeout to 5 minutes to enable upload of larger files
 
 * Add user-agent header to be a good reMarkable citezen
