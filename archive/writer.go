@@ -2,82 +2,246 @@ package archive
 
 import (
 	"archive/zip"
+	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"path/filepath"
 	"time"
+
+	"github.com/google/uuid"
 )
 
-// Writer is for writing a remarkable .zip
-// The uuid should be unique across notes.
-type Writer struct {
-	zipw *zip.Writer
-	uuid string
-}
+// Write writes an archive file from a File struct.
+// It automatically generates a uuid if not already
+// defined in the struct.
+func (f *File) Write(w io.Writer) error {
+	// generate random uuid if not defined
+	if f.UUID == "" {
+		f.UUID = uuid.New().String()
+	}
 
-// NewWriter creates a Writer from an io.Writer.
-// The uuid will be used for file names as done by
-// the remarkable device.
-func NewWriter(w io.Writer, uuid string) *Writer {
 	archive := zip.NewWriter(w)
-	return &Writer{archive, uuid}
+
+	if err := f.writeContent(archive); err != nil {
+		return err
+	}
+
+	if err := f.writePdf(archive); err != nil {
+		return err
+	}
+
+	if err := f.writeEpub(archive); err != nil {
+		return err
+	}
+
+	if err := f.writePagedata(archive); err != nil {
+		return err
+	}
+
+	if err := f.writeThumbnails(archive); err != nil {
+		return err
+	}
+
+	if err := f.writeMetadata(archive); err != nil {
+		return err
+	}
+
+	if err := f.writeData(archive); err != nil {
+		return err
+	}
+
+	archive.Close()
+
+	return nil
 }
 
-// Close finishes writing the zip file.
-func (w *Writer) Close() error {
-	return w.zipw.Close()
+// writeContent writes the .content file to the archive.
+func (f *File) writeContent(zw *zip.Writer) error {
+	bytes, err := json.MarshalIndent(&f.Content, "", "    ")
+	if err != nil {
+		return err
+	}
+
+	name := fmt.Sprintf("%s.content", f.UUID)
+
+	w, err := addToZip(zw, name)
+	if err != nil {
+		return err
+	}
+
+	if _, err := w.Write(bytes); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-// CreateContent is for writing a content file.
-func (w *Writer) CreateContent() (io.Writer, error) {
-	fn := fmt.Sprintf("%s.content", w.uuid)
-	return w.create(fn)
+// writePdf writes a pdf file to the archive if existing in the struct.
+func (f *File) writePdf(zw *zip.Writer) error {
+	// skip if no pdf
+	if f.Pdf == nil {
+		return nil
+	}
+
+	name := fmt.Sprintf("%s.pdf", f.UUID)
+
+	w, err := addToZip(zw, name)
+	if err != nil {
+		return err
+	}
+
+	if _, err := w.Write(f.Pdf); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-// CreatePagedata is for writing a pagedata file.
-func (w *Writer) CreatePagedata() (io.Writer, error) {
-	fn := fmt.Sprintf("%s.pagedata", w.uuid)
-	return w.create(fn)
+// writeEpub writes an epub file to the archive if existing in the struct.
+func (f *File) writeEpub(zw *zip.Writer) error {
+	// skip if no epub
+	if f.Epub == nil {
+		return nil
+	}
+
+	name := fmt.Sprintf("%s.epub", f.UUID)
+
+	w, err := addToZip(zw, name)
+	if err != nil {
+		return err
+	}
+
+	if _, err := w.Write(f.Epub); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-// CreatePdf is for writing a pdf file.
-func (w *Writer) CreatePdf() (io.Writer, error) {
-	fn := fmt.Sprintf("%s.pdf", w.uuid)
-	return w.create(fn)
+// writePagedata writes a .pagedata file containing
+// the name of background templates for each page (one per line).
+func (f *File) writePagedata(zw *zip.Writer) error {
+	// don't add pagedata file if no pages
+	if len(f.Pages) == 0 {
+		return nil
+	}
+
+	name := fmt.Sprintf("%s.pagedata", f.UUID)
+
+	w, err := addToZip(zw, name)
+	if err != nil {
+		return err
+	}
+
+	bw := bufio.NewWriter(w)
+	for _, page := range f.Pages {
+		template := page.Pagedata
+
+		// set default if empty
+		if template == "" {
+			template = defaultPagadata
+		}
+
+		bw.WriteString(template + "\n")
+	}
+
+	// write to the underlying io.Writer
+	bw.Flush()
+
+	return nil
 }
 
-// CreateEpub is for writing an epub file.
-func (w *Writer) CreateEpub() (io.Writer, error) {
-	fn := fmt.Sprintf("%s.epub", w.uuid)
-	return w.create(fn)
+// writeThumbnails writes thumbnail files for each page
+// in the archive.
+func (f *File) writeThumbnails(zw *zip.Writer) error {
+	for idx, page := range f.Pages {
+		if page.Thumbnail == nil {
+			continue
+		}
+
+		folder := fmt.Sprintf("%s.thumbnail", f.UUID)
+		name := fmt.Sprintf("%d.jpg", idx)
+		fn := filepath.Join(folder, name)
+
+		w, err := addToZip(zw, fn)
+		if err != nil {
+			return err
+		}
+
+		if _, err := w.Write(page.Thumbnail); err != nil {
+			return err
+		}
+
+	}
+
+	return nil
 }
 
-// CreatePage is for writing a page data.
-// The argument idx serves for file names.
-func (w *Writer) CreatePage(idx int) (io.Writer, error) {
-	name := fmt.Sprintf("%d.rm", idx)
-	fn := filepath.Join(w.uuid, name)
-	return w.create(fn)
+// writeMetadata writes .json metadata files for each page
+// in the archive.
+func (f *File) writeMetadata(zw *zip.Writer) error {
+	for idx, page := range f.Pages {
+		// if no layers available, don't write the metadata file
+		if len(page.Metadata.Layers) == 0 {
+			continue
+		}
+
+		name := fmt.Sprintf("%d-metadata.json", idx)
+		fn := filepath.Join(f.UUID, name)
+
+		w, err := addToZip(zw, fn)
+		if err != nil {
+			return err
+		}
+
+		bytes, err := json.MarshalIndent(&page.Metadata, "", "    ")
+		if err != nil {
+			return err
+		}
+
+		if _, err := w.Write(bytes); err != nil {
+			return err
+		}
+
+	}
+
+	return nil
 }
 
-// CreatePageMetadata is for writing a page metadata.
-// The argument idx serves for file names.
-func (w *Writer) CreatePageMetadata(idx int) (io.Writer, error) {
-	name := fmt.Sprintf("%d-metadata.json", idx)
-	fn := filepath.Join(w.uuid, name)
-	return w.create(fn)
+// writeData writes .rm data files for each page
+// in the archive.
+func (f *File) writeData(zw *zip.Writer) error {
+	for idx, page := range f.Pages {
+		if page.Data == nil {
+			continue
+		}
+
+		name := fmt.Sprintf("%d.rm", idx)
+		fn := filepath.Join(f.UUID, name)
+
+		w, err := addToZip(zw, fn)
+		if err != nil {
+			return err
+		}
+
+		bytes, err := page.Data.MarshalBinary()
+		if err != nil {
+			return err
+		}
+
+		if _, err := w.Write(bytes); err != nil {
+			return err
+		}
+
+	}
+
+	return nil
 }
 
-// CreateThumbnail is for writing a thumbnail file.
-// The argument idx is used for file names.
-func (w *Writer) CreateThumbnail(idx int) (io.Writer, error) {
-	folder := fmt.Sprintf("%s.thumbnail", w.uuid)
-	name := fmt.Sprintf("%d.jpg", idx)
-	fn := filepath.Join(folder, name)
-	return w.create(fn)
-}
-
-func (w *Writer) create(name string) (io.Writer, error) {
+// addToZip takes a zip.Writer in parameter and creates an io.Writer
+// to write the content of a file to add to the zip.
+func addToZip(zw *zip.Writer, name string) (io.Writer, error) {
 	h := &zip.FileHeader{
 		Name:         name,
 		Method:       zip.Store,
@@ -85,7 +249,7 @@ func (w *Writer) create(name string) (io.Writer, error) {
 		ModifiedDate: uint16(time.Now().UnixNano()),
 	}
 
-	writer, err := w.zipw.CreateHeader(h)
+	writer, err := zw.CreateHeader(h)
 	if err != nil {
 		return nil, err
 	}
