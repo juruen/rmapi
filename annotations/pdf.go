@@ -1,7 +1,7 @@
 package annotations
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/jung-kurt/gofpdf"
 	"github.com/juruen/rmapi/archive"
@@ -27,38 +27,29 @@ func CreatePdfGenerator(zipName, outputFilePath string) PdfGenerator {
 }
 
 func (p PdfGenerator) Generate() error {
-	reader, err := archive.OpenReader(p.zipName)
+	file, err := os.Open(p.zipName)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	zip := archive.NewZip()
+
+	err = zip.Read(file)
 	if err != nil {
 		return err
 	}
 
 	pdf := gofpdf.New("P", "mm", "A4", "")
 
-	for _, page := range reader.Pages {
+	for _, page := range zip.Pages {
 		if page.Data == nil {
 			continue
 		}
 
-		f, err := page.Data.Open()
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-
-		fb, err := ioutil.ReadAll(f)
-		if err != nil {
-			return err
-		}
-
-		pageRm := rm.New()
-		err = pageRm.UnmarshalBinary(fb)
-		if err != nil {
-			return err
-		}
-
 		pdf.AddPage()
 
-		for _, layer := range pageRm.Layers {
+		for _, layer := range page.Data.Layers {
 			for _, line := range layer.Lines {
 
 				if len(line.Points) < 1 {
