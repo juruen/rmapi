@@ -15,39 +15,39 @@ import (
 // Write writes an archive file from a File struct.
 // It automatically generates a uuid if not already
 // defined in the struct.
-func (f *File) Write(w io.Writer) error {
+func (z *Zip) Write(w io.Writer) error {
 	// generate random uuid if not defined
-	if f.UUID == "" {
-		f.UUID = uuid.New().String()
+	if z.UUID == "" {
+		z.UUID = uuid.New().String()
 	}
 
 	archive := zip.NewWriter(w)
 
-	if err := f.writeContent(archive); err != nil {
+	if err := z.writeContent(archive); err != nil {
 		return err
 	}
 
-	if err := f.writePdf(archive); err != nil {
+	if err := z.writePdf(archive); err != nil {
 		return err
 	}
 
-	if err := f.writeEpub(archive); err != nil {
+	if err := z.writeEpub(archive); err != nil {
 		return err
 	}
 
-	if err := f.writePagedata(archive); err != nil {
+	if err := z.writePagedata(archive); err != nil {
 		return err
 	}
 
-	if err := f.writeThumbnails(archive); err != nil {
+	if err := z.writeThumbnails(archive); err != nil {
 		return err
 	}
 
-	if err := f.writeMetadata(archive); err != nil {
+	if err := z.writeMetadata(archive); err != nil {
 		return err
 	}
 
-	if err := f.writeData(archive); err != nil {
+	if err := z.writeData(archive); err != nil {
 		return err
 	}
 
@@ -57,13 +57,13 @@ func (f *File) Write(w io.Writer) error {
 }
 
 // writeContent writes the .content file to the archive.
-func (f *File) writeContent(zw *zip.Writer) error {
-	bytes, err := json.MarshalIndent(&f.Content, "", "    ")
+func (z *Zip) writeContent(zw *zip.Writer) error {
+	bytes, err := json.MarshalIndent(&z.Content, "", "    ")
 	if err != nil {
 		return err
 	}
 
-	name := fmt.Sprintf("%s.content", f.UUID)
+	name := fmt.Sprintf("%s.content", z.UUID)
 
 	w, err := addToZip(zw, name)
 	if err != nil {
@@ -78,20 +78,20 @@ func (f *File) writeContent(zw *zip.Writer) error {
 }
 
 // writePdf writes a pdf file to the archive if existing in the struct.
-func (f *File) writePdf(zw *zip.Writer) error {
+func (z *Zip) writePdf(zw *zip.Writer) error {
 	// skip if no pdf
-	if f.Pdf == nil {
+	if z.Pdf == nil {
 		return nil
 	}
 
-	name := fmt.Sprintf("%s.pdf", f.UUID)
+	name := fmt.Sprintf("%s.pdf", z.UUID)
 
 	w, err := addToZip(zw, name)
 	if err != nil {
 		return err
 	}
 
-	if _, err := w.Write(f.Pdf); err != nil {
+	if _, err := w.Write(z.Pdf); err != nil {
 		return err
 	}
 
@@ -99,20 +99,20 @@ func (f *File) writePdf(zw *zip.Writer) error {
 }
 
 // writeEpub writes an epub file to the archive if existing in the struct.
-func (f *File) writeEpub(zw *zip.Writer) error {
+func (z *Zip) writeEpub(zw *zip.Writer) error {
 	// skip if no epub
-	if f.Epub == nil {
+	if z.Epub == nil {
 		return nil
 	}
 
-	name := fmt.Sprintf("%s.epub", f.UUID)
+	name := fmt.Sprintf("%s.epub", z.UUID)
 
 	w, err := addToZip(zw, name)
 	if err != nil {
 		return err
 	}
 
-	if _, err := w.Write(f.Epub); err != nil {
+	if _, err := w.Write(z.Epub); err != nil {
 		return err
 	}
 
@@ -121,13 +121,13 @@ func (f *File) writeEpub(zw *zip.Writer) error {
 
 // writePagedata writes a .pagedata file containing
 // the name of background templates for each page (one per line).
-func (f *File) writePagedata(zw *zip.Writer) error {
+func (z *Zip) writePagedata(zw *zip.Writer) error {
 	// don't add pagedata file if no pages
-	if len(f.Pages) == 0 {
+	if len(z.Pages) == 0 {
 		return nil
 	}
 
-	name := fmt.Sprintf("%s.pagedata", f.UUID)
+	name := fmt.Sprintf("%s.pagedata", z.UUID)
 
 	w, err := addToZip(zw, name)
 	if err != nil {
@@ -135,7 +135,7 @@ func (f *File) writePagedata(zw *zip.Writer) error {
 	}
 
 	bw := bufio.NewWriter(w)
-	for _, page := range f.Pages {
+	for _, page := range z.Pages {
 		template := page.Pagedata
 
 		// set default if empty
@@ -154,13 +154,13 @@ func (f *File) writePagedata(zw *zip.Writer) error {
 
 // writeThumbnails writes thumbnail files for each page
 // in the archive.
-func (f *File) writeThumbnails(zw *zip.Writer) error {
-	for idx, page := range f.Pages {
+func (z *Zip) writeThumbnails(zw *zip.Writer) error {
+	for idx, page := range z.Pages {
 		if page.Thumbnail == nil {
 			continue
 		}
 
-		folder := fmt.Sprintf("%s.thumbnail", f.UUID)
+		folder := fmt.Sprintf("%s.thumbnail", z.UUID)
 		name := fmt.Sprintf("%d.jpg", idx)
 		fn := filepath.Join(folder, name)
 
@@ -180,15 +180,15 @@ func (f *File) writeThumbnails(zw *zip.Writer) error {
 
 // writeMetadata writes .json metadata files for each page
 // in the archive.
-func (f *File) writeMetadata(zw *zip.Writer) error {
-	for idx, page := range f.Pages {
+func (z *Zip) writeMetadata(zw *zip.Writer) error {
+	for idx, page := range z.Pages {
 		// if no layers available, don't write the metadata file
 		if len(page.Metadata.Layers) == 0 {
 			continue
 		}
 
 		name := fmt.Sprintf("%d-metadata.json", idx)
-		fn := filepath.Join(f.UUID, name)
+		fn := filepath.Join(z.UUID, name)
 
 		w, err := addToZip(zw, fn)
 		if err != nil {
@@ -211,14 +211,14 @@ func (f *File) writeMetadata(zw *zip.Writer) error {
 
 // writeData writes .rm data files for each page
 // in the archive.
-func (f *File) writeData(zw *zip.Writer) error {
-	for idx, page := range f.Pages {
+func (z *Zip) writeData(zw *zip.Writer) error {
+	for idx, page := range z.Pages {
 		if page.Data == nil {
 			continue
 		}
 
 		name := fmt.Sprintf("%d.rm", idx)
-		fn := filepath.Join(f.UUID, name)
+		fn := filepath.Join(z.UUID, name)
 
 		w, err := addToZip(zw, fn)
 		if err != nil {

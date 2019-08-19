@@ -7,8 +7,8 @@ import (
 // Set the default pagedata template to Blank
 const defaultPagadata string = "Blank"
 
-// File represents an entire Remarkable archive file.
-type File struct {
+// Zip represents an entire Remarkable archive file.
+type Zip struct {
 	Content Content
 	Pages   []Page
 	Pdf     []byte
@@ -16,8 +16,8 @@ type File struct {
 	UUID    string
 }
 
-// NewFile creates a File with sane defaults.
-func NewFile() *File {
+// NewZip creates a File with sane defaults.
+func NewZip() *Zip {
 	content := Content{
 		ExtraMetadata: ExtraMetadata{
 			LastBrushColor:           "Black",
@@ -56,7 +56,7 @@ func NewFile() *File {
 		},
 	}
 
-	return &File{
+	return &Zip{
 		Content: content,
 	}
 }
