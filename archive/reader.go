@@ -17,44 +17,44 @@ import (
 )
 
 // Read fills a File struct parsing a Remarkable archive file.
-func (f *File) Read(r io.Reader) error {
+func (z *Zip) Read(r io.Reader) error {
 	zr, err := zipReaderFromIOReader(r)
 	if err != nil {
 		return err
 	}
 
 	// reading content first because it contains the number of pages
-	if err := f.readContent(zr); err != nil {
+	if err := z.readContent(zr); err != nil {
 		return err
 	}
 
 	// instanciate the slice of pages
-	if f.Content.PageCount == 0 {
+	if z.Content.PageCount == 0 {
 		return errors.New("document does not have any pages")
 	}
-	f.Pages = make([]Page, f.Content.PageCount)
+	z.Pages = make([]Page, z.Content.PageCount)
 
-	if err := f.readPagedata(zr); err != nil {
+	if err := z.readPagedata(zr); err != nil {
 		return err
 	}
 
-	if err := f.readPdf(zr); err != nil {
+	if err := z.readPdf(zr); err != nil {
 		return err
 	}
 
-	if err := f.readEpub(zr); err != nil {
+	if err := z.readEpub(zr); err != nil {
 		return err
 	}
 
-	if err := f.readData(zr); err != nil {
+	if err := z.readData(zr); err != nil {
 		return err
 	}
 
-	if err := f.readThumbnails(zr); err != nil {
+	if err := z.readThumbnails(zr); err != nil {
 		return err
 	}
 
-	if err := f.readMetadata(zr); err != nil {
+	if err := z.readMetadata(zr); err != nil {
 		return err
 	}
 
@@ -62,7 +62,7 @@ func (f *File) Read(r io.Reader) error {
 }
 
 // readContent reads the .content file contained in an archive
-func (f *File) readContent(zr *zip.Reader) error {
+func (z *Zip) readContent(zr *zip.Reader) error {
 	files, err := zipExtFinder(zr, ".content")
 	if err != nil {
 		return err
@@ -83,7 +83,7 @@ func (f *File) readContent(zr *zip.Reader) error {
 		return err
 	}
 
-	err = json.Unmarshal(bytes, &f.Content)
+	err = json.Unmarshal(bytes, &z.Content)
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func (f *File) readContent(zr *zip.Reader) error {
 
 // readPagedata reads the .pagedata file contained in an archive
 // and iterate to gather which template was used for each page.
-func (f *File) readPagedata(zr *zip.Reader) error {
+func (z *Zip) readPagedata(zr *zip.Reader) error {
 	files, err := zipExtFinder(zr, ".pagedata")
 	if err != nil {
 		return err
@@ -114,7 +114,7 @@ func (f *File) readPagedata(zr *zip.Reader) error {
 	var i int = 0
 	for sc.Scan() {
 		line := sc.Text()
-		f.Pages[i].Pagedata = line
+		z.Pages[i].Pagedata = line
 		i++
 	}
 
@@ -126,7 +126,7 @@ func (f *File) readPagedata(zr *zip.Reader) error {
 }
 
 // readPdf tries to extract a pdf from an archive is available.
-func (f *File) readPdf(zr *zip.Reader) error {
+func (z *Zip) readPdf(zr *zip.Reader) error {
 	files, err := zipExtFinder(zr, ".pdf")
 	if err != nil {
 		return err
@@ -143,7 +143,7 @@ func (f *File) readPdf(zr *zip.Reader) error {
 	}
 	defer file.Close()
 
-	f.Pdf, err = ioutil.ReadAll(file)
+	z.Pdf, err = ioutil.ReadAll(file)
 	if err != nil {
 		return err
 	}
@@ -152,7 +152,7 @@ func (f *File) readPdf(zr *zip.Reader) error {
 }
 
 // readEpub tries to extract a epub from an archive is available.
-func (f *File) readEpub(zr *zip.Reader) error {
+func (z *Zip) readEpub(zr *zip.Reader) error {
 	files, err := zipExtFinder(zr, ".epub")
 	if err != nil {
 		return err
@@ -169,7 +169,7 @@ func (f *File) readEpub(zr *zip.Reader) error {
 	}
 	defer file.Close()
 
-	f.Epub, err = ioutil.ReadAll(file)
+	z.Epub, err = ioutil.ReadAll(file)
 	if err != nil {
 		return err
 	}
@@ -178,7 +178,7 @@ func (f *File) readEpub(zr *zip.Reader) error {
 }
 
 // readData extracts existing .rm files from an archive.
-func (f *File) readData(zr *zip.Reader) error {
+func (z *Zip) readData(zr *zip.Reader) error {
 	files, err := zipExtFinder(zr, ".rm")
 	if err != nil {
 		return err
@@ -193,7 +193,7 @@ func (f *File) readData(zr *zip.Reader) error {
 			return errors.New("error in .rm filename")
 		}
 
-		if len(f.Pages) < idx {
+		if len(z.Pages) < idx {
 			return errors.New("page not found")
 		}
 
@@ -207,8 +207,8 @@ func (f *File) readData(zr *zip.Reader) error {
 			return err
 		}
 
-		f.Pages[idx].Data = rm.New()
-		f.Pages[idx].Data.UnmarshalBinary(bytes)
+		z.Pages[idx].Data = rm.New()
+		z.Pages[idx].Data.UnmarshalBinary(bytes)
 		if err != nil {
 			return err
 		}
@@ -218,7 +218,7 @@ func (f *File) readData(zr *zip.Reader) error {
 }
 
 // readThumbnails extracts existing thumbnails from an archive.
-func (f *File) readThumbnails(zr *zip.Reader) error {
+func (z *Zip) readThumbnails(zr *zip.Reader) error {
 	files, err := zipExtFinder(zr, ".jpg")
 	if err != nil {
 		return err
@@ -232,7 +232,7 @@ func (f *File) readThumbnails(zr *zip.Reader) error {
 			return errors.New("error in .jpg filename")
 		}
 
-		if len(f.Pages) < idx {
+		if len(z.Pages) < idx {
 			return errors.New("page not found")
 		}
 
@@ -241,7 +241,7 @@ func (f *File) readThumbnails(zr *zip.Reader) error {
 			return err
 		}
 
-		f.Pages[idx].Thumbnail, err = ioutil.ReadAll(r)
+		z.Pages[idx].Thumbnail, err = ioutil.ReadAll(r)
 		if err != nil {
 			return err
 		}
@@ -251,7 +251,7 @@ func (f *File) readThumbnails(zr *zip.Reader) error {
 }
 
 // readMetadata extracts existing .json metadata files from an archive.
-func (f *File) readMetadata(zr *zip.Reader) error {
+func (z *Zip) readMetadata(zr *zip.Reader) error {
 	files, err := zipExtFinder(zr, ".json")
 	if err != nil {
 		return err
@@ -266,7 +266,7 @@ func (f *File) readMetadata(zr *zip.Reader) error {
 			return errors.New("error in metadata .json filename")
 		}
 
-		if len(f.Pages) < idx {
+		if len(z.Pages) < idx {
 			return errors.New("page not found")
 		}
 
@@ -280,7 +280,7 @@ func (f *File) readMetadata(zr *zip.Reader) error {
 			return err
 		}
 
-		err = json.Unmarshal(bytes, &f.Pages[idx].Metadata)
+		err = json.Unmarshal(bytes, &z.Pages[idx].Metadata)
 		if err != nil {
 			return err
 		}

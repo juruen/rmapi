@@ -13,11 +13,11 @@
 // read and write zip files with the correct format expected by
 // the tablet.
 //
-// At the core of this archive package, we have the File struct
+// At the core of this archive package, we have the Zip struct
 // that is defined and that represents a Remarkable zip file.
-// Then it provides a File.Read() method to unmarshal data
-// from an io.Reader into a File struct and a File.Write() method
-// to marshal a File struct into a io.Writer.
+// Then it provides a Zip.Read() method to unmarshal data
+// from an io.Reader into a Zip struct and a Zip.Write() method
+// to marshal a Zip struct into a io.Writer.
 //
 // In order to correctly use this package, you will have to understand
 // the format of a Remarkable zip file, and the format of the files
