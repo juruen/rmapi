@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"path/filepath"
@@ -83,8 +82,7 @@ func (z *Zip) readContent(zr *zip.Reader) error {
 		return err
 	}
 
-	err = json.Unmarshal(bytes, &z.Content)
-	if err != nil {
+	if err = json.Unmarshal(bytes, &z.Content); err != nil {
 		return err
 	}
 
@@ -125,7 +123,7 @@ func (z *Zip) readPagedata(zr *zip.Reader) error {
 	return nil
 }
 
-// readPdf tries to extract a pdf from an archive is available.
+// readPdf tries to extract a pdf from an archive if it exists.
 func (z *Zip) readPdf(zr *zip.Reader) error {
 	files, err := zipExtFinder(zr, ".pdf")
 	if err != nil {
@@ -151,7 +149,7 @@ func (z *Zip) readPdf(zr *zip.Reader) error {
 	return nil
 }
 
-// readEpub tries to extract a epub from an archive is available.
+// readEpub tries to extract an epub from an archive if it exists.
 func (z *Zip) readEpub(zr *zip.Reader) error {
 	files, err := zipExtFinder(zr, ".epub")
 	if err != nil {
@@ -186,7 +184,6 @@ func (z *Zip) readData(zr *zip.Reader) error {
 
 	for _, file := range files {
 		name, _ := splitExt(file.FileInfo().Name())
-		fmt.Println(name)
 
 		idx, err := strconv.Atoi(name)
 		if err != nil {
