@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// Write writes an archive file from a File struct.
+// Write writes an archive file from a Zip struct.
 // It automatically generates a uuid if not already
 // defined in the struct.
 func (z *Zip) Write(w io.Writer) error {

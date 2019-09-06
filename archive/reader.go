@@ -15,7 +15,7 @@ import (
 	"github.com/juruen/rmapi/encoding/rm"
 )
 
-// Read fills a File struct parsing a Remarkable archive file.
+// Read fills a Zip parsing a Remarkable archive file.
 func (z *Zip) Read(r io.Reader) error {
 	zr, err := zipReaderFromIOReader(r)
 	if err != nil {
