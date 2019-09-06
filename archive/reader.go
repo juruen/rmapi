@@ -1,175 +1,325 @@
-// Package archive is used to parse a .zip file retrieved
-// by the API.
-//
-// Here is the content of an archive retried on the tablet as example:
-// 384327f5-133e-49c8-82ff-30aa19f3cfa4.content
-// 384327f5-133e-49c8-82ff-30aa19f3cfa4//0-metadata.json
-// 384327f5-133e-49c8-82ff-30aa19f3cfa4//0.rm
-// 384327f5-133e-49c8-82ff-30aa19f3cfa4.pagedata
-// 384327f5-133e-49c8-82ff-30aa19f3cfa4.thumbnails/0.jpg
-//
-// As the .zip file from remarkable is simply a normal .zip file
-// containing specific file formats, this package is only a wrapper
-// around the standard zip package that will follow the same
-// code architecture and that will help gathering one of
-// those specific files more easily.
 package archive
 
 import (
 	"archive/zip"
-	"fmt"
+	"bufio"
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"io/ioutil"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/juruen/rmapi/encoding/rm"
 )
 
-// A Page represents a note page.
-type Page struct {
-	Data      *zip.File
-	Metadata  *zip.File
-	Thumbnail *zip.File
-}
-
-// Reader will parse specific files of the remarkable zip file.
-type Reader struct {
-	Content  *zip.File
-	Pagedata *zip.File
-	Pages    []Page
-	Pdf      *zip.File
-	Epub     *zip.File
-	UUID     string
-}
-
-// OpenReader opens a reader from a zip file name.
-// The UUID is taken from the Content or Pagadata file name.
-func OpenReader(name string) (*Reader, error) {
-	r := Reader{}
-	pages := make(map[int]Page)
-
-	zipRead, err := zip.OpenReader(name)
+// Read fills a File struct parsing a Remarkable archive file.
+func (z *Zip) Read(r io.Reader) error {
+	zr, err := zipReaderFromIOReader(r)
 	if err != nil {
-		return &r, err
+		return err
 	}
 
-	for _, file := range zipRead.File {
-		if !file.FileInfo().IsDir() {
-
-			name, ext := splitFilenameExtension(file.FileInfo().Name())
-
-			switch ext {
-
-			case ".content":
-				r.Content = file
-				r.UUID = name
-				continue
-
-			case ".pdf":
-				r.Pdf = file
-				continue
-
-			case ".epub":
-				r.Epub = file
-				continue
-
-			case ".json":
-				idx, err := strconv.Atoi(strings.Split(name, "-")[0])
-				if err != nil {
-					return &r, fmt.Errorf("error in .json filename")
-				}
-				pages[idx] = Page{
-					Data:      pages[idx].Data,
-					Metadata:  file,
-					Thumbnail: pages[idx].Thumbnail,
-				}
-				continue
-
-			case ".rm":
-				idx, err := strconv.Atoi(name)
-				if err != nil {
-					return &r, fmt.Errorf("error in .rm filename")
-				}
-				pages[idx] = Page{
-					Data:      file,
-					Metadata:  pages[idx].Metadata,
-					Thumbnail: pages[idx].Thumbnail,
-				}
-				continue
-
-			case ".pagedata":
-				r.Pagedata = file
-				r.UUID = name
-				continue
-
-			case ".jpg":
-				idx, err := strconv.Atoi(name)
-				if err != nil {
-					return &r, fmt.Errorf("error in .jpg filename")
-				}
-				pages[idx] = Page{
-					Data:      pages[idx].Data,
-					Metadata:  pages[idx].Metadata,
-					Thumbnail: file,
-				}
-				continue
-
-			default:
-				return &r, fmt.Errorf("file unknown")
-			}
-		}
+	// reading content first because it contains the number of pages
+	if err := z.readContent(zr); err != nil {
+		return err
 	}
 
-	// Flatten page map to slices
-	r.Pages = make([]Page, nbPages(pages))
-	for k, v := range pages {
-		r.Pages[k] = v
+	// instanciate the slice of pages
+	if z.Content.PageCount == 0 {
+		return errors.New("document does not have any pages")
+	}
+	z.Pages = make([]Page, z.Content.PageCount)
+
+	if err := z.readPagedata(zr); err != nil {
+		return err
 	}
 
-	return &r, nil
+	if err := z.readPdf(zr); err != nil {
+		return err
+	}
+
+	if err := z.readEpub(zr); err != nil {
+		return err
+	}
+
+	if err := z.readData(zr); err != nil {
+		return err
+	}
+
+	if err := z.readThumbnails(zr); err != nil {
+		return err
+	}
+
+	if err := z.readMetadata(zr); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (r Reader) String() string {
-	var o strings.Builder
-	if r.Content != nil {
-		fmt.Fprintf(&o, "Content: %s\n", r.Content.FileInfo().Name())
+// readContent reads the .content file contained in an archive
+func (z *Zip) readContent(zr *zip.Reader) error {
+	files, err := zipExtFinder(zr, ".content")
+	if err != nil {
+		return err
 	}
-	if r.Pagedata != nil {
-		fmt.Fprintf(&o, "Pagedata: %s\n", r.Pagedata.FileInfo().Name())
+
+	if len(files) != 1 {
+		return errors.New("archive does not contain a unique content file")
 	}
-	if r.Epub != nil {
-		fmt.Fprintf(&o, "Epub: %s\n", r.Epub.FileInfo().Name())
+
+	file, err := files[0].Open()
+	if err != nil {
+		return err
 	}
-	if r.Pdf != nil {
-		fmt.Fprintf(&o, "Pdf: %s\n", r.Pdf.FileInfo().Name())
+	defer file.Close()
+
+	bytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		return err
 	}
-	for i, page := range r.Pages {
-		if page.Data != nil {
-			fmt.Fprintf(&o, "Page %d Data: %s\n", i, page.Data.FileInfo().Name())
-		}
-		if page.Metadata != nil {
-			fmt.Fprintf(&o, "Page %d Metadata: %s\n", i, page.Metadata.FileInfo().Name())
-		}
-		if page.Thumbnail != nil {
-			fmt.Fprintf(&o, "Page %d Thumbnail: %s\n", i, page.Thumbnail.FileInfo().Name())
-		}
+
+	if err = json.Unmarshal(bytes, &z.Content); err != nil {
+		return err
 	}
-	return o.String()
+
+	return nil
 }
 
-func splitFilenameExtension(name string) (string, string) {
+// readPagedata reads the .pagedata file contained in an archive
+// and iterate to gather which template was used for each page.
+func (z *Zip) readPagedata(zr *zip.Reader) error {
+	files, err := zipExtFinder(zr, ".pagedata")
+	if err != nil {
+		return err
+	}
+
+	if len(files) != 1 {
+		return errors.New("archive does not contain a unique pagedata file")
+	}
+
+	file, err := files[0].Open()
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// iterate pagedata file lines
+	sc := bufio.NewScanner(file)
+	var i int = 0
+	for sc.Scan() {
+		line := sc.Text()
+		z.Pages[i].Pagedata = line
+		i++
+	}
+
+	if err := sc.Err(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// readPdf tries to extract a pdf from an archive if it exists.
+func (z *Zip) readPdf(zr *zip.Reader) error {
+	files, err := zipExtFinder(zr, ".pdf")
+	if err != nil {
+		return err
+	}
+
+	// return if no pdf
+	if len(files) != 1 {
+		return nil
+	}
+
+	file, err := files[0].Open()
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	z.Pdf, err = ioutil.ReadAll(file)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// readEpub tries to extract an epub from an archive if it exists.
+func (z *Zip) readEpub(zr *zip.Reader) error {
+	files, err := zipExtFinder(zr, ".epub")
+	if err != nil {
+		return err
+	}
+
+	// return if no epub
+	if len(files) != 1 {
+		return nil
+	}
+
+	file, err := files[0].Open()
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	z.Epub, err = ioutil.ReadAll(file)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// readData extracts existing .rm files from an archive.
+func (z *Zip) readData(zr *zip.Reader) error {
+	files, err := zipExtFinder(zr, ".rm")
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		name, _ := splitExt(file.FileInfo().Name())
+
+		idx, err := strconv.Atoi(name)
+		if err != nil {
+			return errors.New("error in .rm filename")
+		}
+
+		if len(z.Pages) < idx {
+			return errors.New("page not found")
+		}
+
+		r, err := file.Open()
+		if err != nil {
+			return err
+		}
+
+		bytes, err := ioutil.ReadAll(r)
+		if err != nil {
+			return err
+		}
+
+		z.Pages[idx].Data = rm.New()
+		z.Pages[idx].Data.UnmarshalBinary(bytes)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// readThumbnails extracts existing thumbnails from an archive.
+func (z *Zip) readThumbnails(zr *zip.Reader) error {
+	files, err := zipExtFinder(zr, ".jpg")
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		name, _ := splitExt(file.FileInfo().Name())
+
+		idx, err := strconv.Atoi(name)
+		if err != nil {
+			return errors.New("error in .jpg filename")
+		}
+
+		if len(z.Pages) < idx {
+			return errors.New("page not found")
+		}
+
+		r, err := file.Open()
+		if err != nil {
+			return err
+		}
+
+		z.Pages[idx].Thumbnail, err = ioutil.ReadAll(r)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// readMetadata extracts existing .json metadata files from an archive.
+func (z *Zip) readMetadata(zr *zip.Reader) error {
+	files, err := zipExtFinder(zr, ".json")
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		name, _ := splitExt(file.FileInfo().Name())
+
+		// name is 0-metadata.json
+		idx, err := strconv.Atoi(strings.Split(name, "-")[0])
+		if err != nil {
+			return errors.New("error in metadata .json filename")
+		}
+
+		if len(z.Pages) < idx {
+			return errors.New("page not found")
+		}
+
+		r, err := file.Open()
+		if err != nil {
+			return err
+		}
+
+		bytes, err := ioutil.ReadAll(r)
+		if err != nil {
+			return err
+		}
+
+		err = json.Unmarshal(bytes, &z.Pages[idx].Metadata)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// splitExt splits the extension from a filename
+func splitExt(name string) (string, string) {
 	ext := filepath.Ext(name)
 	return name[0 : len(name)-len(ext)], ext
 }
 
-func nbPages(pages map[int]Page) int {
-	if len(pages) == 0 {
-		return 0
+// zipExtFinder searches for a file matching the substr pattern
+// in a zip file.
+func zipExtFinder(zr *zip.Reader, ext string) ([]*zip.File, error) {
+	var files []*zip.File
+
+	for _, file := range zr.File {
+		if _, e := splitExt(file.FileInfo().Name()); e == ext {
+			files = append(files, file)
+		}
 	}
 
-	sorted := make([]int, 0, len(pages))
-	for k := range pages {
-		sorted = append(sorted, k)
+	return files, nil
+}
+
+// zipReaderFromIOReader transforms a io.Reader to a zip.Reader.
+func zipReaderFromIOReader(r io.Reader) (*zip.Reader, error) {
+	b, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, err
 	}
-	sort.Sort(sort.Reverse(sort.IntSlice(sorted)))
-	return sorted[0] + 1
+
+	// use a bytes.Reader as it implements io.ReadAt
+	br := bytes.NewReader(b)
+
+	zr, err := zip.NewReader(br, br.Size())
+	if err != nil {
+		return nil, err
+	}
+
+	return zr, nil
 }
