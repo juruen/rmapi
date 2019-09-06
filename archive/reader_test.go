@@ -1,11 +1,23 @@
 package archive
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
 
-func TestOpenReader(t *testing.T) {
-	r, err := OpenReader("test_reader.zip")
+func TestRead(t *testing.T) {
+	zip := NewZip()
+
+	// open test file
+	file, err := os.Open("test.zip")
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log(r)
+	defer file.Close()
+
+	// read file into note
+	err = zip.Read(file)
+	if err != nil {
+		t.Error(err)
+	}
 }
