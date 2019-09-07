@@ -1,6 +1,9 @@
 ## rmapi (master)
 
 * Migrate to go11 modules
+
+* Add api.v2
+
 ## rmapi 0.0.5 (August 11, 2019)
 
 * Fix issue to make document uploads work with reMarkable 1.7.x firmware upgrade
