@@ -1,6 +1,9 @@
 name: Release
 
-on: push
+on:
+  push:
+    tags:
+        - v*
 
 jobs:
 
