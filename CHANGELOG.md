@@ -1,4 +1,4 @@
-## rmapi (master)
+## rmapi 0.0.6 (September 08, 2019)
 
 * Migrate to go11 modules
 
