@@ -16,7 +16,7 @@ update_changelog(){
 
 update_macosx_tutorial(){
   local version=$1
-  sed -i "s/v.*\/rmapi-macosx-v.*.zip/v${version}\/rmapi-macosx-v${version}.zip -o rmapi.zip/" docs/tutorial-print-macosx.md
+  sed -i "s/v.*\/rmapi-macosx.zip/v${version}\/rmapi-macosx.zip -o rmapi.zip/" docs/tutorial-print-macosx.md
 }
 
 create_tag(){
