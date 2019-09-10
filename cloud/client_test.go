@@ -1,6 +1,6 @@
 // +build withauth
 
-package api
+package cloud
 
 import (
 	"io/ioutil"
