@@ -1,4 +1,4 @@
-package api
+package cloud
 
 import (
 	"net/http"
