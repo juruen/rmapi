@@ -3,7 +3,6 @@ package archive
 import (
 	"archive/zip"
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"errors"
 	"io"
@@ -16,8 +15,8 @@ import (
 )
 
 // Read fills a Zip parsing a Remarkable archive file.
-func (z *Zip) Read(r io.Reader) error {
-	zr, err := zipReaderFromIOReader(r)
+func (z *Zip) Read(r io.ReaderAt, size int64) error {
+	zr, err := zip.NewReader(r, size)
 	if err != nil {
 		return err
 	}
@@ -304,22 +303,4 @@ func zipExtFinder(zr *zip.Reader, ext string) ([]*zip.File, error) {
 	}
 
 	return files, nil
-}
-
-// zipReaderFromIOReader transforms a io.Reader to a zip.Reader.
-func zipReaderFromIOReader(r io.Reader) (*zip.Reader, error) {
-	b, err := ioutil.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-
-	// use a bytes.Reader as it implements io.ReadAt
-	br := bytes.NewReader(b)
-
-	zr, err := zip.NewReader(br, br.Size())
-	if err != nil {
-		return nil, err
-	}
-
-	return zr, nil
 }
