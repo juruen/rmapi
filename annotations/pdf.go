@@ -35,7 +35,12 @@ func (p PdfGenerator) Generate() error {
 
 	zip := archive.NewZip()
 
-	err = zip.Read(file)
+	fi, err := file.Stat()
+	if err != nil {
+		return err
+	}
+
+	err = zip.Read(file, fi.Size())
 	if err != nil {
 		return err
 	}
