@@ -1,6 +1,6 @@
 # rMAPI
 
-[![Actions Status](https://github.com/juruen/rmapi/workflows/Go/badge.svg)](https://github.com/{juruen}/{rmapi}/actions)
+[![Actions Status](https://github.com/juruen/rmapi/workflows/Go/badge.svg)](https://github.com/juruen/rmapi/actions)
 
 
 
