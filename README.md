@@ -1,6 +1,7 @@
 # rMAPI
 
-[![Build Status](https://dev.azure.com/fruruenv/fruruenv/_apis/build/status/juruen.rmapi?branchName=master)](https://dev.azure.com/fruruenv/fruruenv/_build/latest?definitionId=1?branchName=master)
+[![Actions Status](https://github.com/juruen/rmapi/workflows/Go/badge.svg)](https://github.com/{juruen}/{rmapi}/actions)
+
 
 
 rMAPI is a Go app that allows you to access the ReMarkable Cloud API programmatically.
