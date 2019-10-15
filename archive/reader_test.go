@@ -15,8 +15,13 @@ func TestRead(t *testing.T) {
 	}
 	defer file.Close()
 
+	fi, err := file.Stat()
+	if err != nil {
+		t.Error(err)
+	}
+
 	// read file into note
-	err = zip.Read(file)
+	err = zip.Read(file, fi.Size())
 	if err != nil {
 		t.Error(err)
 	}
