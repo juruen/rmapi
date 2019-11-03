@@ -1,9 +1,9 @@
-name: "Update deps.nix"
+name: nix
 on:
   pull_request:
   push:
 jobs:
-  tests:
+  update-deps:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code into the Go module directory
@@ -19,3 +19,17 @@ jobs:
       uses: peter-evans/create-pull-request@v1.6.0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        COMMIT_MESSAGE: "Update deps.nix"
+        PULL_REQUEST_TITLE: "Update deps.nix"
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v1
+
+    - name: Set up nix
+      uses: cachix/install-nix-action@v3
+
+    - name: Build
+      run: nix-build
