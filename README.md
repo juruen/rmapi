@@ -157,3 +157,12 @@ rMAPI will set the exit code to `0` if the command succeedes, or `1` if it fails
 - `RMAPI_CONFIG`: filepath used to store authentication tokens. When not set, rmapi uses the file `.rmapi` in the home directory of the current user.
 - `RMAPI_TRACE=1`: enable trace logging.
 - `RMAPI_USE_HIDDEN_FILES=1`: use and traverse hidden files/directories (they are ignored by default).
+
+# Update `deps.nix`
+
+Using `nix`:
+1. [Install NixOs](https://nixos.org/nix/manual/#chap-quick-start)
+2. In the top level folder run [`vgo2nix`](https://github.com/adisbladis/vgo2nix)
+```shell
+$ nix-shell -p vgo2nix --command vgo2nix
+```

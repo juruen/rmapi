@@ -1,0 +1,21 @@
+name: "Update deps.nix"
+on:
+  pull_request:
+  push:
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v1
+
+    - name: Set up nix
+      uses: cachix/install-nix-action@v3
+
+    - name: Update deps.nix
+      run: nix-shell -p vgo2nix --command vgo2nix
+
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v1.6.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
