@@ -21,6 +21,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         COMMIT_MESSAGE: "Update deps.nix"
         PULL_REQUEST_TITLE: "Update deps.nix"
+        PULL_REQUEST_BODY: "Auto-generated pull request: Keep `deps.nix` up to date with `go.mod`"
 
   build:
     runs-on: ubuntu-latest
