@@ -23,6 +23,9 @@ jobs:
         PULL_REQUEST_TITLE: "Update deps.nix"
         PULL_REQUEST_BODY: "Auto-generated pull request: Keep `deps.nix` up to date with `go.mod`"
 
+    - name: Fail on outdated deps.nix
+      run: git diff --exit-code
+
   build:
     runs-on: ubuntu-latest
     steps:
