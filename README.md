@@ -158,11 +158,7 @@ rMAPI will set the exit code to `0` if the command succeedes, or `1` if it fails
 - `RMAPI_TRACE=1`: enable trace logging.
 - `RMAPI_USE_HIDDEN_FILES=1`: use and traverse hidden files/directories (they are ignored by default).
 
-# Update `deps.nix`
+# Development environment
 
-Using `nix`:
-1. [Install NixOs](https://nixos.org/nix/manual/#chap-quick-start)
-2. In the top level folder run [`vgo2nix`](https://github.com/adisbladis/vgo2nix)
-```shell
-$ nix-shell -p vgo2nix --command vgo2nix
-```
+1. [Install nix](https://nixos.org/nix/manual/#chap-quick-start)
+2. In the top level folder run `nix-shell`
