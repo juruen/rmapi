@@ -14,8 +14,8 @@
     fetch = {
       type = "git";
       url = "https://github.com/chzyer/logex";
-      rev = "v1.1.10";
-      sha256 = "08pbjj3wx9acavlwyr055isa8a5hnmllgdv5k6ra60l5y1brmlq4";
+      rev = "v1.1.9";
+      sha256 = "0kk4ahl37qc9dkgqvndibcjwsl0s22pcpjyds23qn7ss4zb8g1c2";
     };
   }
   {
