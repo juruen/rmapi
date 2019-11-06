@@ -159,6 +159,6 @@ rMAPI will set the exit code to `0` if the command succeedes, or `1` if it fails
 - `RMAPI_USE_HIDDEN_FILES=1`: use and traverse hidden files/directories (they are ignored by default).
 
 # Development environment
-
+## Using Nix
 1. [Install nix](https://nixos.org/nix/manual/#chap-quick-start)
 2. In the top level folder run `nix-shell`
