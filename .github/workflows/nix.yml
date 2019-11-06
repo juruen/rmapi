@@ -1,7 +1,6 @@
 name: nix
-on:
-  pull_request:
-  push:
+on: [pull_request, push]
+
 jobs:
   update-deps:
     runs-on: ubuntu-latest
@@ -16,6 +15,7 @@ jobs:
       run: nix-shell -p vgo2nix --command vgo2nix
 
     - name: Create Pull Request
+      if: github.event_name == 'push'
       uses: peter-evans/create-pull-request@v1.6.0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
