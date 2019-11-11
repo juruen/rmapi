@@ -1,4 +1,4 @@
-// Package api is the second version of the client implemented
+// Package cloud is the second version of the client implemented
 // for interacting with the Remarkable Cloud API. It has been initiated because
 // the first version was not decoupled enough and could not be easily used
 // by external packages. The first version of the package is still available for
@@ -18,4 +18,4 @@
 //
 // We tend to follow the good practices from this article to write a modular http client:
 // https://medium.com/@marcus.olsson/writing-a-go-client-for-your-restful-api-c193a2f4998c.
-package api
+package cloud
