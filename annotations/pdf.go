@@ -1,6 +1,7 @@
 package annotations
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/jung-kurt/gofpdf"
@@ -47,12 +48,14 @@ func (p PdfGenerator) Generate() error {
 
 	pdf := gofpdf.New("P", "mm", "A4", "")
 
-	for _, page := range zip.Pages {
+	pdf.SetFont("Arial", "", 10)
+	for i, page := range zip.Pages {
 		if page.Data == nil {
 			continue
 		}
 
 		pdf.AddPage()
+		pdf.Cell(0, 0, fmt.Sprintf("%d", i+1))
 
 		for _, layer := range page.Data.Layers {
 			for _, line := range layer.Lines {

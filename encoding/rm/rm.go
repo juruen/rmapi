@@ -40,7 +40,7 @@ import (
 
 // Header starting a .rm binary file. This can help recognizing a .rm file.
 const (
-	Header    = "reMarkable .lines file, version=3          "
+	Header    = "reMarkable .lines file, version=5          "
 	HeaderLen = 43
 )
 
@@ -105,6 +105,7 @@ type Line struct {
 	BrushType  BrushType
 	BrushColor BrushColor
 	Padding    uint32
+	Unknown    BrushSize
 	BrushSize  BrushSize
 	Points     []Point
 }
