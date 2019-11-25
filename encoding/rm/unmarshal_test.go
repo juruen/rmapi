@@ -7,7 +7,7 @@ import (
 )
 
 func TestUnmarshalBinary(t *testing.T) {
-	b, err := ioutil.ReadFile("test.rm")
+	b, err := ioutil.ReadFile("test_v5.rm")
 	if err != nil {
 		t.Error("can't open test.rm file")
 	}
