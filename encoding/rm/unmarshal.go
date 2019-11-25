@@ -85,6 +85,10 @@ func (r *rmReader) readLine() (Line, error) {
 		return line, fmt.Errorf("Failed to read line")
 	}
 
+	if err := binary.Read(r, binary.LittleEndian, &line.Unknown); err != nil {
+		return line, fmt.Errorf("Failed to read line")
+	}
+
 	if err := binary.Read(r, binary.LittleEndian, &line.BrushSize); err != nil {
 		return line, fmt.Errorf("Failed to read line")
 	}
