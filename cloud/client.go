@@ -1,4 +1,4 @@
-package api
+package cloud
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 const defaultUserAgent = "rmapi"
 const defaultBaseURL = "https://document-storage-production-dot-remarkable-production.appspot.com"
 
-// A Client manages communication with the Remarkable API.
+// A Client manages communication with the Remarkable Cloud API.
 type Client struct {
 	// By making the base URL configurable we can make it
 	// testable by passing the URL of a httptest.Server.
@@ -22,7 +22,7 @@ type Client struct {
 
 	UserAgent string
 
-	// The api package does not directly handle authentication.
+	// The cloud package does not directly handle authentication.
 	// Instead, when creating a new client, pass an http.Client that
 	// can handle authentication for you.
 	// The easiest and recommended way to do this is using the auth package.
