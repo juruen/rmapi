@@ -3,7 +3,7 @@ with pkgs;
 
 let
 in pkgs.callPackage ./derivation.nix {
-  buildGoPackage = super: buildGoPackage (super // {
+  buildGoModule = super: buildGoModule (super // {
 
     name = super.name + "-env";
 

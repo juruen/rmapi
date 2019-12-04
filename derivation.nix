@@ -1,12 +1,13 @@
-{stdenv, buildGoPackage}:
+{stdenv, buildGoModule}:
 
 let
-in buildGoPackage rec {
+in buildGoModule rec {
   name = "rMAPI";
 
   goPackagePath = "github.com/juruen/rmapi";
 
   src = ./.;
+  modSha256 = "1952wjp3d66k0dgkag0hh0zzzrv881q53n5vjj9m72008ni5pchr";
 
   goDeps = ./deps.nix;
 
