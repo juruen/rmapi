@@ -52,7 +52,7 @@ func AuthHttpCtx() *transport.HttpClientCtx {
 
 func readCode() string {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Enter one-time code (go to https://my.remarkable.com): ")
+	fmt.Print("Enter one-time code (go to https://my.remarkable.com/connect/desktop): ")
 	code, _ := reader.ReadString('\n')
 
 	code = strings.TrimSuffix(code, "\n")
