@@ -21,10 +21,15 @@ const (
 type PdfGenerator struct {
 	zipName        string
 	outputFilePath string
+	options        PdfGeneratorOptions
 }
 
-func CreatePdfGenerator(zipName, outputFilePath string) PdfGenerator {
-	return PdfGenerator{zipName: zipName, outputFilePath: outputFilePath}
+type PdfGeneratorOptions struct {
+	AddPageNumbers bool
+}
+
+func CreatePdfGenerator(zipName, outputFilePath string, options PdfGeneratorOptions) PdfGenerator {
+	return PdfGenerator{zipName: zipName, outputFilePath: outputFilePath, options: options}
 }
 
 func (p PdfGenerator) Generate() error {
@@ -55,7 +60,9 @@ func (p PdfGenerator) Generate() error {
 		}
 
 		pdf.AddPage()
-		pdf.Cell(0, 0, fmt.Sprintf("%d", i+1))
+		if p.options.AddPageNumbers {
+			pdf.Cell(0, 0, fmt.Sprintf("%d", i+1))
+		}
 
 		for _, layer := range page.Data.Layers {
 			for _, line := range layer.Lines {

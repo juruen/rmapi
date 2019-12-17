@@ -2,11 +2,10 @@ package shell
 
 import (
 	"errors"
+	"flag"
 	"fmt"
-
-	"github.com/juruen/rmapi/annotations"
-
 	"github.com/abiosoft/ishell"
+	"github.com/juruen/rmapi/annotations"
 )
 
 func getACmd(ctx *ShellCtxt) *ishell.Cmd {
@@ -15,12 +14,20 @@ func getACmd(ctx *ShellCtxt) *ishell.Cmd {
 		Help:      "copy remote file to local and generate a PDF with its annotations",
 		Completer: createEntryCompleter(ctx),
 		Func: func(c *ishell.Context) {
-			if len(c.Args) == 0 {
+
+			flagSet := flag.NewFlagSet("geta", flag.ContinueOnError)
+			addPageNumbers := flagSet.Bool("p", false, "add page numbers")
+			if err := flagSet.Parse(c.Args); err != nil {
+				c.Err(err)
+				return
+			}
+			argRest := flagSet.Args()
+			if len(argRest) == 0 {
 				c.Err(errors.New("missing source file"))
 				return
 			}
 
-			srcName := c.Args[0]
+			srcName := argRest[0]
 
 			node, err := ctx.api.Filetree.NodeByPath(srcName, ctx.node)
 
@@ -29,7 +36,7 @@ func getACmd(ctx *ShellCtxt) *ishell.Cmd {
 				return
 			}
 
-			c.Println(fmt.Sprintf("downlading: [%s]...", srcName))
+			c.Println(fmt.Sprintf("downloading: [%s]...", srcName))
 
 			zipName := fmt.Sprintf("%s.zip", node.Name())
 			err = ctx.api.FetchDocument(node.Document.ID, zipName)
@@ -40,8 +47,8 @@ func getACmd(ctx *ShellCtxt) *ishell.Cmd {
 			}
 
 			pdfName := fmt.Sprintf("%s-annotations.pdf", node.Name())
-
-			generator := annotations.CreatePdfGenerator(zipName, pdfName)
+			options := annotations.PdfGeneratorOptions{AddPageNumbers: *addPageNumbers}
+			generator := annotations.CreatePdfGenerator(zipName, pdfName, options)
 			err = generator.Generate()
 
 			if err != nil {
