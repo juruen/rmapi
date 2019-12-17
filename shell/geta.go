@@ -18,7 +18,9 @@ func getACmd(ctx *ShellCtxt) *ishell.Cmd {
 			flagSet := flag.NewFlagSet("geta", flag.ContinueOnError)
 			addPageNumbers := flagSet.Bool("p", false, "add page numbers")
 			if err := flagSet.Parse(c.Args); err != nil {
-				c.Err(err)
+				if err != flag.ErrHelp {
+					c.Err(err)
+				}
 				return
 			}
 			argRest := flagSet.Args()
