@@ -6,10 +6,12 @@ import (
 	"fmt"
 )
 
-const HeaderV3    = "reMarkable .lines file, version=3          "
+const HeaderV3 = "reMarkable .lines file, version=3          "
+
 type rmReaderV3 struct {
 	bytes.Reader
 }
+
 func (r *rmReaderV3) readNumber() (uint32, error) {
 	var nb uint32
 	if err := binary.Read(r, binary.LittleEndian, &nb); err != nil {
