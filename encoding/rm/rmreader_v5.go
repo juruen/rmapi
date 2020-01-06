@@ -1,4 +1,3 @@
-
 package rm
 
 import (
@@ -6,10 +5,13 @@ import (
 	"encoding/binary"
 	"fmt"
 )
-const HeaderV5    = "reMarkable .lines file, version=5          "
+
+const HeaderV5 = "reMarkable .lines file, version=5          "
+
 type rmReaderV5 struct {
 	bytes.Reader
 }
+
 const (
 	BallPointV2   BrushType = 15
 	MarkerV2      BrushType = 16
@@ -21,26 +23,27 @@ const (
 )
 
 func remapBrushType(brushType BrushType) BrushType {
-    switch (brushType) {
-        case BallPointV2:
-            return BallPoint
-        case MarkerV2:
-            return Marker
-        case FinelinerV2:
-            return Fineliner
-        case SharpPencilV2:
-            return SharpPencil
-        case TiltPencilV2:
-            return TiltPencil
-        case BrushV2:
-            return Brush
-        case HighlighterV2:
-            return Highlighter
-        default:
-            return brushType
+	switch brushType {
+	case BallPointV2:
+		return BallPoint
+	case MarkerV2:
+		return Marker
+	case FinelinerV2:
+		return Fineliner
+	case SharpPencilV2:
+		return SharpPencil
+	case TiltPencilV2:
+		return TiltPencil
+	case BrushV2:
+		return Brush
+	case HighlighterV2:
+		return Highlighter
+	default:
+		return brushType
 
-    }
+	}
 }
+
 func (r *rmReaderV5) readNumber() (uint32, error) {
 
 	var nb uint32
@@ -53,11 +56,11 @@ func (r *rmReaderV5) readNumber() (uint32, error) {
 func (r *rmReaderV5) readLine() (Line, error) {
 	var line Line
 
-    var brushType BrushType
+	var brushType BrushType
 	if err := binary.Read(r, binary.LittleEndian, &brushType); err != nil {
 		return line, fmt.Errorf("Failed to read line")
 	}
-    line.BrushType = remapBrushType(brushType)
+	line.BrushType = remapBrushType(brushType)
 
 	if err := binary.Read(r, binary.LittleEndian, &line.BrushColor); err != nil {
 		return line, fmt.Errorf("Failed to read line")
