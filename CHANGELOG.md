@@ -1,4 +1,4 @@
-## rmapi master
+## rmapi 0.0.8 (January 06, 2020)
 
 * Add support for v5 annotations
 
