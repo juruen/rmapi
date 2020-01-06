@@ -2,15 +2,14 @@ package rm
 
 import (
 	"bytes"
-	"encoding/binary"
 	"fmt"
 )
 
 // UnmarshalBinary implements encoding.UnmarshalBinary for
 // transforming bytes into a Rm page
 func (rm *Rm) UnmarshalBinary(data []byte) error {
-	lr := newRmReader(data)
-	if err := lr.checkHeader(); err != nil {
+	lr, err := newRmReader(data)
+	if  err != nil {
 		return err
 	}
 
@@ -39,100 +38,32 @@ func (rm *Rm) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
-type rmReader struct {
-	bytes.Reader
+type rmReader interface {
+    readNumber() (uint32, error) 
+    readLine() (Line, error) 
+    readPoint() (Point, error) 
 }
 
-func newRmReader(data []byte) rmReader {
+func newRmReader(data []byte) (rmReader, error) {
 	br := bytes.NewReader(data)
-	return rmReader{*br}
-}
-
-func (r *rmReader) checkHeader() error {
 	buf := make([]byte, HeaderLen)
 
-	n, err := r.Read(buf)
+	n, err := br.Read(buf)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if n != HeaderLen || string(buf) != Header {
-		return fmt.Errorf("Wrong header")
+	if n != HeaderLen {
+		return nil, fmt.Errorf("Wrong header")
 	}
-	return nil
+    switch string(buf) {
+        case HeaderV5:
+            return &rmReaderV5{*br},nil
+        case HeaderV3:
+            return &rmReaderV3{*br},nil
+        default:
+            return nil, fmt.Errorf("Unknown header")
+    }
 }
 
-func (r *rmReader) readNumber() (uint32, error) {
-	var nb uint32
-	if err := binary.Read(r, binary.LittleEndian, &nb); err != nil {
-		return 0, fmt.Errorf("Wrong number read")
-	}
-	return nb, nil
-}
 
-func (r *rmReader) readLine() (Line, error) {
-	var line Line
-
-	if err := binary.Read(r, binary.LittleEndian, &line.BrushType); err != nil {
-		return line, fmt.Errorf("Failed to read line")
-	}
-
-	if err := binary.Read(r, binary.LittleEndian, &line.BrushColor); err != nil {
-		return line, fmt.Errorf("Failed to read line")
-	}
-
-	if err := binary.Read(r, binary.LittleEndian, &line.Padding); err != nil {
-		return line, fmt.Errorf("Failed to read line")
-	}
-
-	if err := binary.Read(r, binary.LittleEndian, &line.BrushSize); err != nil {
-		return line, fmt.Errorf("Failed to read line")
-	}
-
-	nbPoints, err := r.readNumber()
-	if err != nil {
-		return line, err
-	}
-
-	if nbPoints == 0 {
-		return line, nil
-	}
-
-	line.Points = make([]Point, nbPoints)
-
-	for i := uint32(0); i < nbPoints; i++ {
-		p, err := r.readPoint()
-		if err != nil {
-			return line, err
-		}
-
-		line.Points[i] = p
-	}
-
-	return line, nil
-}
-
-func (r *rmReader) readPoint() (Point, error) {
-	var point Point
-
-	if err := binary.Read(r, binary.LittleEndian, &point.X); err != nil {
-		return point, fmt.Errorf("Failed to read point")
-	}
-	if err := binary.Read(r, binary.LittleEndian, &point.Y); err != nil {
-		return point, fmt.Errorf("Failed to read point")
-	}
-	if err := binary.Read(r, binary.LittleEndian, &point.Speed); err != nil {
-		return point, fmt.Errorf("Failed to read point")
-	}
-	if err := binary.Read(r, binary.LittleEndian, &point.Direction); err != nil {
-		return point, fmt.Errorf("Failed to read point")
-	}
-	if err := binary.Read(r, binary.LittleEndian, &point.Width); err != nil {
-		return point, fmt.Errorf("Failed to read point")
-	}
-	if err := binary.Read(r, binary.LittleEndian, &point.Pressure); err != nil {
-		return point, fmt.Errorf("Failed to read point")
-	}
-
-	return point, nil
-}
