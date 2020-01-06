@@ -1,3 +1,11 @@
+## rmapi master
+
+* Add support for v5 annotations
+
+## rmapi 0.0.7 (November 11, 2019)
+
+* Rename api.v2 to cloud
+
 ## rmapi 0.0.6 (September 08, 2019)
 
 * Migrate to go11 modules
