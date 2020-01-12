@@ -11,7 +11,6 @@ require (
 	github.com/fatih/color v0.0.0-20170926111411-5df930a27be2 // indirect
 	github.com/flynn-archive/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
 	github.com/google/uuid v1.1.1
-	github.com/jung-kurt/gofpdf v0.0.0-20181227150023-8baf016b4b80
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mattn/go-isatty v0.0.9 // indirect
