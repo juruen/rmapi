@@ -38,8 +38,18 @@ import (
 	"strings"
 )
 
+// Version defines the version number of a remarkable note.
+type Version int
+
+const (
+	V3 Version = iota
+	V5
+)
+
 // Header starting a .rm binary file. This can help recognizing a .rm file.
 const (
+	HeaderV3  = "reMarkable .lines file, version=3          "
+	HeaderV5  = "reMarkable .lines file, version=5          "
 	HeaderLen = 43
 )
 
@@ -76,6 +86,15 @@ const (
 	Highlighter BrushType = 5
 	Eraser      BrushType = 6
 	EraseArea   BrushType = 8
+
+	// v5 brings new brush type IDs
+	BallPointV5   BrushType = 15
+	MarkerV5      BrushType = 16
+	FinelinerV5   BrushType = 17
+	SharpPencilV5 BrushType = 13
+	TiltPencilV5  BrushType = 14
+	BrushV5       BrushType = 12
+	HighlighterV5 BrushType = 18
 )
 
 // BrushSize represents the base brush sizes.
@@ -91,7 +110,8 @@ const (
 // A Rm represents an entire .rm file
 // and is composed of layers.
 type Rm struct {
-	Layers []Layer
+	Version Version
+	Layers  []Layer
 }
 
 // A Layer contains lines.
