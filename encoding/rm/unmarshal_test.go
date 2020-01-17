@@ -6,16 +6,20 @@ import (
 	"testing"
 )
 
-func TestUnmarshalBinaryV5(t *testing.T) {
-	b, err := ioutil.ReadFile("test_v5.rm")
+func testUnmarshalBinary(t *testing.T, fn string, ver Version) {
+	b, err := ioutil.ReadFile(fn)
 	if err != nil {
-		t.Error("can't open test_v5.rm file")
+		t.Errorf("can't open %s file", fn)
 	}
 
 	rm := New()
 	err = rm.UnmarshalBinary(b)
 	if err != nil {
 		t.Error(err)
+	}
+
+	if rm.Version != ver {
+		t.Error("wrong version parsed")
 	}
 
 	t.Log(rm)
@@ -23,19 +27,10 @@ func TestUnmarshalBinaryV5(t *testing.T) {
 	fmt.Println("unmarshaling complete")
 }
 
+func TestUnmarshalBinaryV5(t *testing.T) {
+	testUnmarshalBinary(t, "test_v5.rm", V5)
+}
+
 func TestUnmarshalBinaryV3(t *testing.T) {
-	b, err := ioutil.ReadFile("test_v3.rm")
-	if err != nil {
-		t.Error("can't open test_v3.rm file")
-	}
-
-	rm := New()
-	err = rm.UnmarshalBinary(b)
-	if err != nil {
-		t.Error(err)
-	}
-
-	t.Log(rm)
-
-	fmt.Println("unmarshaling complete")
+	testUnmarshalBinary(t, "test_v3.rm", V3)
 }
