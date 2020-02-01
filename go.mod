@@ -22,4 +22,4 @@ require (
 	gopkg.in/yaml.v2 v2.0.0
 )
 
-replace ithub.com/unidoc/unipdf/v3 v3.3.1 => github.com/juruen/unipdf/v3 v3.3.1
+replace github.com/unidoc/unipdf/v3 => github.com/juruen/unipdf/v3 v3.3.1
