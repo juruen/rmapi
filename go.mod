@@ -1,6 +1,6 @@
 module github.com/juruen/rmapi
 
-go 1.12
+go 1.13
 
 require (
 	github.com/abiosoft/ishell v0.0.0-20180125194311-42a9bbfa0017
@@ -21,3 +21,5 @@ require (
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/yaml.v2 v2.0.0
 )
+
+replace ithub.com/unidoc/unipdf/v3 v3.3.1 => github.com/juruen/unipdf/v3 v3.3.1
