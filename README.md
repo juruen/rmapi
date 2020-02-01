@@ -63,7 +63,7 @@ docker run -v $HOME/.rmapi/:/home/user/.rmapi/ rmapi help
 
 # Annotations
 
-- Initial support to generate a PDF with annotations from `Quick Sheet` and notebooks.
+- Initial support to generate a PDF with annotations.
 
 # Shell ergonomics
 
