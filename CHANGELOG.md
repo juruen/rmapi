@@ -1,4 +1,4 @@
-## rmapi master
+## rmapi 0.0.9 (February 01, 2020)
 
 * Change license to AGPL
 
