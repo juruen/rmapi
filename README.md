@@ -136,7 +136,7 @@ mget .
 
 ## Download a file and generate a PDF with its annoations
 
-Use `geta` to download either a `Quick Sheets` or `notebook` file and generate a PDF document
+Use `geta` to download a file and generate a PDF document
 with its annotations.
 
 Please note that its support is very basic for now and only supports one type of pen for now, but
