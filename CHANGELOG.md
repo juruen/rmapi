@@ -1,3 +1,7 @@
+## rmapi master
+
+* Change license to AGPL
+
 ## rmapi 0.0.8 (January 06, 2020)
 
 * Add support for v5 annotations
