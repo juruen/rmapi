@@ -1,5 +1,9 @@
 ## rmapi 0.0.9 (February 01, 2020)
 
+* Use Go 1.13 in GitHub actions
+
+## rmapi 0.0.9 (February 01, 2020)
+
 * Change license to AGPL
 
 * Initial support for PDF annotations with UniPDF
