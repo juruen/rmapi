@@ -36,6 +36,10 @@ func CreatePdfGenerator(zipName, outputFilePath string, options PdfGeneratorOpti
 	return &PdfGenerator{zipName: zipName, outputFilePath: outputFilePath, options: options}
 }
 
+func normalized(p1, p2 rm.Point, ratioX, ratioY float64) (float64, float64, float64, float64) {
+	return float64(p1.X) * ratioX, float64(p1.Y) * ratioY, float64(p2.X) * ratioX, float64(p2.Y) * ratioY
+}
+
 func (p *PdfGenerator) Generate() error {
 	file, err := os.Open(p.zipName)
 	if err != nil {
@@ -60,25 +64,10 @@ func (p *PdfGenerator) Generate() error {
 	}
 
 	c := creator.New()
-	//psize := creator.PageSize{DeviceWidth * PPI, DeviceHeight * PPI}
-	//c.SetPageSize(psize)
-	fmt.Printf("canvas width height %f %f %f \n", c.Width(), c.Height(), c.Width()/c.Height())
-	psize := creator.PageSizeA4
-	c.SetPageSize(psize)
+	c.SetPageSize(creator.PageSizeA4)
 
-	fmt.Printf("canvas width height %f %f %f \n", c.Width(), c.Height(), c.Width()/c.Height())
-	fmt.Printf("canvas %f \n", creator.PageSizeA4[0]/creator.PageSizeLegal[0])
-	fmt.Printf("canvas %f \n", creator.PageSizeA4[1]/creator.PageSizeLegal[1])
-	fmt.Printf("page A4 %v \n", creator.PageSizeA4)
-	fmt.Printf("page Legal %v \n", creator.PageSizeLegal)
-	ratioX := float64(c.Width() / DeviceWidth)
-	ratioY := float64(c.Height() / DeviceHeight)
-
-	line := c.NewLine(0.0, 0.0, c.Width(), c.Height())
-	line.SetLineWidth(0.6)
-	black := creator.ColorRGBFromHex("#000000")
-	line.SetColor(black)
-	c.Draw(line)
+	ratioX := c.Width() / DeviceWidth
+	ratioY := c.Height() / DeviceHeight
 
 	for i, pageAnnotations := range zip.Pages {
 		hasContent := pageAnnotations.Data != nil
@@ -96,56 +85,37 @@ func (p *PdfGenerator) Generate() error {
 			log.Error.Fatal("page is null")
 		}
 
+		if err != nil {
+			return err
+		}
 		if !hasContent {
 			continue
 		}
 
-		var maxx float32
-		var maxy float32
 		for _, layer := range pageAnnotations.Data.Layers {
 			for _, line := range layer.Lines {
 				if len(line.Points) < 1 {
 					continue
 				}
-				var isHighlighter bool
 
 				if line.BrushType == rm.HighlighterV5 {
-					isHighlighter = true
-				}
-
-				for i := 1; i < len(line.Points); i++ {
-					s := line.Points[i-1]
-					x1 := float64(s.X) * ratioX
-					y1 := float64(s.Y) * ratioY
-
-					if s.X > maxx {
-						maxx = s.X
+					last := len(line.Points) - 1
+					x1, y1, x2, y2 := normalized(line.Points[0], line.Points[last], ratioX, ratioY)
+					// make horizontal lines only
+					y2 = y1
+					//todo: y cooridnates are reversed
+					lineDef := annotator.LineAnnotationDef{X1: x1 - 1, Y1: c.Height() - y1, X2: x2, Y2: c.Height() - y2}
+					lineDef.LineColor = pdf.NewPdfColorDeviceRGB(1.0, 1.0, 0.0) //yellow
+					lineDef.Opacity = 0.5
+					lineDef.LineWidth = 5.0
+					ann, err := annotator.CreateLineAnnotation(lineDef)
+					if err != nil {
+						return err
 					}
-					if s.Y > maxy {
-						maxy = s.Y
-					}
-					s = line.Points[i]
-					x2 := float64(s.X) * ratioX
-					y2 := float64(s.Y) * ratioY
-
-					if s.X > maxx {
-						maxx = s.X
-					}
-					if s.Y > maxy {
-						maxy = s.Y
-					}
-
-					if isHighlighter {
-						lineDef := annotator.LineAnnotationDef{X1: x1, Y1: y1, X2: x2, Y2: y2}
-						lineDef.LineColor = pdf.NewPdfColorDeviceRGB(1.0, 0.0, 0.0)
-						lineDef.Opacity = 0.50
-						lineDef.LineWidth = 6.0
-						ann, err := annotator.CreateLineAnnotation(lineDef)
-						if err != nil {
-							return err
-						}
-						page.AddAnnotation(ann)
-					} else {
+					page.AddAnnotation(ann)
+				} else {
+					for i := 1; i < len(line.Points); i++ {
+						x1, y1, x2, y2 := normalized(line.Points[i-1], line.Points[i], ratioX, ratioY)
 						line := c.NewLine(x1, y1, x2, y2)
 						line.SetLineWidth(0.6)
 						black := creator.ColorRGBFromHex("#000000")
@@ -155,7 +125,6 @@ func (p *PdfGenerator) Generate() error {
 				}
 			}
 		}
-		fmt.Printf("maxX: %f maxY: %f\n", maxx, maxy)
 	}
 
 	return c.WriteToFile(p.outputFilePath)
@@ -187,16 +156,16 @@ func (p *PdfGenerator) addBackgroundPage(c *creator.Creator, pageNum int) (*pdf.
 			return nil, err
 		}
 
-		bbox, err := page.GetMediaBox()
-		if err != nil {
-			log.Error.Println(err)
-		}
+		mbox := pdf.PdfRectangle{}
+		//cbox := pdf.PdfRectangle{}
 
-		bbox.Urx = c.Width()
-		bbox.Ury = c.Height()
-		bbox.Llx = 0
-		bbox.Lly = 0
-		//page.MediaBox = &bbox
+		mbox.Urx = c.Width()
+		mbox.Ury = c.Height()
+		mbox.Llx = 0
+		mbox.Lly = 0
+		//page.MediaBox = &mbox
+		//page.CropBox = &cbox
+		page.TrimBox = &mbox
 
 		if err != nil {
 			return nil, err
