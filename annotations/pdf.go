@@ -2,11 +2,12 @@ package annotations
 
 import (
 	"bytes"
-	"os"
-
+	"fmt"
 	"github.com/juruen/rmapi/archive"
 	"github.com/unidoc/unipdf/v3/creator"
 	pdf "github.com/unidoc/unipdf/v3/model"
+	"log"
+	"os"
 )
 
 const (
@@ -23,7 +24,9 @@ type PdfGenerator struct {
 }
 
 type PdfGeneratorOptions struct {
-	AddPageNumbers bool
+	AddPageNumbers  bool
+	AllPages        bool
+	AnnotationsOnly bool
 }
 
 func CreatePdfGenerator(zipName, outputFilePath string, options PdfGeneratorOptions) *PdfGenerator {
@@ -54,9 +57,23 @@ func (p *PdfGenerator) Generate() error {
 	}
 
 	c := creator.New()
+	c.SetPageSize(creator.PageSizeA4)
+	c.SetPageMargins(0.0, 0.0, 0.0, 0.0)
+
 	for i, pageAnnotations := range zip.Pages {
+		hasContent := pageAnnotations.Data != nil
+
+		// do not add a page when there are no annotaions
+		if !p.options.AllPages && !hasContent {
+			continue
+		}
+
 		if err := p.addBackgroundPage(c, i+1); err != nil {
 			return err
+		}
+
+		if !hasContent {
+			continue
 		}
 
 		for _, layer := range pageAnnotations.Data.Layers {
@@ -104,8 +121,24 @@ func (p *PdfGenerator) initBackgroundPages(pdfArr []byte) error {
 }
 
 func (p *PdfGenerator) addBackgroundPage(c *creator.Creator, pageNum int) error {
-	if p.template == false {
+	//bbox := pdf.PdfRectangle{Llx: 0, Lly: 0, Urx: c.Width(), Ury: c.Height()}
+	if p.template == false && !p.options.AnnotationsOnly {
 		page, err := p.pdfReader.GetPage(pageNum)
+		if err != nil {
+			return err
+		}
+
+		bbox, err := page.GetMediaBox()
+		if err != nil {
+			log.Println(err)
+		}
+
+		bbox.Urx = c.Width()
+		bbox.Ury = c.Height()
+		bbox.Llx = 0
+		bbox.Lly = 0
+		//page.MediaBox = &bbox
+
 		if err != nil {
 			return err
 		}
@@ -117,6 +150,16 @@ func (p *PdfGenerator) addBackgroundPage(c *creator.Creator, pageNum int) error 
 	}
 
 	c.NewPage()
-	c.SetPageSize(creator.PageSizeA4)
+
+	if p.options.AddPageNumbers {
+		c.DrawFooter(func(block *creator.Block, args creator.FooterFunctionArgs) {
+			p := c.NewParagraph(fmt.Sprintf("%d", args.PageNum))
+			p.SetFontSize(8)
+			w := block.Width() - 20
+			h := block.Height() - 10
+			p.SetPos(w, h)
+			block.Draw(p)
+		})
+	}
 	return nil
 }
