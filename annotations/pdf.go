@@ -67,7 +67,7 @@ func (p *PdfGenerator) Generate() error {
 	c.SetPageSize(creator.PageSizeA4)
 
 	ratioX := c.Width() / DeviceWidth
-	ratioY := c.Height() / DeviceHeight
+	//ratioY := c.Height() / DeviceHeight
 
 	for i, pageAnnotations := range zip.Pages {
 		hasContent := pageAnnotations.Data != nil
@@ -100,7 +100,7 @@ func (p *PdfGenerator) Generate() error {
 
 				if line.BrushType == rm.HighlighterV5 {
 					last := len(line.Points) - 1
-					x1, y1, x2, y2 := normalized(line.Points[0], line.Points[last], ratioX, ratioY)
+					x1, y1, x2, y2 := normalized(line.Points[0], line.Points[last], ratioX, ratioX)
 					// make horizontal lines only
 					y2 = y1
 					//todo: y cooridnates are reversed
@@ -115,7 +115,7 @@ func (p *PdfGenerator) Generate() error {
 					page.AddAnnotation(ann)
 				} else {
 					for i := 1; i < len(line.Points); i++ {
-						x1, y1, x2, y2 := normalized(line.Points[i-1], line.Points[i], ratioX, ratioY)
+						x1, y1, x2, y2 := normalized(line.Points[i-1], line.Points[i], ratioX, ratioX)
 						line := c.NewLine(x1, y1, x2, y2)
 						line.SetLineWidth(0.6)
 						black := creator.ColorRGBFromHex("#000000")
@@ -147,36 +147,25 @@ func (p *PdfGenerator) initBackgroundPages(pdfArr []byte) error {
 }
 
 func (p *PdfGenerator) addBackgroundPage(c *creator.Creator, pageNum int) (*pdf.PdfPage, error) {
-	//bbox := pdf.PdfRectangle{Llx: 0, Lly: 0, Urx: c.Width(), Ury: c.Height()}
-	var page *pdf.PdfPage
+	page := c.NewPage()
+
 	if p.template == false && !p.options.AnnotationsOnly {
-		var err error
-		page, err = p.pdfReader.GetPage(pageNum)
+		page, err := p.pdfReader.GetPage(pageNum)
 		if err != nil {
 			return nil, err
 		}
-
-		mbox := pdf.PdfRectangle{}
-		//cbox := pdf.PdfRectangle{}
-
-		mbox.Urx = c.Width()
-		mbox.Ury = c.Height()
-		mbox.Llx = 0
-		mbox.Lly = 0
-		//page.MediaBox = &mbox
-		//page.CropBox = &cbox
-		page.TrimBox = &mbox
-
+		block, err := creator.NewBlockFromPage(page)
 		if err != nil {
 			return nil, err
 		}
+		//convert: Letter->A4
+		block.SetPos(0.0, 0.0)
+		block.ScaleToWidth(c.Width())
 
-		if err = c.AddPage(page); err != nil {
+		err = c.Draw(block)
+		if err != nil {
 			return nil, err
 		}
-	} else {
-		page = c.NewPage()
-		c.SetPageMargins(0.0, 0.0, 0.0, 0.0)
 	}
 
 	if p.options.AddPageNumbers {
