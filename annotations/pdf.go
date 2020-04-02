@@ -7,6 +7,10 @@ import (
 	"github.com/juruen/rmapi/encoding/rm"
 	"github.com/juruen/rmapi/log"
 	annotator "github.com/unidoc/unipdf/v3/annotator"
+	"github.com/unidoc/unipdf/v3/contentstream"
+	//"github.com/unidoc/unipdf/v3/contentstream/draw/util"
+	"github.com/unidoc/unipdf/v3/contentstream/draw"
+	"github.com/unidoc/unipdf/v3/core"
 	"github.com/unidoc/unipdf/v3/creator"
 	pdf "github.com/unidoc/unipdf/v3/model"
 	"os"
@@ -92,6 +96,10 @@ func (p *PdfGenerator) Generate() error {
 			continue
 		}
 
+		contentCreator := contentstream.NewContentCreator()
+		contentCreator.Add_q()
+		contentCreator.Add_w(0.6)
+		contentCreator.Add_rg(1.0, 1.0, 0.0)
 		for _, layer := range pageAnnotations.Data.Layers {
 			for _, line := range layer.Lines {
 				if len(line.Points) < 1 {
@@ -114,16 +122,36 @@ func (p *PdfGenerator) Generate() error {
 					}
 					page.AddAnnotation(ann)
 				} else {
+					//block, err := creator.NewBlockFromPage(page)
+					if err != nil {
+						return err
+					}
+					path := draw.NewPath()
 					for i := 1; i < len(line.Points); i++ {
 						x1, y1, x2, y2 := normalized(line.Points[i-1], line.Points[i], ratioX, ratioX)
 						line := c.NewLine(x1, y1, x2, y2)
 						line.SetLineWidth(0.6)
 						black := creator.ColorRGBFromHex("#000000")
 						line.SetColor(black)
-						c.Draw(line)
+						path = path.AppendPoint(draw.NewPoint(x1, c.Height()-y1))
+						path = path.AppendPoint(draw.NewPoint(x2, c.Height()-y2))
+
+						//c.Draw(line)
 					}
+					draw.DrawPathWithCreator(path, contentCreator)
+					//contentCreator.Add_h()
+					if err != nil {
+						return err
+					}
+					//c.Draw(block)
 				}
 			}
+			contentCreator.Add_S()
+			contentCreator.Add_Q()
+
+			ops := contentCreator.Operations()
+			bt := ops.Bytes()
+			err = page.SetContentStreams([]string{string(bt)}, core.NewFlateEncoder())
 		}
 	}
 
