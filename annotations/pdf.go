@@ -33,7 +33,7 @@ type PdfGenerator struct {
 type PdfGeneratorOptions struct {
 	AddPageNumbers  bool
 	AllPages        bool
-	AnnotationsOnly bool
+	AnnotationsOnly bool //export the annotations without the background/pdf
 }
 
 func CreatePdfGenerator(zipName, outputFilePath string, options PdfGeneratorOptions) *PdfGenerator {
@@ -72,7 +72,6 @@ func (p *PdfGenerator) Generate() error {
 		// use the standard page size
 		c.SetPageSize(rmPageSize)
 	}
-	//c.SetPageSize(rmPageSize)
 
 	for i, pageAnnotations := range zip.Pages {
 		hasContent := pageAnnotations.Data != nil
@@ -88,7 +87,6 @@ func (p *PdfGenerator) Generate() error {
 		}
 
 		ratio := c.Height() / c.Width()
-		fmt.Println(ratio)
 
 		var scale float64
 		if ratio < 1.33 {
@@ -145,6 +143,7 @@ func (p *PdfGenerator) Generate() error {
 					contentCreator.Add_w(float64(line.BrushSize / 100))
 					contentCreator.Add_rg(1.0, 1.0, 0.0)
 
+					//TODO: use bezier
 					draw.DrawPathWithCreator(path, contentCreator)
 
 					contentCreator.Add_S()
@@ -190,9 +189,10 @@ func (p *PdfGenerator) addBackgroundPage(c *creator.Creator, pageNum int) (*pdf.
 			return nil, err
 		}
 
-		// TODO:
+		// TODO: adjust the page if cropped
 		pageHeight := mbox.Ury - mbox.Lly
 		pageWidth := mbox.Urx - mbox.Llx
+		// use the pdf's page size
 		c.SetPageSize(creator.PageSize{pageWidth, pageHeight})
 		c.AddPage(tmpPage)
 		page = tmpPage
