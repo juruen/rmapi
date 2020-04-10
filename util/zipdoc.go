@@ -4,10 +4,16 @@ import (
 	"archive/zip"
 	"encoding/json"
 	"fmt"
+	"image/jpeg"
 	"io/ioutil"
 	"strings"
 
+	"bytes"
+
 	"github.com/juruen/rmapi/log"
+	"github.com/nfnt/resize"
+	"github.com/unidoc/unipdf/v3/model"
+	"github.com/unidoc/unipdf/v3/render"
 )
 
 type zipDocumentContent struct {
@@ -21,6 +27,31 @@ type zipDocumentContent struct {
 	Transform      map[string]string `json:"transform"`
 }
 
+func makeThumbnail(pdf []byte) ([]byte, error) {
+
+	reader, err := model.NewPdfReader(bytes.NewReader(pdf))
+	if err != nil {
+		return nil, err
+	}
+	page, err := reader.GetPage(1)
+	if err != nil {
+		return nil, err
+	}
+
+	device := render.NewImageDevice()
+
+	image, err := device.Render(page)
+	if err != nil {
+		return nil, err
+	}
+
+	thumbnail := resize.Resize(280, 374, image, resize.Lanczos3)
+	out := &bytes.Buffer{}
+	jpeg.Encode(out, thumbnail, nil)
+
+	return out.Bytes(), err
+}
+
 func CreateZipDocument(id, srcPath string) (string, error) {
 	pdf, err := ioutil.ReadFile(srcPath)
 
@@ -30,7 +61,10 @@ func CreateZipDocument(id, srcPath string) (string, error) {
 	}
 
 	tmp, err := ioutil.TempFile("", "rmapizip")
-	log.Trace.Println("creating temp zip file:", tmp.Name())
+	if err != nil {
+		return "", err
+	}
+	// log.Trace.Println("creating temp zip file:", tmp.Name())
 	defer tmp.Close()
 
 	if err != nil {
@@ -52,8 +86,22 @@ func CreateZipDocument(id, srcPath string) (string, error) {
 		log.Error.Println("failed to create doc entry in zip file", err)
 		return "", err
 	}
-
 	f.Write(pdf)
+
+	//try to create a thumbnail
+	if ext == "pdf" {
+		thumbnail, err := makeThumbnail(pdf)
+		if err != nil {
+			log.Error.Println("cannot generate thumbnail", err)
+		} else {
+			f, err := w.Create(fmt.Sprintf("%s.thumbnails/0.jpg", id))
+			if err != nil {
+				log.Error.Println("failed to create doc entry in zip file", err)
+				return "", err
+			}
+			f.Write(thumbnail)
+		}
+	}
 
 	// Create pagedata file
 	f, err = w.Create(fmt.Sprintf("%s.pagedata", id))
@@ -61,8 +109,9 @@ func CreateZipDocument(id, srcPath string) (string, error) {
 		log.Error.Println("failed to create content entry in zip file", err)
 		return "", err
 	}
-
 	f.Write(make([]byte, 0))
+
+	//create thumbnail
 
 	// Create content content
 	f, err = w.Create(fmt.Sprintf("%s.content", id))
@@ -83,7 +132,7 @@ func CreateZipDocument(id, srcPath string) (string, error) {
 
 func CreateZipDirectory(id string) (string, error) {
 	tmp, err := ioutil.TempFile("", "rmapizip")
-	log.Trace.Println("creating temp zip file:", tmp.Name())
+	// log.Trace.Println("creating temp zip file:", tmp.Name())
 	defer tmp.Close()
 
 	if err != nil {
@@ -120,7 +169,7 @@ func createZipContent(ext string) (string, error) {
 
 	cstring, err := json.Marshal(c)
 
-	log.Trace.Println("content: ", string(cstring))
+	//log.Trace.Println("content: ", string(cstring))
 
 	if err != nil {
 		log.Error.Println("failed to serialize content file", err)
