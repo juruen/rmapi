@@ -3,14 +3,13 @@ package annotations
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/juruen/rmapi/archive"
 	"github.com/juruen/rmapi/encoding/rm"
 	"github.com/juruen/rmapi/log"
-	annotator "github.com/unidoc/unipdf/v3/annotator"
+	"github.com/unidoc/unipdf/v3/annotator"
 	"github.com/unidoc/unipdf/v3/contentstream"
-	//"github.com/unidoc/unipdf/v3/contentstream/draw/util"
 	"github.com/unidoc/unipdf/v3/contentstream/draw"
-	"github.com/unidoc/unipdf/v3/core"
 	"github.com/unidoc/unipdf/v3/creator"
 	pdf "github.com/unidoc/unipdf/v3/model"
 	"os"
@@ -21,6 +20,8 @@ const (
 	DeviceHeight = 1872
 	DeviceWidth  = 1404
 )
+
+var rmPageSize = creator.PageSize{445, 594}
 
 type PdfGenerator struct {
 	zipName        string
@@ -40,8 +41,8 @@ func CreatePdfGenerator(zipName, outputFilePath string, options PdfGeneratorOpti
 	return &PdfGenerator{zipName: zipName, outputFilePath: outputFilePath, options: options}
 }
 
-func normalized(p1, p2 rm.Point, ratioX, ratioY float64) (float64, float64, float64, float64) {
-	return float64(p1.X) * ratioX, float64(p1.Y) * ratioY, float64(p2.X) * ratioX, float64(p2.Y) * ratioY
+func normalized(p1 rm.Point, ratioX float64) (float64, float64) {
+	return float64(p1.X) * ratioX, float64(p1.Y) * ratioX
 }
 
 func (p *PdfGenerator) Generate() error {
@@ -68,10 +69,13 @@ func (p *PdfGenerator) Generate() error {
 	}
 
 	c := creator.New()
-	c.SetPageSize(creator.PageSizeA4)
+	if p.template {
+		// use the standard page size
+		c.SetPageSize(rmPageSize)
+	}
+	c.SetPageSize(rmPageSize)
 
 	ratioX := c.Width() / DeviceWidth
-	//ratioY := c.Height() / DeviceHeight
 
 	for i, pageAnnotations := range zip.Pages {
 		hasContent := pageAnnotations.Data != nil
@@ -97,18 +101,19 @@ func (p *PdfGenerator) Generate() error {
 		}
 
 		contentCreator := contentstream.NewContentCreator()
-		contentCreator.Add_q()
-		contentCreator.Add_w(0.6)
-		contentCreator.Add_rg(1.0, 1.0, 0.0)
 		for _, layer := range pageAnnotations.Data.Layers {
 			for _, line := range layer.Lines {
 				if len(line.Points) < 1 {
 					continue
 				}
+				if line.BrushType == rm.Eraser {
+					continue
+				}
 
 				if line.BrushType == rm.HighlighterV5 {
 					last := len(line.Points) - 1
-					x1, y1, x2, y2 := normalized(line.Points[0], line.Points[last], ratioX, ratioX)
+					x1, y1 := normalized(line.Points[0], ratioX)
+					x2, y2 := normalized(line.Points[last], ratioX)
 					// make horizontal lines only
 					y2 = y1
 					//todo: y cooridnates are reversed
@@ -122,36 +127,26 @@ func (p *PdfGenerator) Generate() error {
 					}
 					page.AddAnnotation(ann)
 				} else {
-					//block, err := creator.NewBlockFromPage(page)
-					if err != nil {
-						return err
-					}
 					path := draw.NewPath()
-					for i := 1; i < len(line.Points); i++ {
-						x1, y1, x2, y2 := normalized(line.Points[i-1], line.Points[i], ratioX, ratioX)
-						line := c.NewLine(x1, y1, x2, y2)
-						line.SetLineWidth(0.6)
-						black := creator.ColorRGBFromHex("#000000")
-						line.SetColor(black)
+					for i := 0; i < len(line.Points); i++ {
+						x1, y1 := normalized(line.Points[i], ratioX)
 						path = path.AppendPoint(draw.NewPoint(x1, c.Height()-y1))
-						path = path.AppendPoint(draw.NewPoint(x2, c.Height()-y2))
+					}
+					contentCreator.Add_q()
+					// fmt.Printf("unk: %f\n", line.Unknown)
+					contentCreator.Add_w(float64(line.BrushSize / 1000))
+					contentCreator.Add_rg(1.0, 1.0, 0.0)
 
-						//c.Draw(line)
-					}
 					draw.DrawPathWithCreator(path, contentCreator)
-					//contentCreator.Add_h()
-					if err != nil {
-						return err
-					}
-					//c.Draw(block)
+
+					contentCreator.Add_S()
+					contentCreator.Add_Q()
 				}
 			}
-			contentCreator.Add_S()
-			contentCreator.Add_Q()
 
 			ops := contentCreator.Operations()
 			bt := ops.Bytes()
-			err = page.SetContentStreams([]string{string(bt)}, core.NewFlateEncoder())
+			err = page.AppendContentStream(string(bt))
 		}
 	}
 
@@ -177,18 +172,28 @@ func (p *PdfGenerator) initBackgroundPages(pdfArr []byte) error {
 func (p *PdfGenerator) addBackgroundPage(c *creator.Creator, pageNum int) (*pdf.PdfPage, error) {
 	page := c.NewPage()
 
-	if p.template == false && !p.options.AnnotationsOnly {
-		page, err := p.pdfReader.GetPage(pageNum)
+	if !p.template && !p.options.AnnotationsOnly {
+		tmpPage, err := p.pdfReader.GetPage(pageNum)
 		if err != nil {
 			return nil, err
 		}
-		block, err := creator.NewBlockFromPage(page)
+		block, err := creator.NewBlockFromPage(tmpPage)
 		if err != nil {
 			return nil, err
 		}
-		//convert: Letter->A4
+		// mb, err := tmpPage.GetMediaBox()
+		// if err != nil {
+		// 	return nil, err
+		// }
+		factor := block.Height() / block.Width()
 		block.SetPos(0.0, 0.0)
-		block.ScaleToWidth(c.Width())
+		block.SetMargins(0.0, 0.0, 0.0, 0.0)
+
+		if factor > 1.33 {
+			block.ScaleToHeight(rmPageSize[1])
+		} else {
+			block.ScaleToWidth(rmPageSize[0])
+		}
 
 		err = c.Draw(block)
 		if err != nil {
