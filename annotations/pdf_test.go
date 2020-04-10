@@ -32,3 +32,6 @@ func TestGenerateLetter(t *testing.T) {
 func TestGenerateRM(t *testing.T) {
 	test("rm", t)
 }
+func TestGenerateTmpl(t *testing.T) {
+	test("tmpl", t)
+}
