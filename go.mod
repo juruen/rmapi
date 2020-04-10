@@ -14,12 +14,14 @@ require (
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mattn/go-isatty v0.0.9 // indirect
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/pkg/errors v0.8.1
 	github.com/satori/go.uuid v0.0.0-20180103174451-36e9d2ebbde5
 	github.com/stretchr/testify v1.3.0
-	github.com/unidoc/unipdf/v3 v3.3.1
+	github.com/unidoc/unipdf/v3 v3.6.1
+	golang.org/x/lint v0.0.0-20190409202823-959b441ac422 // indirect
+	golang.org/x/net v0.0.0-20190606173856-1492cefac77f // indirect
+	golang.org/x/tools v0.0.0-20190606174628-0139d5756a7d // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/yaml.v2 v2.0.0
 )
-
-replace github.com/unidoc/unipdf/v3 => github.com/juruen/unipdf/v3 v3.3.1
