@@ -16,9 +16,8 @@ import (
 )
 
 const (
-	PPI          = 226
-	DeviceHeight = 1872
 	DeviceWidth  = 1404
+	DeviceHeight = 1872
 )
 
 var rmPageSize = creator.PageSize{445, 594}
@@ -73,9 +72,7 @@ func (p *PdfGenerator) Generate() error {
 		// use the standard page size
 		c.SetPageSize(rmPageSize)
 	}
-	c.SetPageSize(rmPageSize)
-
-	ratioX := c.Width() / DeviceWidth
+	//c.SetPageSize(rmPageSize)
 
 	for i, pageAnnotations := range zip.Pages {
 		hasContent := pageAnnotations.Data != nil
@@ -89,6 +86,17 @@ func (p *PdfGenerator) Generate() error {
 		if err != nil {
 			return err
 		}
+
+		ratio := c.Height() / c.Width()
+		fmt.Println(ratio)
+
+		var scale float64
+		if ratio < 1.33 {
+			scale = c.Width() / DeviceWidth
+		} else {
+			scale = c.Height() / DeviceHeight
+		}
+		fmt.Println("scale ", scale)
 		if page == nil {
 			log.Error.Fatal("page is null")
 		}
@@ -112,15 +120,16 @@ func (p *PdfGenerator) Generate() error {
 
 				if line.BrushType == rm.HighlighterV5 {
 					last := len(line.Points) - 1
-					x1, y1 := normalized(line.Points[0], ratioX)
-					x2, y2 := normalized(line.Points[last], ratioX)
-					// make horizontal lines only
-					y2 = y1
-					//todo: y cooridnates are reversed
-					lineDef := annotator.LineAnnotationDef{X1: x1 - 1, Y1: c.Height() - y1, X2: x2, Y2: c.Height() - y2}
+					x1, y1 := normalized(line.Points[0], scale)
+					x2, _ := normalized(line.Points[last], scale)
+					// make horizontal lines only, use y1
+					width := scale * 30
+					y1 += width / 2
+
+					lineDef := annotator.LineAnnotationDef{X1: x1 - 1, Y1: c.Height() - y1, X2: x2, Y2: c.Height() - y1}
 					lineDef.LineColor = pdf.NewPdfColorDeviceRGB(1.0, 1.0, 0.0) //yellow
 					lineDef.Opacity = 0.5
-					lineDef.LineWidth = 5.0
+					lineDef.LineWidth = width
 					ann, err := annotator.CreateLineAnnotation(lineDef)
 					if err != nil {
 						return err
@@ -129,12 +138,11 @@ func (p *PdfGenerator) Generate() error {
 				} else {
 					path := draw.NewPath()
 					for i := 0; i < len(line.Points); i++ {
-						x1, y1 := normalized(line.Points[i], ratioX)
+						x1, y1 := normalized(line.Points[i], scale)
 						path = path.AppendPoint(draw.NewPoint(x1, c.Height()-y1))
 					}
 					contentCreator.Add_q()
-					// fmt.Printf("unk: %f\n", line.Unknown)
-					contentCreator.Add_w(float64(line.BrushSize / 1000))
+					contentCreator.Add_w(float64(line.BrushSize / 100))
 					contentCreator.Add_rg(1.0, 1.0, 0.0)
 
 					draw.DrawPathWithCreator(path, contentCreator)
@@ -170,35 +178,26 @@ func (p *PdfGenerator) initBackgroundPages(pdfArr []byte) error {
 }
 
 func (p *PdfGenerator) addBackgroundPage(c *creator.Creator, pageNum int) (*pdf.PdfPage, error) {
-	page := c.NewPage()
+	var page *pdf.PdfPage
 
 	if !p.template && !p.options.AnnotationsOnly {
 		tmpPage, err := p.pdfReader.GetPage(pageNum)
 		if err != nil {
 			return nil, err
 		}
-		block, err := creator.NewBlockFromPage(tmpPage)
+		mbox, err := tmpPage.GetMediaBox()
 		if err != nil {
 			return nil, err
 		}
-		// mb, err := tmpPage.GetMediaBox()
-		// if err != nil {
-		// 	return nil, err
-		// }
-		factor := block.Height() / block.Width()
-		block.SetPos(0.0, 0.0)
-		block.SetMargins(0.0, 0.0, 0.0, 0.0)
 
-		if factor > 1.33 {
-			block.ScaleToHeight(rmPageSize[1])
-		} else {
-			block.ScaleToWidth(rmPageSize[0])
-		}
-
-		err = c.Draw(block)
-		if err != nil {
-			return nil, err
-		}
+		// TODO:
+		pageHeight := mbox.Ury - mbox.Lly
+		pageWidth := mbox.Urx - mbox.Llx
+		c.SetPageSize(creator.PageSize{pageWidth, pageHeight})
+		c.AddPage(tmpPage)
+		page = tmpPage
+	} else {
+		page = c.NewPage()
 	}
 
 	if p.options.AddPageNumbers {
