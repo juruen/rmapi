@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 
+	"os"
+
 	"github.com/juruen/rmapi/archive"
 	"github.com/juruen/rmapi/encoding/rm"
 	"github.com/juruen/rmapi/log"
@@ -12,7 +14,6 @@ import (
 	"github.com/unidoc/unipdf/v3/contentstream/draw"
 	"github.com/unidoc/unipdf/v3/creator"
 	pdf "github.com/unidoc/unipdf/v3/model"
-	"os"
 )
 
 const (
@@ -94,7 +95,6 @@ func (p *PdfGenerator) Generate() error {
 		} else {
 			scale = c.Height() / DeviceHeight
 		}
-		fmt.Println("scale ", scale)
 		if page == nil {
 			log.Error.Fatal("page is null")
 		}
