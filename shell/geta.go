@@ -17,6 +17,8 @@ func getACmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			flagSet := flag.NewFlagSet("geta", flag.ContinueOnError)
 			addPageNumbers := flagSet.Bool("p", false, "add page numbers")
+			allPages := flagSet.Bool("a", false, "all pages")
+			annotationsOnly := flagSet.Bool("n", false, "annotations only")
 			if err := flagSet.Parse(c.Args); err != nil {
 				if err != flag.ErrHelp {
 					c.Err(err)
@@ -49,7 +51,7 @@ func getACmd(ctx *ShellCtxt) *ishell.Cmd {
 			}
 
 			pdfName := fmt.Sprintf("%s-annotations.pdf", node.Name())
-			options := annotations.PdfGeneratorOptions{AddPageNumbers: *addPageNumbers}
+			options := annotations.PdfGeneratorOptions{AddPageNumbers: *addPageNumbers, AllPages: *allPages, AnnotationsOnly: *annotationsOnly}
 			generator := annotations.CreatePdfGenerator(zipName, pdfName, options)
 			err = generator.Generate()
 
