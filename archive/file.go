@@ -122,13 +122,13 @@ type ExtraMetadata struct {
 
 // Transform is a struct contained into a Content struct.
 type Transform struct {
-	M11 int `json:"m11"`
-	M12 int `json:"m12"`
-	M13 int `json:"m13"`
-	M21 int `json:"m21"`
-	M22 int `json:"m22"`
-	M23 int `json:"m23"`
-	M31 int `json:"m31"`
-	M32 int `json:"m32"`
-	M33 int `json:"m33"`
+	M11 float32 `json:"m11"`
+	M12 float32 `json:"m12"`
+	M13 float32 `json:"m13"`
+	M21 float32 `json:"m21"`
+	M22 float32 `json:"m22"`
+	M23 float32 `json:"m23"`
+	M31 float32 `json:"m31"`
+	M32 float32 `json:"m32"`
+	M33 float32 `json:"m33"`
 }
