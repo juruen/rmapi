@@ -49,7 +49,7 @@ func makeThumbnail(pdf []byte) ([]byte, error) {
 	out := &bytes.Buffer{}
 	jpeg.Encode(out, thumbnail, nil)
 
-	return out.Bytes(), err
+	return out.Bytes(), nil
 }
 
 func CreateZipDocument(id, srcPath string) (string, error) {
@@ -64,7 +64,6 @@ func CreateZipDocument(id, srcPath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// log.Trace.Println("creating temp zip file:", tmp.Name())
 	defer tmp.Close()
 
 	if err != nil {
@@ -132,7 +131,6 @@ func CreateZipDocument(id, srcPath string) (string, error) {
 
 func CreateZipDirectory(id string) (string, error) {
 	tmp, err := ioutil.TempFile("", "rmapizip")
-	// log.Trace.Println("creating temp zip file:", tmp.Name())
 	defer tmp.Close()
 
 	if err != nil {
@@ -168,8 +166,6 @@ func createZipContent(ext string) (string, error) {
 	}
 
 	cstring, err := json.Marshal(c)
-
-	//log.Trace.Println("content: ", string(cstring))
 
 	if err != nil {
 		log.Error.Println("failed to serialize content file", err)
