@@ -1,3 +1,13 @@
+## rmapi 0.0.10 (April 17, 2020)
+
+* Multiple annotation fixes (@ddvk)
+
+* Add support to create thumbnails in large PDF docs (@ddvk)
+
+* Use community license instead a UniPDF fork (@ddvk)
+
+* Fix put bug to allow directories and files with the same name (@GjjvdBurg)
+
 ## rmapi 0.0.9 (February 01, 2020)
 
 * Change license to AGPL
