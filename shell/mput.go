@@ -66,13 +66,14 @@ func mputCmd(ctx *ShellCtxt) *ishell.Cmd {
 	}
 }
 
-// Checks whether the file has a pdf or epub extension.
+// Checks whether the file has a pdf, epub or zip extension.
 //
 // Input -> [string] Valid file name.
 // Returns -> true if the file is a pdf or epub, false otherwise
 func checkFileType(fName string) bool {
 	return (strings.Contains(fName, ".pdf") ||
-		strings.Contains(fName, ".epub"))
+		strings.Contains(fName, ".epub") ||
+		strings.Contains(fName, ".zip"))
 }
 
 // Print the required spaces and characters for tree formatting.
