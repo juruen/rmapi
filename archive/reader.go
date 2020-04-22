@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/juruen/rmapi/encoding/rm"
+	"github.com/juruen/rmapi/log"
 	"github.com/juruen/rmapi/util"
 )
 
@@ -27,17 +28,26 @@ func (z *Zip) Read(r io.ReaderAt, size int64) error {
 		return err
 	}
 
-	z.Pages = make([]Page, z.Content.PageCount)
-
-	if err := z.readPagedata(zr); err != nil {
-		return err
-	}
-
 	if err := z.readPdf(zr); err != nil {
 		return err
 	}
 
 	if err := z.readEpub(zr); err != nil {
+		return err
+	}
+	// instanciate the slice of pages
+	if z.Content.PageCount == 0 {
+
+		log.Error.Printf("malformed zip")
+		return nil
+	}
+	z.Pages = make([]Page, z.Content.PageCount)
+
+	if err := z.readMetadata(zr); err != nil {
+		return err
+	}
+
+	if err := z.readPagedata(zr); err != nil {
 		return err
 	}
 
@@ -46,10 +56,6 @@ func (z *Zip) Read(r io.ReaderAt, size int64) error {
 	}
 
 	if err := z.readThumbnails(zr); err != nil {
-		return err
-	}
-
-	if err := z.readMetadata(zr); err != nil {
 		return err
 	}
 
@@ -189,7 +195,7 @@ func (z *Zip) readData(zr *zip.Reader) error {
 			return errors.New("error in .rm filename")
 		}
 
-		if len(z.Pages) < idx {
+		if len(z.Pages) <= idx {
 			return errors.New("page not found")
 		}
 
@@ -228,7 +234,7 @@ func (z *Zip) readThumbnails(zr *zip.Reader) error {
 			return errors.New("error in .jpg filename")
 		}
 
-		if len(z.Pages) < idx {
+		if len(z.Pages) <= idx {
 			return errors.New("page not found")
 		}
 
@@ -262,7 +268,7 @@ func (z *Zip) readMetadata(zr *zip.Reader) error {
 			return errors.New("error in metadata .json filename")
 		}
 
-		if len(z.Pages) < idx {
+		if len(z.Pages) <= idx {
 			return errors.New("page not found")
 		}
 
