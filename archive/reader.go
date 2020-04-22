@@ -27,10 +27,6 @@ func (z *Zip) Read(r io.ReaderAt, size int64) error {
 		return err
 	}
 
-	// instanciate the slice of pages
-	if z.Content.PageCount == 0 {
-		return errors.New("document does not have any pages")
-	}
 	z.Pages = make([]Page, z.Content.PageCount)
 
 	if err := z.readPagedata(zr); err != nil {
