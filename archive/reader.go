@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/juruen/rmapi/encoding/rm"
+	"github.com/juruen/rmapi/util"
 )
 
 // Read fills a Zip parsing a Remarkable archive file.
@@ -59,7 +60,7 @@ func (z *Zip) Read(r io.ReaderAt, size int64) error {
 	return nil
 }
 
-// readContent reads the .content file contained in an archive
+// readContent reads the .content file contained in an archive and the UUID
 func (z *Zip) readContent(zr *zip.Reader) error {
 	files, err := zipExtFinder(zr, ".content")
 	if err != nil {
@@ -70,7 +71,8 @@ func (z *Zip) readContent(zr *zip.Reader) error {
 		return errors.New("archive does not contain a unique content file")
 	}
 
-	file, err := files[0].Open()
+	contentFile := files[0]
+	file, err := contentFile.Open()
 	if err != nil {
 		return err
 	}
@@ -84,7 +86,9 @@ func (z *Zip) readContent(zr *zip.Reader) error {
 	if err = json.Unmarshal(bytes, &z.Content); err != nil {
 		return err
 	}
-
+	p := contentFile.FileInfo().Name()
+	id, _ := util.DocPathToName(p)
+	z.UUID = id
 	return nil
 }
 

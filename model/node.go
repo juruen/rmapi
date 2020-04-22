@@ -19,6 +19,9 @@ func (node *Node) Name() string {
 func (node *Node) Id() string {
 	return node.Document.ID
 }
+func (node *Node) Version() int {
+	return node.Document.Version
+}
 
 func (node *Node) IsRoot() bool {
 	return node.Id() == ""

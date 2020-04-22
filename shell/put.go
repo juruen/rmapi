@@ -21,7 +21,7 @@ func putCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			srcName := c.Args[0]
 
-			docName := util.DocPathToName(srcName)
+			docName, _ := util.DocPathToName(srcName)
 
 			node := ctx.node
 			var err error

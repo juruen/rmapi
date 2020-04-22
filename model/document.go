@@ -73,21 +73,24 @@ func CreateDirDocument(parent, name string) MetadataDocument {
 	}
 }
 
-func CreateUploadDocumentRequest(entryType string) UploadDocumentRequest {
-	id, err := uuid.NewV4()
+func CreateUploadDocumentRequest(id string, entryType string) UploadDocumentRequest {
+	if id == "" {
+		newId, err := uuid.NewV4()
 
-	if err != nil {
-		log.Panic("failed to create uuid for upload request")
+		if err != nil {
+			log.Panic("failed to create uuid for directory")
+		}
+		id = newId.String()
 	}
 
 	return UploadDocumentRequest{
-		id.String(),
+		id,
 		entryType,
 		1,
 	}
 }
 
-func CreateUploadDocumentMeta(id, entryType, parent, name string) MetadataDocument {
+func CreateUploadDocumentMeta(id string, entryType, parent, name string) MetadataDocument {
 
 	return MetadataDocument{
 		ID:             id,

@@ -11,12 +11,10 @@ import (
 	"github.com/juruen/rmapi/model"
 )
 
-func DocPathToName(p string) string {
-	if strings.HasSuffix(p, ".pdf") {
-		return strings.TrimSuffix(path.Base(p), ".pdf")
-	} else {
-		return strings.TrimSuffix(path.Base(p), ".epub")
-	}
+func DocPathToName(p string) (name string, ext string) {
+	ext = path.Ext(p)
+	name = strings.TrimSuffix(path.Base(p), path.Ext(p))
+	return
 }
 
 func ToIOReader(source interface{}) (io.Reader, error) {
