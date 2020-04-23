@@ -35,12 +35,12 @@ func (z *Zip) Read(r io.ReaderAt, size int64) error {
 	if err := z.readEpub(zr); err != nil {
 		return err
 	}
-	// instanciate the slice of pages
-	if z.Content.PageCount == 0 {
-
-		log.Error.Printf("malformed zip")
+	//uploading and then downloading a file results in 0 pages
+	if z.Content.PageCount <= 0 {
+		log.Warning.Printf("PageCount is 0")
 		return nil
 	}
+	// instantiate the slice of pages
 	z.Pages = make([]Page, z.Content.PageCount)
 
 	if err := z.readMetadata(zr); err != nil {
