@@ -69,7 +69,7 @@ func CreateDirDocument(parent, name string) MetadataDocument {
 		VissibleName:   name,
 		Type:           DirectoryType,
 		Version:        1,
-		ModifiedClient: time.Now().Format(time.RFC3339Nano),
+		ModifiedClient: time.Now().UTC().Format(time.RFC3339Nano),
 	}
 }
 
@@ -98,7 +98,7 @@ func CreateUploadDocumentMeta(id string, entryType, parent, name string) Metadat
 		VissibleName:   name,
 		Type:           entryType,
 		Version:        1,
-		ModifiedClient: time.Now().Format(time.RFC3339Nano),
+		ModifiedClient: time.Now().UTC().Format(time.RFC3339Nano),
 	}
 }
 
@@ -120,7 +120,7 @@ func (doc Document) ToMetaDocument() MetadataDocument {
 		VissibleName:   doc.VissibleName,
 		Type:           doc.Type,
 		Version:        doc.Version,
-		ModifiedClient: time.Now().Format(time.RFC3339Nano),
+		ModifiedClient: time.Now().UTC().Format(time.RFC3339Nano),
 	}
 }
 
