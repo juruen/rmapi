@@ -238,7 +238,7 @@ func (c *Client) Metadata(doc Document) error {
 	}
 
 	// set modified to now
-	rdoc.ModifiedClient = time.Now().Format(time.RFC3339Nano)
+	rdoc.ModifiedClient = time.Now().UTC().Format(time.RFC3339Nano)
 
 	// set Version to current version +1 if not defined
 	if rdoc.Version == 0 {
