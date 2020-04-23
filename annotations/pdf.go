@@ -64,8 +64,8 @@ func (p *PdfGenerator) Generate() error {
 	if err != nil {
 		return err
 	}
-	if zip.Content.FileType != "pdf" {
-		return errors.New("not a pdf")
+	if zip.Content.FileType == "epub" {
+		return errors.New("only pdf and notebooks supported")
 	}
 
 	if err = p.initBackgroundPages(zip.Payload); err != nil {
