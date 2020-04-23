@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/juruen/rmapi/log"
 	"github.com/nfnt/resize"
@@ -73,8 +74,9 @@ func GetIdFromZip(srcPath string) (id string, err error) {
 }
 
 func CreateZipDocument(id, srcPath string) (zipPath string, err error) {
-	ext := filepath.Ext(srcPath)
-	if ext == ".zip" {
+	ext := strings.TrimPrefix(filepath.Ext(srcPath), ".")
+	fmt.Println("Ext:", ext)
+	if ext == "zip" {
 		zipPath = srcPath
 		return
 	}
@@ -99,7 +101,7 @@ func CreateZipDocument(id, srcPath string) (zipPath string, err error) {
 	w := zip.NewWriter(tmp)
 	defer w.Close()
 
-	f, err := w.Create(fmt.Sprintf("%s%s", id, ext))
+	f, err := w.Create(fmt.Sprintf("%s.%s", id, ext))
 	if err != nil {
 		log.Error.Println("failed to create doc entry in zip file", err)
 		return
@@ -107,7 +109,7 @@ func CreateZipDocument(id, srcPath string) (zipPath string, err error) {
 	f.Write(doc)
 
 	//try to create a thumbnail
-	if ext == ".pdf" {
+	if ext == "pdf" {
 		thumbnail, err := makeThumbnail(doc)
 		if err != nil {
 			log.Error.Println("cannot generate thumbnail", err)
