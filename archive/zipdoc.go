@@ -75,7 +75,6 @@ func GetIdFromZip(srcPath string) (id string, err error) {
 
 func CreateZipDocument(id, srcPath string) (zipPath string, err error) {
 	ext := strings.TrimPrefix(filepath.Ext(srcPath), ".")
-	fmt.Println("Ext:", ext)
 	if ext == "zip" {
 		zipPath = srcPath
 		return
