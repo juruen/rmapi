@@ -28,13 +28,10 @@ func (z *Zip) Read(r io.ReaderAt, size int64) error {
 		return err
 	}
 
-	if err := z.readPdf(zr); err != nil {
+	if err := z.readPayload(zr); err != nil {
 		return err
 	}
 
-	if err := z.readEpub(zr); err != nil {
-		return err
-	}
 	//uploading and then downloading a file results in 0 pages
 	if z.Content.PageCount <= 0 {
 		log.Warning.Printf("PageCount is 0")
@@ -128,14 +125,15 @@ func (z *Zip) readPagedata(zr *zip.Reader) error {
 	return nil
 }
 
-// readPdf tries to extract a pdf from an archive if it exists.
-func (z *Zip) readPdf(zr *zip.Reader) error {
-	files, err := zipExtFinder(zr, ".pdf")
+// readPayload tries to extract the payload from an archive if it exists.
+func (z *Zip) readPayload(zr *zip.Reader) error {
+	ext := z.Content.FileType
+	files, err := zipExtFinder(zr, "."+ext)
 	if err != nil {
 		return err
 	}
 
-	// return if no pdf
+	// return if not found
 	if len(files) != 1 {
 		return nil
 	}
@@ -146,33 +144,7 @@ func (z *Zip) readPdf(zr *zip.Reader) error {
 	}
 	defer file.Close()
 
-	z.Pdf, err = ioutil.ReadAll(file)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// readEpub tries to extract an epub from an archive if it exists.
-func (z *Zip) readEpub(zr *zip.Reader) error {
-	files, err := zipExtFinder(zr, ".epub")
-	if err != nil {
-		return err
-	}
-
-	// return if no epub
-	if len(files) != 1 {
-		return nil
-	}
-
-	file, err := files[0].Open()
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	z.Epub, err = ioutil.ReadAll(file)
+	z.Payload, err = ioutil.ReadAll(file)
 	if err != nil {
 		return err
 	}

@@ -27,11 +27,7 @@ func (z *Zip) Write(w io.Writer) error {
 		return err
 	}
 
-	if err := z.writePdf(archive); err != nil {
-		return err
-	}
-
-	if err := z.writeEpub(archive); err != nil {
+	if err := z.writePayload(archive); err != nil {
 		return err
 	}
 
@@ -78,41 +74,20 @@ func (z *Zip) writeContent(zw *zip.Writer) error {
 }
 
 // writePdf writes a pdf file to the archive if existing in the struct.
-func (z *Zip) writePdf(zw *zip.Writer) error {
+func (z *Zip) writePayload(zw *zip.Writer) error {
 	// skip if no pdf
-	if z.Pdf == nil {
+	if z.Payload == nil {
 		return nil
 	}
 
-	name := fmt.Sprintf("%s.pdf", z.UUID)
+	name := fmt.Sprintf("%s.%s", z.UUID, z.Content.FileType)
 
 	w, err := addToZip(zw, name)
 	if err != nil {
 		return err
 	}
 
-	if _, err := w.Write(z.Pdf); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// writeEpub writes an epub file to the archive if existing in the struct.
-func (z *Zip) writeEpub(zw *zip.Writer) error {
-	// skip if no epub
-	if z.Epub == nil {
-		return nil
-	}
-
-	name := fmt.Sprintf("%s.epub", z.UUID)
-
-	w, err := addToZip(zw, name)
-	if err != nil {
-		return err
-	}
-
-	if _, err := w.Write(z.Epub); err != nil {
+	if _, err := w.Write(z.Payload); err != nil {
 		return err
 	}
 
