@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"image/jpeg"
 	"io/ioutil"
+	"os"
 	"strings"
 
 	"bytes"
@@ -28,7 +29,6 @@ type zipDocumentContent struct {
 }
 
 func makeThumbnail(pdf []byte) ([]byte, error) {
-
 	reader, err := model.NewPdfReader(bytes.NewReader(pdf))
 	if err != nil {
 		return nil, err
@@ -88,7 +88,8 @@ func CreateZipDocument(id, srcPath string) (string, error) {
 	f.Write(pdf)
 
 	//try to create a thumbnail
-	if ext == "pdf" {
+	//due to a bug somewhere in unipdf the generation is opt-in
+	if ext == "pdf" && os.Getenv("RMAPI_THUMBNAILS") != "" {
 		thumbnail, err := makeThumbnail(pdf)
 		if err != nil {
 			log.Error.Println("cannot generate thumbnail", err)
