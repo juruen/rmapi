@@ -23,16 +23,17 @@ func main() {
 	log.InitLog()
 
 	var ctx *api.ApiCtx
+	var err error
 	for i := 0; i < AUTH_RETRIES; i++ {
-		ctx = api.CreateApiCtx(api.AuthHttpCtx())
+		ctx, err = api.CreateApiCtx(api.AuthHttpCtx())
 
-		if ctx.Filetree == nil && i < AUTH_RETRIES {
-			log.Error.Println("retrying...")
+		if err != nil {
+			log.Trace.Println(err)
 		}
 	}
 
-	if ctx.Filetree == nil {
-		log.Error.Fatal("failed to build documents tree")
+	if ctx == nil {
+		log.Error.Fatal("failed to build documents tree, last error: ", err)
 	}
 
 	run_shell(ctx)
