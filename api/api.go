@@ -21,18 +21,21 @@ type ApiCtx struct {
 }
 
 // CreateApiCtx initializes an instance of ApiCtx
-func CreateApiCtx(http *transport.HttpClientCtx) *ApiCtx {
-	return &ApiCtx{http, DocumentsFileTree(http)}
+func CreateApiCtx(http *transport.HttpClientCtx) (*ApiCtx, error) {
+	fileTree, err := DocumentsFileTree(http)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch document tree %v", err)
+	}
+	return &ApiCtx{http, fileTree}, nil
 }
 
 // DocumentsFileTree reads your remote documents and builds a file tree
 // structure to represent them
-func DocumentsFileTree(http *transport.HttpClientCtx) *filetree.FileTreeCtx {
+func DocumentsFileTree(http *transport.HttpClientCtx) (*filetree.FileTreeCtx, error) {
 	documents := make([]model.Document, 0)
 
 	if err := http.Get(transport.UserBearer, listDocs, nil, &documents); err != nil {
-		log.Error.Println("failed to fetch documents", err.Error())
-		return nil
+		return nil, err
 	}
 
 	fileTree := filetree.CreateFileTreeCtx()
@@ -45,7 +48,7 @@ func DocumentsFileTree(http *transport.HttpClientCtx) *filetree.FileTreeCtx {
 		log.Trace.Println(d.Name(), d.IsFile())
 	}
 
-	return &fileTree
+	return &fileTree, nil
 }
 
 // FetchDocument downloads a document given its ID and saves it locally into dstPath
