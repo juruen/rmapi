@@ -24,7 +24,7 @@ type ApiCtx struct {
 func CreateApiCtx(http *transport.HttpClientCtx) (*ApiCtx, error) {
 	fileTree, err := DocumentsFileTree(http)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch document tree %w", err)
+		return nil, fmt.Errorf("failed to fetch document tree %v", err)
 	}
 	return &ApiCtx{http, fileTree}, nil
 }
