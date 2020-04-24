@@ -1,6 +1,8 @@
 set -e
 path=$(dirname $0)
+go clean -testcache
 go test -v github.com/juruen/rmapi/annotations 
+xdg-open /tmp/strange.pdf
 xdg-open /tmp/tmpl.pdf
 xdg-open /tmp/a3.pdf
 xdg-open /tmp/a4.pdf
