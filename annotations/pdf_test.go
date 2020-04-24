@@ -35,3 +35,6 @@ func TestGenerateRM(t *testing.T) {
 func TestGenerateTmpl(t *testing.T) {
 	test("tmpl", t)
 }
+func TestGenerateStrangeBug(t *testing.T) {
+	test("strange", t)
+}
