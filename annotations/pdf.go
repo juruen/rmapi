@@ -13,6 +13,7 @@ import (
 	"github.com/unidoc/unipdf/v3/annotator"
 	"github.com/unidoc/unipdf/v3/contentstream"
 	"github.com/unidoc/unipdf/v3/contentstream/draw"
+	"github.com/unidoc/unipdf/v3/core"
 	"github.com/unidoc/unipdf/v3/creator"
 	pdf "github.com/unidoc/unipdf/v3/model"
 )
@@ -115,6 +116,10 @@ func (p *PdfGenerator) Generate() error {
 		}
 
 		contentCreator := contentstream.NewContentCreator()
+		contentCreator.Add_q()
+		contentCreator.Add_j("1")
+		contentCreator.Add_J("1")
+
 		for _, layer := range pageAnnotations.Data.Layers {
 			for _, line := range layer.Lines {
 				if len(line.Points) < 1 {
@@ -147,22 +152,31 @@ func (p *PdfGenerator) Generate() error {
 						x1, y1 := normalized(line.Points[i], scale)
 						path = path.AppendPoint(draw.NewPoint(x1, c.Height()-y1))
 					}
-					contentCreator.Add_q()
+
 					contentCreator.Add_w(float64(line.BrushSize / 100))
-					contentCreator.Add_rg(1.0, 1.0, 0.0)
+
+					switch line.BrushColor {
+					case rm.Black:
+						contentCreator.Add_rg(1.0, 1.0, 1.0)
+					case rm.White:
+						contentCreator.Add_rg(0.0, 0.0, 0.0)
+					case rm.Grey:
+						contentCreator.Add_rg(0.8, 0.8, 0.8)
+					}
 
 					//TODO: use bezier
 					draw.DrawPathWithCreator(path, contentCreator)
 
 					contentCreator.Add_S()
-					contentCreator.Add_Q()
 				}
 			}
-
-			ops := contentCreator.Operations()
-			bt := ops.Bytes()
-			err = page.AppendContentStream(string(bt))
 		}
+		contentCreator.Add_Q()
+		drawingOperations := contentCreator.Operations().String()
+		pageContentStreams, err := page.GetAllContentStreams()
+		//hack: wrap the page content in a context to prevent transformation matrix misalignment
+		wrapper := []string{"q", pageContentStreams, "Q", drawingOperations}
+		page.SetContentStreams(wrapper, core.NewFlateEncoder())
 	}
 
 	return c.WriteToFile(p.outputFilePath)

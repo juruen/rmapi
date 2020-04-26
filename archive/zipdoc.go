@@ -29,7 +29,6 @@ type zipDocumentContent struct {
 }
 
 func makeThumbnail(pdf []byte) ([]byte, error) {
-
 	reader, err := pdfmodel.NewPdfReader(bytes.NewReader(pdf))
 	if err != nil {
 		return nil, err
@@ -108,7 +107,8 @@ func CreateZipDocument(id, srcPath string) (zipPath string, err error) {
 	f.Write(doc)
 
 	//try to create a thumbnail
-	if ext == "pdf" {
+	//due to a bug somewhere in unipdf the generation is opt-in
+	if ext == "pdf" && os.Getenv("RMAPI_THUMBNAILS") != "" {
 		thumbnail, err := makeThumbnail(doc)
 		if err != nil {
 			log.Error.Println("cannot generate thumbnail", err)
