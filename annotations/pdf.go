@@ -2,6 +2,7 @@ package annotations
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 
 	"os"
@@ -64,9 +65,16 @@ func (p *PdfGenerator) Generate() error {
 	if err != nil {
 		return err
 	}
+	if zip.Content.FileType == "epub" {
+		return errors.New("only pdf and notebooks supported")
+	}
 
-	if err = p.initBackgroundPages(zip.Pdf); err != nil {
+	if err = p.initBackgroundPages(zip.Payload); err != nil {
 		return err
+	}
+
+	if len(zip.Pages) == 0 {
+		return errors.New("the document has no pages")
 	}
 
 	c := creator.New()
@@ -78,7 +86,7 @@ func (p *PdfGenerator) Generate() error {
 	for i, pageAnnotations := range zip.Pages {
 		hasContent := pageAnnotations.Data != nil
 
-		// do not add a page when there are no annotaions
+		// do not add a page when there are no annotations
 		if !p.options.AllPages && !hasContent {
 			continue
 		}

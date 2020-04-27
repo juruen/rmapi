@@ -10,7 +10,7 @@ func TestWrite(t *testing.T) {
 	zip.Content.FileType = "pdf"
 	zip.Content.PageCount = 1
 	zip.Pages = append(zip.Pages, Page{Pagedata: "Blank"})
-	zip.Pdf = []byte{'p', 'd', 'f'}
+	zip.Payload = []byte{'p', 'd', 'f'}
 
 	// create test file
 	file, err := os.Create("write.zip")

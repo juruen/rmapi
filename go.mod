@@ -3,25 +3,24 @@ module github.com/juruen/rmapi
 go 1.13
 
 require (
-	github.com/abiosoft/ishell v0.0.0-20180125194311-42a9bbfa0017
+	github.com/abiosoft/ishell v2.0.0+incompatible
+	github.com/abiosoft/readline v0.0.0-20180607040430-155bce2042db // indirect
 	github.com/chzyer/logex v1.1.10 // indirect
-	github.com/chzyer/readline v0.0.0-20171208011716-f6d7a1f6fbf3 // indirect
+	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/fatih/color v0.0.0-20170926111411-5df930a27be2 // indirect
+	github.com/fatih/color v1.9.0 // indirect
 	github.com/flynn-archive/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/kr/pretty v0.1.0 // indirect
-	github.com/mattn/go-colorable v0.1.2 // indirect
-	github.com/mattn/go-isatty v0.0.9 // indirect
+	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/pkg/errors v0.8.1
 	github.com/satori/go.uuid v0.0.0-20180103174451-36e9d2ebbde5
-	github.com/stretchr/testify v1.3.0
+	github.com/stretchr/testify v1.5.1
 	github.com/unidoc/unipdf/v3 v3.6.1
-	golang.org/x/lint v0.0.0-20190409202823-959b441ac422 // indirect
-	golang.org/x/net v0.0.0-20190606173856-1492cefac77f // indirect
-	golang.org/x/tools v0.0.0-20190606174628-0139d5756a7d // indirect
+	golang.org/x/image v0.0.0-20200119044424-58c23975cae1 // indirect
+	golang.org/x/sys v0.0.0-20200420163511-1957bb5e6d1f // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
-	gopkg.in/yaml.v2 v2.0.0
+	gopkg.in/yaml.v2 v2.2.8
 )
