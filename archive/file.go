@@ -11,8 +11,7 @@ const defaultPagadata string = "Blank"
 type Zip struct {
 	Content Content
 	Pages   []Page
-	Pdf     []byte
-	Epub    []byte
+	Payload []byte
 	UUID    string
 }
 

@@ -66,13 +66,14 @@ func mputCmd(ctx *ShellCtxt) *ishell.Cmd {
 	}
 }
 
-// Checks whether the file has a pdf or epub extension.
+// Checks whether the file has a pdf, epub or zip extension.
 //
 // Input -> [string] Valid file name.
 // Returns -> true if the file is a pdf or epub, false otherwise
 func checkFileType(fName string) bool {
 	return (strings.Contains(fName, ".pdf") ||
-		strings.Contains(fName, ".epub"))
+		strings.Contains(fName, ".epub") ||
+		strings.Contains(fName, ".zip"))
 }
 
 // Print the required spaces and characters for tree formatting.
@@ -133,7 +134,7 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 
 		name := d.Name()
 
-		if ! pCtx.useHiddenFiles && strings.HasPrefix(d.Name(), ".") {
+		if !pCtx.useHiddenFiles && strings.HasPrefix(d.Name(), ".") {
 			continue
 		}
 
@@ -187,7 +188,7 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 			if checkFileType(name) {
 				// Is a pdf or epub file
 
-				docName := util.DocPathToName(name)
+				docName, _ := util.DocPathToName(name)
 				_, err := pCtx.api.Filetree.NodeByPath(docName, pCtx.node)
 
 				if err == nil {

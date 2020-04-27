@@ -12,6 +12,8 @@ import (
 	"strings"
 
 	"github.com/juruen/rmapi/encoding/rm"
+	"github.com/juruen/rmapi/log"
+	"github.com/juruen/rmapi/util"
 )
 
 // Read fills a Zip parsing a Remarkable archive file.
@@ -26,21 +28,23 @@ func (z *Zip) Read(r io.ReaderAt, size int64) error {
 		return err
 	}
 
-	// instanciate the slice of pages
-	if z.Content.PageCount == 0 {
-		return errors.New("document does not have any pages")
+	if err := z.readPayload(zr); err != nil {
+		return err
 	}
+
+	//uploading and then downloading a file results in 0 pages
+	if z.Content.PageCount <= 0 {
+		log.Warning.Printf("PageCount is 0")
+		return nil
+	}
+	// instantiate the slice of pages
 	z.Pages = make([]Page, z.Content.PageCount)
 
+	if err := z.readMetadata(zr); err != nil {
+		return err
+	}
+
 	if err := z.readPagedata(zr); err != nil {
-		return err
-	}
-
-	if err := z.readPdf(zr); err != nil {
-		return err
-	}
-
-	if err := z.readEpub(zr); err != nil {
 		return err
 	}
 
@@ -52,14 +56,10 @@ func (z *Zip) Read(r io.ReaderAt, size int64) error {
 		return err
 	}
 
-	if err := z.readMetadata(zr); err != nil {
-		return err
-	}
-
 	return nil
 }
 
-// readContent reads the .content file contained in an archive
+// readContent reads the .content file contained in an archive and the UUID
 func (z *Zip) readContent(zr *zip.Reader) error {
 	files, err := zipExtFinder(zr, ".content")
 	if err != nil {
@@ -70,7 +70,8 @@ func (z *Zip) readContent(zr *zip.Reader) error {
 		return errors.New("archive does not contain a unique content file")
 	}
 
-	file, err := files[0].Open()
+	contentFile := files[0]
+	file, err := contentFile.Open()
 	if err != nil {
 		return err
 	}
@@ -84,7 +85,9 @@ func (z *Zip) readContent(zr *zip.Reader) error {
 	if err = json.Unmarshal(bytes, &z.Content); err != nil {
 		return err
 	}
-
+	p := contentFile.FileInfo().Name()
+	id, _ := util.DocPathToName(p)
+	z.UUID = id
 	return nil
 }
 
@@ -122,14 +125,15 @@ func (z *Zip) readPagedata(zr *zip.Reader) error {
 	return nil
 }
 
-// readPdf tries to extract a pdf from an archive if it exists.
-func (z *Zip) readPdf(zr *zip.Reader) error {
-	files, err := zipExtFinder(zr, ".pdf")
+// readPayload tries to extract the payload from an archive if it exists.
+func (z *Zip) readPayload(zr *zip.Reader) error {
+	ext := z.Content.FileType
+	files, err := zipExtFinder(zr, "."+ext)
 	if err != nil {
 		return err
 	}
 
-	// return if no pdf
+	// return if not found
 	if len(files) != 1 {
 		return nil
 	}
@@ -140,33 +144,7 @@ func (z *Zip) readPdf(zr *zip.Reader) error {
 	}
 	defer file.Close()
 
-	z.Pdf, err = ioutil.ReadAll(file)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// readEpub tries to extract an epub from an archive if it exists.
-func (z *Zip) readEpub(zr *zip.Reader) error {
-	files, err := zipExtFinder(zr, ".epub")
-	if err != nil {
-		return err
-	}
-
-	// return if no epub
-	if len(files) != 1 {
-		return nil
-	}
-
-	file, err := files[0].Open()
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	z.Epub, err = ioutil.ReadAll(file)
+	z.Payload, err = ioutil.ReadAll(file)
 	if err != nil {
 		return err
 	}
@@ -189,7 +167,7 @@ func (z *Zip) readData(zr *zip.Reader) error {
 			return errors.New("error in .rm filename")
 		}
 
-		if len(z.Pages) < idx {
+		if len(z.Pages) <= idx {
 			return errors.New("page not found")
 		}
 
@@ -228,7 +206,7 @@ func (z *Zip) readThumbnails(zr *zip.Reader) error {
 			return errors.New("error in .jpg filename")
 		}
 
-		if len(z.Pages) < idx {
+		if len(z.Pages) <= idx {
 			return errors.New("page not found")
 		}
 
@@ -262,7 +240,7 @@ func (z *Zip) readMetadata(zr *zip.Reader) error {
 			return errors.New("error in metadata .json filename")
 		}
 
-		if len(z.Pages) < idx {
+		if len(z.Pages) <= idx {
 			return errors.New("page not found")
 		}
 
