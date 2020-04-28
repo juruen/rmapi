@@ -1,3 +1,15 @@
+## rmapi 0.0.11 (April 28, 2020)
+
+* Add env variables to override cloud API hosts (@ddvk)
+
+* Upload downloaded zip files (@ddvk)
+
+* Bug fix: use UTC time when setting document's upload time (@ddvk)
+
+* Add support to optinally create thumbnails for uploaded documents (@ddvk)
+
+* Update CI scripts to use Go 1.13 (@ddvk)
+
 ## rmapi 0.0.10 (April 17, 2020)
 
 * Multiple annotation fixes (@ddvk)
