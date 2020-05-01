@@ -1,10 +1,10 @@
 package config
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"os/user"
+	"path/filepath"
 
 	"github.com/juruen/rmapi/log"
 	"github.com/juruen/rmapi/model"
@@ -12,11 +12,13 @@ import (
 )
 
 const (
-	defaultConfigFile = ".rmapi"
-	configFileEnvVar = "RMAPI_CONFIG"
+	defaultConfigFile    = ".rmapi"
+	defaultConfigFileXDG = "rmapi.conf"
+	appName              = "rmapi"
+	configFileEnvVar     = "RMAPI_CONFIG"
 )
 
-func ConfigPath() string {
+func ConfigPath() (config string) {
 	configFile, ok := os.LookupEnv(configFileEnvVar)
 	if ok {
 		return configFile
@@ -28,8 +30,28 @@ func ConfigPath() string {
 	}
 
 	home := user.HomeDir
+	config = filepath.Join(home, defaultConfigFile)
 
-	return fmt.Sprintf("%s/%s", home, defaultConfigFile)
+	//return config in home if exists
+	if _, err := os.Stat(config); err == nil {
+		return
+	}
+
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		log.Warning.Println("cannot determine config dir, using HOME", err)
+		return
+	}
+
+	xdgConfigDir := filepath.Join(configDir, appName)
+	err = os.MkdirAll(xdgConfigDir, 0700)
+	if err != nil {
+		log.Error.Panicln("cannot create config dir "+xdgConfigDir, err)
+	}
+	config = filepath.Join(xdgConfigDir, defaultConfigFileXDG)
+
+	return
+
 }
 
 func LoadTokens(path string) model.AuthTokens {
