@@ -66,16 +66,6 @@ func mputCmd(ctx *ShellCtxt) *ishell.Cmd {
 	}
 }
 
-// Checks whether the file has a pdf, epub or zip extension.
-//
-// Input -> [string] Valid file name.
-// Returns -> true if the file is a pdf or epub, false otherwise
-func checkFileType(fName string) bool {
-	return (strings.Contains(fName, ".pdf") ||
-		strings.Contains(fName, ".epub") ||
-		strings.Contains(fName, ".zip"))
-}
-
 // Print the required spaces and characters for tree formatting.
 //
 // Input -> [*ishell.Context]
@@ -184,32 +174,33 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 
 		case mode.IsRegular():
 
-			// Is a file.
-			if checkFileType(name) {
-				// Is a pdf or epub file
+			docName, ext := util.DocPathToName(name)
 
-				docName, _ := util.DocPathToName(name)
-				_, err := pCtx.api.Filetree.NodeByPath(docName, pCtx.node)
+			if !util.IsFileTypeSupported(ext) {
+				continue
+			}
 
-				if err == nil {
-					// Document already exists.
-					treeFormat(pC, depth, index, lSize, tFS)
-					pC.Printf("document [%s] already exists\n", name)
+			_, err := pCtx.api.Filetree.NodeByPath(docName, pCtx.node)
+
+			if err == nil {
+				// Document already exists.
+				treeFormat(pC, depth, index, lSize, tFS)
+				pC.Printf("document [%s] already exists\n", name)
+			} else {
+				// Document does not exist.
+				treeFormat(pC, depth, index, lSize, tFS)
+				pC.Printf("uploading: [%s]...", name)
+				doc, err := pCtx.api.UploadDocument(pCtx.node.Id(), name)
+
+				if err != nil {
+					pC.Err(fmt.Errorf("failed to upload file %s", name))
 				} else {
-					// Document does not exist.
-					treeFormat(pC, depth, index, lSize, tFS)
-					pC.Printf("uploading: [%s]...", name)
-					doc, err := pCtx.api.UploadDocument(pCtx.node.Id(), name)
-
-					if err != nil {
-						pC.Err(fmt.Errorf("failed to upload file %s", name))
-					} else {
-						// Document uploaded successfully.
-						pC.Println(" complete")
-						pCtx.api.Filetree.AddDocument(*doc)
-					}
+					// Document uploaded successfully.
+					pC.Println(" complete")
+					pCtx.api.Filetree.AddDocument(*doc)
 				}
 			}
+
 		}
 	}
 

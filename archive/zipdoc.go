@@ -8,10 +8,9 @@ import (
 	"image/jpeg"
 	"io/ioutil"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/juruen/rmapi/log"
+	"github.com/juruen/rmapi/util"
 	"github.com/nfnt/resize"
 	pdfmodel "github.com/unidoc/unipdf/v3/model"
 	"github.com/unidoc/unipdf/v3/render"
@@ -52,7 +51,7 @@ func makeThumbnail(pdf []byte) ([]byte, error) {
 	return out.Bytes(), nil
 }
 
-// gets the Document UUID from an archive
+// GetIdFromZip tries to get the Document UUID from an archive
 func GetIdFromZip(srcPath string) (id string, err error) {
 	file, err := os.Open(srcPath)
 	if err != nil {
@@ -73,7 +72,8 @@ func GetIdFromZip(srcPath string) (id string, err error) {
 }
 
 func CreateZipDocument(id, srcPath string) (zipPath string, err error) {
-	ext := strings.TrimPrefix(filepath.Ext(srcPath), ".")
+	_, ext := util.DocPathToName(srcPath)
+
 	if ext == "zip" {
 		zipPath = srcPath
 		return
