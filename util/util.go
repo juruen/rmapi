@@ -11,9 +11,21 @@ import (
 	"github.com/juruen/rmapi/model"
 )
 
+var supportedExt = map[string]bool{
+	"epub": true,
+	"pdf":  true,
+	"zip":  true,
+}
+
+func IsFileTypeSupported(ext string) bool {
+	return supportedExt[ext]
+}
+
+// DocPathToName extracts the file name and file extension (without .) from a given path
 func DocPathToName(p string) (name string, ext string) {
-	ext = path.Ext(p)
-	name = strings.TrimSuffix(path.Base(p), path.Ext(p))
+	tmpExt := path.Ext(p)
+	name = strings.TrimSuffix(path.Base(p), tmpExt)
+	ext = strings.ToLower(strings.TrimPrefix(tmpExt, "."))
 	return
 }
 
