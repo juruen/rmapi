@@ -48,7 +48,7 @@ func putCmd(ctx *ShellCtxt) *ishell.Cmd {
 			document, err := ctx.api.UploadDocument(dstDir, srcName)
 
 			if err != nil {
-				c.Err(errors.New(fmt.Sprint("Failed to upload file", srcName, err.Error())))
+				c.Err(fmt.Errorf("Failed to upload file [%s] %v", srcName, err))
 				return
 			}
 
