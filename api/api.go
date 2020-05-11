@@ -210,11 +210,15 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model
 		return nil, errors.New("file name is invalid")
 	}
 
+	if !util.IsFileTypeSupported(ext) {
+		return nil, errors.New("unsupported file extension: " + ext)
+	}
+
 	id := ""
 	var err error
 
 	//restore document
-	if ext == ".zip" {
+	if ext == "zip" {
 		id, err = archive.GetIdFromZip(sourceDocPath)
 		if err != nil {
 			return nil, err
