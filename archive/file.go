@@ -18,6 +18,7 @@ type Zip struct {
 // NewZip creates a File with sane defaults.
 func NewZip() *Zip {
 	content := Content{
+		DummyDocument: false,
 		ExtraMetadata: ExtraMetadata{
 			LastBrushColor:           "Black",
 			LastBrushThicknessScale:  "2",
@@ -32,6 +33,7 @@ func NewZip() *Zip {
 			LastPencilThicknessScale: "2",
 			LastTool:                 "SharpPencil",
 			ThicknessScale:           "2",
+			LastFinelinerv2Size:      "1",
 		},
 		FileType:       "",
 		FontName:       "",
@@ -84,6 +86,7 @@ type Layer struct {
 
 // Content represents the structure of a .content json file.
 type Content struct {
+	DummyDocument bool          `json:"dummyDocument"`
 	ExtraMetadata ExtraMetadata `json:"extraMetadata"`
 
 	// FileType is "pdf", "epub" or empty for a simple note
@@ -117,6 +120,7 @@ type ExtraMetadata struct {
 	LastPencilThicknessScale string `json:"LastPencilThicknessScale"`
 	LastTool                 string `json:"LastTool"`
 	ThicknessScale           string `json:"ThicknessScale"`
+	LastFinelinerv2Size      string `json:"LastFinelinerv2Size"`
 }
 
 // Transform is a struct contained into a Content struct.
