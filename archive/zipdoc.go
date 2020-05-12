@@ -16,17 +16,6 @@ import (
 	"github.com/unidoc/unipdf/v3/render"
 )
 
-type zipDocumentContent struct {
-	ExtraMetadata  map[string]string `json:"extraMetadata"`
-	FileType       string            `json:"fileType"`
-	PageCount      int               `json:"pageCount"`
-	LastOpenedPage int               `json:"lastOpenedPage"`
-	LineHeight     int               `json:"lineHeight"`
-	Margins        int               `json:"margins"`
-	TextScale      int               `json:"textScale"`
-	Transform      map[string]string `json:"transform"`
-}
-
 func makeThumbnail(pdf []byte) ([]byte, error) {
 	reader, err := pdfmodel.NewPdfReader(bytes.NewReader(pdf))
 	if err != nil {
@@ -130,8 +119,6 @@ func CreateZipDocument(id, srcPath string) (zipPath string, err error) {
 	}
 	f.Write(make([]byte, 0))
 
-	//create thumbnail
-
 	// Create content content
 	f, err = w.Create(fmt.Sprintf("%s.content", id))
 	if err != nil {
@@ -175,15 +162,30 @@ func CreateZipDirectory(id string) (string, error) {
 }
 
 func createZipContent(ext string) (string, error) {
-	c := zipDocumentContent{
-		make(map[string]string),
-		ext,
-		0,
-		0,
-		-1,
-		180,
-		1,
-		make(map[string]string),
+	c := Content{
+		DummyDocument: false,
+		ExtraMetadata: ExtraMetadata{
+			LastPen:             "Finelinerv2",
+			LastTool:            "Finelinerv2",
+			LastFinelinerv2Size: "1",
+		},
+		FileType:       ext,
+		PageCount:      0,
+		LastOpenedPage: 0,
+		LineHeight:     -1,
+		Margins:        180,
+		TextScale:      1,
+		Transform: Transform{
+			M11: 1,
+			M12: 0,
+			M13: 0,
+			M21: 0,
+			M22: 1,
+			M23: 0,
+			M31: 0,
+			M32: 0,
+			M33: 1,
+		},
 	}
 
 	cstring, err := json.Marshal(c)
