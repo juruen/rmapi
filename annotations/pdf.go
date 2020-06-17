@@ -117,8 +117,6 @@ func (p *PdfGenerator) Generate() error {
 
 		contentCreator := contentstream.NewContentCreator()
 		contentCreator.Add_q()
-		contentCreator.Add_j("1")
-		contentCreator.Add_J("1")
 
 		for _, layer := range pageAnnotations.Data.Layers {
 			for _, line := range layer.Lines {
