@@ -1,3 +1,13 @@
+## rmapi 0.0.12 (June 18, 2020)
+
+* Use XDG paths conf config file (@ddvk)
+
+* Fix issue where documents are downloaded again
+  when the device reboots (@ddvk)
+
+* Fix annnoation issue where Acrobat Reader wouldn't display
+  annotations correctly (@ddvk)
+
 ## rmapi 0.0.11 (April 28, 2020)
 
 * Add env variables to override cloud API hosts (@ddvk)
