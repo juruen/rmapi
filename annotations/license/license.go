@@ -1,4 +1,4 @@
-package annotations
+package license
 
 import (
 	"time"

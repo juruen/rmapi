@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	_ "github.com/juruen/rmapi/annotations/license"
 	"github.com/juruen/rmapi/api"
 	"github.com/juruen/rmapi/log"
 	"github.com/juruen/rmapi/shell"
