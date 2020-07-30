@@ -23,7 +23,7 @@ taking automatic backups or uploading documents programmatically.
 
 Install and build the project:
 
-`go get -u github.com/juruen/rmapi`
+`GO111MODULE=on go get github.com/juruen/rmapi@latest`
 
 ## Binary
 
