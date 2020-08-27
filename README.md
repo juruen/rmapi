@@ -7,7 +7,7 @@
 rMAPI is a Go app that allows you to access the ReMarkable Cloud API programmatically.
 
 You can interact with the different API end-points through a shell. However, you can also
-run commands non-interactively. This may come in handy to script certian workflows such as
+run commands non-interactively. This may come in handy to script certain workflows such as
 taking automatic backups or uploading documents programmatically.
 
 
