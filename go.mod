@@ -16,6 +16,9 @@ require (
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/pkg/errors v0.8.1
+	github.com/rustyoz/Mtransform v0.0.0-20190224104252-60c8c35a3681 // indirect
+	github.com/rustyoz/genericlexer v0.0.0-20190224115003-eb82fd2987bd // indirect
+	github.com/rustyoz/svg v0.0.0-20200706102315-fe1aeca2ba20
 	github.com/satori/go.uuid v0.0.0-20180103174451-36e9d2ebbde5
 	github.com/stretchr/testify v1.5.1
 	github.com/unidoc/unipdf/v3 v3.6.1

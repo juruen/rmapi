@@ -40,7 +40,7 @@ func findCmd(ctx *ShellCtxt) *ishell.Cmd {
 			}
 
 			filetree.WalkTree(startNode, filetree.FileTreeVistor{
-				Visit:func(node *model.Node, path []string) bool {
+				Visit: func(node *model.Node, path []string) bool {
 					entryName := filepath.Join(strings.Join(path, "/"), node.Name())
 
 					if matchRegexp == nil {
@@ -48,7 +48,7 @@ func findCmd(ctx *ShellCtxt) *ishell.Cmd {
 						return false
 					}
 
-					if ! matchRegexp.Match([]byte(entryName)) {
+					if !matchRegexp.Match([]byte(entryName)) {
 						return false
 					}
 
@@ -60,4 +60,3 @@ func findCmd(ctx *ShellCtxt) *ishell.Cmd {
 		},
 	}
 }
-
