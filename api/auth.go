@@ -17,11 +17,14 @@ const (
 	defaultDeviceDesc string = "desktop-linux"
 )
 
-func AuthHttpCtx() *transport.HttpClientCtx {
+func AuthHttpCtx(nonInteractive bool) *transport.HttpClientCtx {
 	authTokens := config.LoadTokens(config.ConfigPath())
 	httpClientCtx := transport.CreateHttpClientCtx(authTokens)
 
 	if authTokens.DeviceToken == "" {
+		if nonInteractive {
+			log.Error.Fatal("missing token, not asking, aborting")
+		}
 		deviceToken, err := newDeviceToken(&httpClientCtx, readCode())
 
 		if err != nil {
@@ -39,7 +42,7 @@ func AuthHttpCtx() *transport.HttpClientCtx {
 	userToken, err := newUserToken(&httpClientCtx)
 
 	if err != nil {
-		log.Error.Fatal("failed to create user token from device token")
+		log.Error.Fatal("failed to create user token from device token, remove the existing token and try again")
 	}
 
 	log.Trace.Println("user token:", userToken)
