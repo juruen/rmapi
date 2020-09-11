@@ -2,7 +2,6 @@ package filetree
 
 import (
 	"path"
-	"strings"
 
 	"github.com/juruen/rmapi/model"
 )
@@ -45,7 +44,5 @@ func BuildPath(_path []string, entry string) string {
 		return entry
 	}
 
-	resultPath := path.Join(path.Join(_path...), entry)
-
-	return strings.TrimPrefix(resultPath, "/")
+	return path.Join(path.Join(_path...), entry)
 }
