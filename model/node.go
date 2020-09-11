@@ -1,6 +1,9 @@
 package model
 
-import "errors"
+import (
+	"errors"
+	"time"
+)
 
 type Node struct {
 	Document *Document
@@ -38,6 +41,10 @@ func (node *Node) IsFile() bool {
 func (node *Node) EntyExists(id string) bool {
 	_, ok := node.Children[id]
 	return ok
+}
+
+func (node *Node) LastModified() (time.Time, error) {
+	return time.Parse(time.RFC3339Nano, node.Document.ModifiedClient)
 }
 
 func (node *Node) FindByName(name string) (*Node, error) {
