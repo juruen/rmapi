@@ -19,11 +19,6 @@ func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 		Help:      "recursively copy remote directory to local",
 		Completer: createDirCompleter(ctx),
 		Func: func(c *ishell.Context) {
-			if len(c.Args) == 0 {
-				c.Err(errors.New(("missing source dir")))
-				return
-			}
-
 			flagSet := flag.NewFlagSet("mget", flag.ContinueOnError)
 			incremental := flagSet.Bool("i", false, "incremental")
 			outputDir := flagSet.String("o", "./", "output folder")
@@ -36,6 +31,12 @@ func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 				return
 			}
 			argRest := flagSet.Args()
+
+			if len(argRest) == 0 {
+				c.Err(errors.New(("missing source dir")))
+				return
+			}
+
 			srcName := argRest[0]
 
 			node, err := ctx.api.Filetree.NodeByPath(srcName, ctx.node)
