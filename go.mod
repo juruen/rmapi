@@ -6,7 +6,6 @@ require (
 	github.com/abiosoft/ishell v2.0.0+incompatible
 	github.com/abiosoft/readline v0.0.0-20180607040430-155bce2042db // indirect
 	github.com/chzyer/logex v1.1.10 // indirect
-	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.9.0 // indirect
@@ -16,9 +15,6 @@ require (
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/pkg/errors v0.8.1
-	github.com/rustyoz/Mtransform v0.0.0-20190224104252-60c8c35a3681 // indirect
-	github.com/rustyoz/genericlexer v0.0.0-20190224115003-eb82fd2987bd // indirect
-	github.com/rustyoz/svg v0.0.0-20200706102315-fe1aeca2ba20
 	github.com/satori/go.uuid v0.0.0-20180103174451-36e9d2ebbde5
 	github.com/stretchr/testify v1.5.1
 	github.com/unidoc/unipdf/v3 v3.6.1
