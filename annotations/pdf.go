@@ -65,6 +65,7 @@ func (p *PdfGenerator) Generate() error {
 	if err != nil {
 		return err
 	}
+
 	if zip.Content.FileType == "epub" {
 		return errors.New("only pdf and notebooks supported")
 	}
@@ -81,6 +82,11 @@ func (p *PdfGenerator) Generate() error {
 	if p.template {
 		// use the standard page size
 		c.SetPageSize(rmPageSize)
+	}
+
+	if p.pdfReader != nil && p.options.AllPages {
+		outlines := p.pdfReader.GetOutlineTree()
+		c.SetOutlineTree(outlines)
 	}
 
 	for i, pageAnnotations := range zip.Pages {
@@ -185,6 +191,21 @@ func (p *PdfGenerator) initBackgroundPages(pdfArr []byte) error {
 		pdfReader, err := pdf.NewPdfReader(bytes.NewReader(pdfArr))
 		if err != nil {
 			return err
+		}
+
+		encrypted, err := pdfReader.IsEncrypted()
+		if err != nil {
+			return nil
+		}
+		if encrypted {
+			valid, err := pdfReader.Decrypt([]byte(""))
+			if err != nil {
+				return err
+			}
+			if !valid {
+				return fmt.Errorf("cannot decrypt")
+			}
+
 		}
 
 		p.pdfReader = pdfReader
