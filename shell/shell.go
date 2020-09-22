@@ -48,7 +48,6 @@ func RunShell(apiCtx *api.ApiCtx, args []string) error {
 		path:           apiCtx.Filetree.Root().Name(),
 		useHiddenFiles: useHiddenFiles()}
 
-	shell.Println("ReMarkable Cloud API Shell")
 	shell.SetPrompt(ctx.prompt())
 
 	shell.AddCmd(lsCmd(ctx))
@@ -71,6 +70,7 @@ func RunShell(apiCtx *api.ApiCtx, args []string) error {
 	if len(args) > 0 {
 		return shell.Process(args...)
 	} else {
+		shell.Println("ReMarkable Cloud API Shell")
 		shell.Run()
 
 		return nil
