@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"time"
 
 	"github.com/abiosoft/ishell"
@@ -21,8 +22,8 @@ func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 		Func: func(c *ishell.Context) {
 			flagSet := flag.NewFlagSet("mget", flag.ContinueOnError)
 			incremental := flagSet.Bool("i", false, "incremental")
-			outputDir := flagSet.String("o", "./", "output folder")
-			_ = flagSet.Bool("d", false, "remove deleted/moved")
+			outputDir := flagSet.String("o", ".", "output folder")
+			removeDeleted := flagSet.Bool("d", false, "remove deleted/moved")
 
 			if err := flagSet.Parse(c.Args); err != nil {
 				if err != flag.ErrHelp {
@@ -30,13 +31,18 @@ func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 				}
 				return
 			}
-			argRest := flagSet.Args()
 
+			target := path.Clean(*outputDir)
+			if *removeDeleted && target == "." {
+				c.Err(fmt.Errorf("set a folder explictly with the -o flag when removing deleted (and not .)"))
+				return
+			}
+
+			argRest := flagSet.Args()
 			if len(argRest) == 0 {
 				c.Err(errors.New(("missing source dir")))
 				return
 			}
-
 			srcName := argRest[0]
 
 			node, err := ctx.api.Filetree.NodeByPath(srcName, ctx.node)
@@ -45,6 +51,9 @@ func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 				c.Err(errors.New("directory doesn't exist"))
 				return
 			}
+
+			fileMap := make(map[string]struct{})
+			fileMap[target] = struct{}{}
 
 			visitor := filetree.FileTreeVistor{
 				func(currentNode *model.Node, currentPath []string) bool {
@@ -55,8 +64,11 @@ func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 					fileName := currentNode.Name() + ".zip"
 
-					dst := path.Join(*outputDir, filetree.BuildPath(currentPath[idxDir:], fileName))
+					dst := path.Join(target, filetree.BuildPath(currentPath[idxDir:], fileName))
+					fileMap[dst] = struct{}{}
+
 					dir := path.Dir(dst)
+					fileMap[dir] = struct{}{}
 
 					os.MkdirAll(dir, 0766)
 
@@ -102,6 +114,37 @@ func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 			}
 
 			filetree.WalkTree(node, visitor)
+
+			if *removeDeleted {
+				filepath.Walk(target, func(path string, info os.FileInfo, err error) error {
+					if err != nil {
+						c.Err(fmt.Errorf("can't read %s %v", path, err))
+						return nil
+					}
+					//just to be sure
+					if path == target {
+						return nil
+					}
+					if _, ok := fileMap[path]; !ok {
+						var err error
+						if info.IsDir() {
+							c.Println("Removing folder ", path)
+							err = os.RemoveAll(path)
+							if err != nil {
+								c.Err(err)
+							}
+							return filepath.SkipDir
+						}
+
+						c.Println("Removing ", path)
+						err = os.Remove(path)
+						if err != nil {
+							c.Err(err)
+						}
+					}
+					return nil
+				})
+			}
 		},
 	}
 }
