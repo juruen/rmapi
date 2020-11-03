@@ -25,10 +25,12 @@ func main() {
 	var ctx *api.ApiCtx
 	var err error
 	for i := 0; i < AUTH_RETRIES; i++ {
-		ctx, err = api.CreateApiCtx(api.AuthHttpCtx())
+		ctx, err = api.CreateApiCtx(api.AuthHttpCtx(i > 0))
 
 		if err != nil {
 			log.Trace.Println(err)
+		} else {
+			break
 		}
 	}
 
