@@ -8,8 +8,8 @@ import (
 
 func lsCmd(ctx *ShellCtxt) *ishell.Cmd {
 	return &ishell.Cmd{
-		Name: "ls",
-		Help: "list directory",
+		Name:      "ls",
+		Help:      "list directory",
 		Completer: createEntryCompleter(ctx),
 		Func: func(c *ishell.Context) {
 			node := ctx.node

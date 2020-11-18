@@ -17,11 +17,14 @@ const (
 	defaultDeviceDesc string = "desktop-linux"
 )
 
-func AuthHttpCtx(reAuth bool) *transport.HttpClientCtx {
+func AuthHttpCtx(reAuth, nonInteractive bool) *transport.HttpClientCtx {
 	authTokens := config.LoadTokens(config.ConfigPath())
 	httpClientCtx := transport.CreateHttpClientCtx(authTokens)
 
 	if authTokens.DeviceToken == "" {
+		if nonInteractive {
+			log.Error.Fatal("missing token, not asking, aborting")
+		}
 		deviceToken, err := newDeviceToken(&httpClientCtx, readCode())
 
 		if err != nil {
