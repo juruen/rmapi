@@ -2,9 +2,12 @@ package shell
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
+	"time"
 
 	"github.com/abiosoft/ishell"
 	"github.com/juruen/rmapi/filetree"
@@ -17,12 +20,30 @@ func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 		Help:      "recursively copy remote directory to local",
 		Completer: createDirCompleter(ctx),
 		Func: func(c *ishell.Context) {
-			if len(c.Args) == 0 {
-				c.Err(errors.New(("missing source dir")))
+			flagSet := flag.NewFlagSet("mget", flag.ContinueOnError)
+			incremental := flagSet.Bool("i", false, "incremental")
+			outputDir := flagSet.String("o", ".", "output folder")
+			removeDeleted := flagSet.Bool("d", false, "remove deleted/moved")
+
+			if err := flagSet.Parse(c.Args); err != nil {
+				if err != flag.ErrHelp {
+					c.Err(err)
+				}
 				return
 			}
 
-			srcName := c.Args[0]
+			target := path.Clean(*outputDir)
+			if *removeDeleted && target == "." {
+				c.Err(fmt.Errorf("set a folder explictly with the -o flag when removing deleted (and not .)"))
+				return
+			}
+
+			argRest := flagSet.Args()
+			if len(argRest) == 0 {
+				c.Err(errors.New(("missing source dir")))
+				return
+			}
+			srcName := argRest[0]
 
 			node, err := ctx.api.Filetree.NodeByPath(srcName, ctx.node)
 
@@ -31,6 +52,9 @@ func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 				return
 			}
 
+			fileMap := make(map[string]struct{})
+			fileMap[target] = struct{}{}
+
 			visitor := filetree.FileTreeVistor{
 				func(currentNode *model.Node, currentPath []string) bool {
 					idxDir := 0
@@ -38,14 +62,35 @@ func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 						idxDir = 1
 					}
 
-					dst := "./" + filetree.BuildPath(currentPath[idxDir:], currentNode.Name())
-					dst += ".zip"
+					fileName := currentNode.Name() + ".zip"
+
+					dst := path.Join(target, filetree.BuildPath(currentPath[idxDir:], fileName))
+					fileMap[dst] = struct{}{}
+
 					dir := path.Dir(dst)
+					fileMap[dir] = struct{}{}
 
 					os.MkdirAll(dir, 0766)
 
 					if currentNode.IsDirectory() {
 						return filetree.ContinueVisiting
+					}
+
+					lastModified, err := currentNode.LastModified()
+					if err != nil {
+						fmt.Printf("%v for %s\n", err, dst)
+						lastModified = time.Now()
+					}
+
+					if *incremental {
+						stat, err := os.Stat(dst)
+						if err == nil {
+							localMod := stat.ModTime()
+
+							if !lastModified.After(localMod) {
+								return filetree.ContinueVisiting
+							}
+						}
 					}
 
 					c.Printf("downloading [%s]...", dst)
@@ -54,16 +99,52 @@ func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 					if err == nil {
 						c.Println(" OK")
+
+						err = os.Chtimes(dst, lastModified, lastModified)
+						if err != nil {
+							c.Err(fmt.Errorf("cant set lastModified for %s", dst))
+						}
 						return filetree.ContinueVisiting
 					}
 
-					c.Err(errors.New(fmt.Sprintf("Failed to downlaod file %s", currentNode.Name())))
+					c.Err(fmt.Errorf("Failed to download file %s", currentNode.Name()))
 
 					return filetree.ContinueVisiting
 				},
 			}
 
 			filetree.WalkTree(node, visitor)
+
+			if *removeDeleted {
+				filepath.Walk(target, func(path string, info os.FileInfo, err error) error {
+					if err != nil {
+						c.Err(fmt.Errorf("can't read %s %v", path, err))
+						return nil
+					}
+					//just to be sure
+					if path == target {
+						return nil
+					}
+					if _, ok := fileMap[path]; !ok {
+						var err error
+						if info.IsDir() {
+							c.Println("Removing folder ", path)
+							err = os.RemoveAll(path)
+							if err != nil {
+								c.Err(err)
+							}
+							return filepath.SkipDir
+						}
+
+						c.Println("Removing ", path)
+						err = os.Remove(path)
+						if err != nil {
+							c.Err(err)
+						}
+					}
+					return nil
+				})
+			}
 		},
 	}
 }
