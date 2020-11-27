@@ -37,16 +37,22 @@ First clone this repository, then build a local container like
 docker build -t rmapi .
 ```
 
-and run by mounting the .rmapi folder
+create the .config/rmapi config folder
 
 ```
-docker run -v $HOME/.rmapi/:/home/user/.rmapi/ -it rmapi
+docker build -t rmapi .
+``` 
+
+and run by mounting the .config/rmapi folder
+
+```
+docker run -v $HOME/.config/rmapi/:/home/user/.config/rmapi/ -it rmapi
 ```
 
 Issue non-interactive commands by appending to the `docker run` command:
 
 ```
-docker run -v $HOME/.rmapi/:/home/user/.rmapi/ rmapi help
+docker run -v $HOME/.config/rmapi/:/home/user/.config/rmapi/ rmapi help
 ```
 
 # API support
