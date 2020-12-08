@@ -1,6 +1,6 @@
 module github.com/juruen/rmapi
 
-go 1.13
+go 1.15
 
 require (
 	github.com/abiosoft/ishell v2.0.0+incompatible
