@@ -1,3 +1,15 @@
+## rmapi master
+
+* Copy table contents when creating annotations (@ddvk)
+
+* Incremental sync (@ddvk)
+
+* Fix auth retries (@ddvk)
+
+* Use nested config dir under XDG (@jebw)
+
+* Bump go verison to 1.15 (@juruen)
+
 ## rmapi 0.0.12 (June 18, 2020)
 
 * Use XDG paths conf config file (@ddvk)
