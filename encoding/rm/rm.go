@@ -95,6 +95,7 @@ const (
 	TiltPencilV5  BrushType = 14
 	BrushV5       BrushType = 12
 	HighlighterV5 BrushType = 18
+	CalligraphyV5 BrushType = 21
 )
 
 // BrushSize represents the base brush sizes.

@@ -100,15 +100,15 @@ func (r *reader) readLine() (Line, error) {
 		return line, fmt.Errorf("Failed to read line")
 	}
 
+	if err := binary.Read(r, binary.LittleEndian, &line.BrushSize); err != nil {
+		return line, fmt.Errorf("Failed to read line")
+	}
+
 	// this new attribute has been added in v5
 	if r.version == V5 {
 		if err := binary.Read(r, binary.LittleEndian, &line.Unknown); err != nil {
 			return line, fmt.Errorf("Failed to read line")
 		}
-	}
-
-	if err := binary.Read(r, binary.LittleEndian, &line.BrushSize); err != nil {
-		return line, fmt.Errorf("Failed to read line")
 	}
 
 	nbPoints, err := r.readNumber()
