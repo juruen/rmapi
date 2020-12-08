@@ -5,16 +5,9 @@ import (
 	"math"
 )
 
-// StrokeSetting describes strokes from an .rm file in a pdf document.
-// Although Colours are defined as RGBA values, they all have solid
-// (255) Alpha values. The width of each stroke is a value representing
-// the medium-sized pen width of each pen type (the middle of three
-// values), although StdWidth is an eyeballed/very approximate value
-// which is further adjusted through StrokeSetting.Width(). In future
-// it may be better to set the widths explictly in this struct.
-// The Alpha value is set separately using the Opacity value. The
-// ColourOverride property determines if the colour of the stroke may be
-// manually overridden by command-line options.
+// Just a translation of https://github.com/peerdavid/remapy/blob/master/model/render.py
+// Use some ideas for golang code of https://github.com/rorycl/rm2pdf/blob/master/rmpdf/stroke.go
+
 type StrokeSetting struct {
 	Render    BrushRenderType
 	Ratio     float32
@@ -76,8 +69,16 @@ func (p StrokeSetting) GetOpacity() float32 {
 
 }
 
-func (p StrokeSetting) GetColour() rm.BrushColor {
-	var colour rm.BrushColor = p.Line.BrushColor
+func (p StrokeSetting) GetColour() float32 {
+	var colour float32 = 0
+	switch p.Line.BrushColor {
+	case rm.Black:
+		colour = 0
+	case rm.Grey:
+		colour = 0.5
+	default:
+		colour = 1
+	}
 	return colour
 }
 
@@ -159,12 +160,12 @@ var StrokeSettings = map[BrushRenderType]StrokeSetting{
 	EraserRender: {
 		Render:  EraserRender,
 		Opacity: 1,
-		Length:  1000,
+		Length:  10,
 	},
 	EraseAreaRender: {
 		Render:  EraserRender,
 		Opacity: 0,
-		Length:  1000,
+		Length:  10,
 	},
 	CalligraphyRender: {
 		Render:  CalligraphyRender,
@@ -178,6 +179,6 @@ type PointRender struct {
 	Y       float64
 	Width   float64
 	Opacity float64
-	Colour  rm.BrushColor
+	Colour  float64
 	Render  BrushRenderType
 }
