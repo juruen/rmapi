@@ -94,6 +94,8 @@ func (p *PdfGenerator) Generate() error {
 			continue
 		}
 
+		// TODO: check if page is horizontal and rotate
+
 		page, err := p.addBackgroundPage(c, i+1)
 
 		if err != nil {
@@ -118,10 +120,12 @@ func (p *PdfGenerator) Generate() error {
 		if !hasContent {
 			continue
 		}
+
 		contentCreator := contentstream.NewContentCreator()
 		contentCreator.Add_q()
 
 		// Setting transparency is a total mess and require a different Dictionary for each alpha value
+		// PS: there is no documentation about this.
 		var GSname core.PdfObjectName = GSnormal
 
 		GS := core.MakeDict()
@@ -179,6 +183,10 @@ func (p *PdfGenerator) Generate() error {
 				for i := PathSkip; i < len(line.Points); i++ {
 
 					// Set colour
+					// TODO: Cool features: set colour
+					// -string in layer
+					// -type of pen
+
 					contentCreator.Add_RG(points[i-1].Colour, points[i-1].Colour, points[i-1].Colour)
 
 					// Set Cap
@@ -211,6 +219,7 @@ func (p *PdfGenerator) Generate() error {
 					// Set width
 					contentCreator.Add_w(points[i].Width)
 
+					// Did tried Bezier: useless.
 					//Draw Path
 					path := draw.NewPath()
 					path = path.AppendPoint(draw.NewPoint(points[i-PathSkip].X, points[i-PathSkip].Y))
