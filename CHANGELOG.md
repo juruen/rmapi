@@ -1,4 +1,4 @@
-## rmapi master
+## rmapi 0.0.13 (December 08, 2020)
 
 * Copy table contents when creating annotations (@ddvk)
 
