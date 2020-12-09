@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/juruen/rmapi/encoding/rm"
+
 	"github.com/juruen/rmapi/archive"
 	"github.com/juruen/rmapi/log"
 	//"github.com/unidoc/unipdf/v3/annotator"
@@ -17,8 +19,8 @@ import (
 )
 
 const (
-	DeviceWidth   = 1404
-	DeviceHeight  = 1872
+	DeviceWidth   = float64(rm.Width)
+	DeviceHeight  = float64(rm.Height)
 	PathSkip      = 3
 	GShighlighter = "GShiglighter"
 	GSnormal      = "GS"
@@ -158,7 +160,7 @@ func (p *PdfGenerator) Generate() error {
 				var lastwidth float32 = 0
 				var opacity float32 = 1
 				var colour float32 = 0
-				points := make([]PointRender, len(line.Points))
+				var points []PointRender
 				for j := 0; j < len(line.Points); j++ {
 					ss.Point = line.Points[j]
 					ss.LastWidth = lastwidth
@@ -168,19 +170,26 @@ func (p *PdfGenerator) Generate() error {
 						colour = ss.GetColour()
 					}
 
-					points[j] = PointRender{
+					points = append(points, PointRender{
 						X:       float64(ss.Point.X) * float64(ss.Ratio),
 						Y:       c.Height() - float64(ss.Point.Y)*float64(ss.Ratio),
 						Width:   float64(lastwidth),
 						Opacity: float64(opacity),
 						Colour:  float64(colour),
 						Render:  ss.Render,
-					}
+					})
 
 					ss.LastWidth = lastwidth
 				}
 
-				for j := PathSkip; j < len(line.Points); j++ {
+				for j := PathSkip; j < len(points); j++ {
+					// Did tried Bezier: useless.
+					//Draw Path
+					path := draw.NewPath()
+					path = path.AppendPoint(draw.NewPoint(points[j-PathSkip].X, points[j-PathSkip].Y))
+					path = path.AppendPoint(draw.NewPoint(points[j].X, points[j].Y))
+
+					// Style
 
 					// Set colour
 					// TODO: Cool features: set colour
@@ -223,14 +232,12 @@ func (p *PdfGenerator) Generate() error {
 					// Set width
 					contentCreator.Add_w(points[j-1].Width)
 
-					// Did tried Bezier: useless.
-					//Draw Path
-					path := draw.NewPath()
-					path = path.AppendPoint(draw.NewPoint(points[j-PathSkip].X, points[j-PathSkip].Y))
-					path = path.AppendPoint(draw.NewPoint(points[j].X, points[j].Y))
-
 					draw.DrawPathWithCreator(path, contentCreator)
-					contentCreator.Add_S()
+
+					// Be able to set a new style for next line
+					if points[j-1].Render != HighlighterRender && j%ss.Length == 0 {
+						contentCreator.Add_S()
+					}
 
 					// annotator Version: have some serious bug with width > 0.1
 					// Should be the right way to go, but waiting that unipdf fix the bugs
@@ -251,6 +258,7 @@ func (p *PdfGenerator) Generate() error {
 
 				}
 
+				contentCreator.Add_S()
 			}
 		}
 

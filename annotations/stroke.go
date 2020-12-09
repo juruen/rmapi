@@ -135,7 +135,7 @@ var StrokeSettings = map[BrushRenderType]StrokeSetting{
 	FinelineRender: {
 		Render:  FinelineRender,
 		Opacity: 1,
-		Length:  1000,
+		Length:  10,
 	},
 	SharpPencilRender: {
 		Render:  SharpPencilRender,
