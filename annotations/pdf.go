@@ -136,6 +136,8 @@ func (p *PdfGenerator) Generate() error {
 		GS.Set("CA", core.MakeFloat(float64(StrokeSettings[FinelineRender].Opacity)))
 		page.AddExtGState(GSnormal, GS)
 
+		var GScount uint32 = 0
+
 		for _, layer := range pageAnnotations.Data.Layers {
 			for _, line := range layer.Lines {
 				if len(line.Points) < 1 {
@@ -207,7 +209,11 @@ func (p *PdfGenerator) Generate() error {
 					if points[i-1].Render == HighlighterRender {
 						contentCreator.Add_gs(GShighlighter)
 					} else if points[i-1].Render == TiltPencilRender {
-						GSname = core.PdfObjectName(fmt.Sprintf("GS%d", i))
+						GSname = core.PdfObjectName(fmt.Sprintf("GS%d", GScount))
+						for page.HasExtGState(GSname) {
+							GScount++
+							GSname = core.PdfObjectName(fmt.Sprintf("GS%d", GScount))
+						}
 						GS = core.MakeDict()
 						GS.Set("CA", core.MakeFloat(points[i-1].Opacity))
 						page.AddExtGState(GSname, GS)
