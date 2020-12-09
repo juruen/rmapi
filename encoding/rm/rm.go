@@ -55,7 +55,7 @@ const (
 
 // Width and Height of the device in pixels.
 const (
-	Width  int = 1404
+	Width  int = 1404 // 1408 in case of rm2
 	Height int = 1872
 )
 
