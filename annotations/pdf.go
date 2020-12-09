@@ -105,7 +105,7 @@ func (p *PdfGenerator) Generate() error {
 		ratio := c.Height() / c.Width()
 
 		var scale float64
-		if ratio < 1.33 {
+		if ratio < (float64(DeviceHeight) / float64(DeviceWidth)) {
 			scale = c.Width() / DeviceWidth
 		} else {
 			scale = c.Height() / DeviceHeight
@@ -159,18 +159,16 @@ func (p *PdfGenerator) Generate() error {
 				var opacity float32 = 1
 				var colour float32 = 0
 				points := make([]PointRender, len(line.Points))
-				var sum float64 = 0
-				for i := 0; i < len(line.Points); i++ {
-					ss.Point = line.Points[i]
+				for j := 0; j < len(line.Points); j++ {
+					ss.Point = line.Points[j]
 					ss.LastWidth = lastwidth
-					sum += float64(opacity)
-					if i%ss.Length == 0 {
+					if j%ss.Length == 0 {
 						lastwidth = ss.GetWidth()
 						opacity = ss.GetOpacity()
 						colour = ss.GetColour()
 					}
 
-					points[i] = PointRender{
+					points[j] = PointRender{
 						X:       float64(ss.Point.X) * float64(ss.Ratio),
 						Y:       c.Height() - float64(ss.Point.Y)*float64(ss.Ratio),
 						Width:   float64(lastwidth),
@@ -182,40 +180,40 @@ func (p *PdfGenerator) Generate() error {
 					ss.LastWidth = lastwidth
 				}
 
-				for i := PathSkip; i < len(line.Points); i++ {
+				for j := PathSkip; j < len(line.Points); j++ {
 
 					// Set colour
 					// TODO: Cool features: set colour
 					// -string in layer
 					// -type of pen
 
-					contentCreator.Add_RG(points[i-1].Colour, points[i-1].Colour, points[i-1].Colour)
+					contentCreator.Add_RG(points[j-1].Colour, points[j-1].Colour, points[j-1].Colour)
 
 					// Set Cap
 					var Cap string = "Round cap."
-					if points[i-1].Render == HighlighterRender {
+					if points[j-1].Render == HighlighterRender {
 						Cap = "Butt cap" // Projecting square cap
 					}
 					contentCreator.Add_J(Cap)
 
 					// Set join
 					var Join string = "Round  join"
-					if points[i-1].Render == HighlighterRender {
+					if points[j-1].Render == HighlighterRender {
 						Cap = "Miter join" // Bevel  join
 					}
 					contentCreator.Add_j(Join)
 
 					//Set Tranparency
-					if points[i-1].Render == HighlighterRender {
+					if points[j-1].Render == HighlighterRender {
 						contentCreator.Add_gs(GShighlighter)
-					} else if points[i-1].Render == TiltPencilRender {
+					} else if points[j-1].Render == TiltPencilRender {
 						GSname = core.PdfObjectName(fmt.Sprintf("GS%d", GScount))
 						for page.HasExtGState(GSname) {
 							GScount++
 							GSname = core.PdfObjectName(fmt.Sprintf("GS%d", GScount))
 						}
 						GS = core.MakeDict()
-						GS.Set("CA", core.MakeFloat(points[i-1].Opacity))
+						GS.Set("CA", core.MakeFloat(points[j-1].Opacity))
 						page.AddExtGState(GSname, GS)
 						contentCreator.Add_gs(GSname)
 					} else {
@@ -223,16 +221,33 @@ func (p *PdfGenerator) Generate() error {
 					}
 
 					// Set width
-					contentCreator.Add_w(points[i].Width)
+					contentCreator.Add_w(points[j-1].Width)
 
 					// Did tried Bezier: useless.
 					//Draw Path
 					path := draw.NewPath()
-					path = path.AppendPoint(draw.NewPoint(points[i-PathSkip].X, points[i-PathSkip].Y))
-					path = path.AppendPoint(draw.NewPoint(points[i].X, points[i].Y))
+					path = path.AppendPoint(draw.NewPoint(points[j-PathSkip].X, points[j-PathSkip].Y))
+					path = path.AppendPoint(draw.NewPoint(points[j].X, points[j].Y))
 
 					draw.DrawPathWithCreator(path, contentCreator)
 					contentCreator.Add_S()
+
+					// annotator Version: have some serious bug with width > 0.1
+					// Should be the right way to go, but waiting that unipdf fix the bugs
+
+					// lineDef := annotator.LineAnnotationDef{X1: points[i-PathSkip].X,
+					//	Y1:        points[i-PathSkip].Y,
+					//	X2:        points[i].X,
+					//	Y2:        points[i].Y,
+					//	LineColor: pdf.NewPdfColorDeviceRGB(points[i].Colour, points[i].Colour, points[i].Colour),
+					//	Opacity:   points[i].Opacity,
+					//	LineWidth: points[i].Width,
+					// }
+					// ann, err := annotator.CreateLineAnnotation(lineDef)
+					// if err != nil {
+					// 	return err
+					// }
+					// page.AddAnnotation(ann)
 
 				}
 
