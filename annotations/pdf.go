@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-
 	"os"
 
-	"github.com/juruen/rmapi/archive"
 	"github.com/juruen/rmapi/encoding/rm"
+
+	"github.com/juruen/rmapi/archive"
 	"github.com/juruen/rmapi/log"
-	"github.com/unidoc/unipdf/v3/annotator"
+	//"github.com/unidoc/unipdf/v3/annotator"
 	"github.com/unidoc/unipdf/v3/contentstream"
 	"github.com/unidoc/unipdf/v3/contentstream/draw"
 	"github.com/unidoc/unipdf/v3/core"
@@ -19,8 +19,11 @@ import (
 )
 
 const (
-	DeviceWidth  = 1404
-	DeviceHeight = 1872
+	DeviceWidth   = float64(rm.Width)
+	DeviceHeight  = float64(rm.Height)
+	PathSkip      = 3
+	GShighlighter = "GShiglighter"
+	GSnormal      = "GS"
 )
 
 var rmPageSize = creator.PageSize{445, 594}
@@ -41,10 +44,6 @@ type PdfGeneratorOptions struct {
 
 func CreatePdfGenerator(zipName, outputFilePath string, options PdfGeneratorOptions) *PdfGenerator {
 	return &PdfGenerator{zipName: zipName, outputFilePath: outputFilePath, options: options}
-}
-
-func normalized(p1 rm.Point, ratioX float64) (float64, float64) {
-	return float64(p1.X) * ratioX, float64(p1.Y) * ratioX
 }
 
 func (p *PdfGenerator) Generate() error {
@@ -97,7 +96,10 @@ func (p *PdfGenerator) Generate() error {
 			continue
 		}
 
+		// TODO: check if page is horizontal and rotate
+
 		page, err := p.addBackgroundPage(c, i+1)
+
 		if err != nil {
 			return err
 		}
@@ -105,7 +107,7 @@ func (p *PdfGenerator) Generate() error {
 		ratio := c.Height() / c.Width()
 
 		var scale float64
-		if ratio < 1.33 {
+		if ratio < (float64(DeviceHeight) / float64(DeviceWidth)) {
 			scale = c.Width() / DeviceWidth
 		} else {
 			scale = c.Height() / DeviceHeight
@@ -124,57 +126,142 @@ func (p *PdfGenerator) Generate() error {
 		contentCreator := contentstream.NewContentCreator()
 		contentCreator.Add_q()
 
+		// Setting transparency is a total mess and require a different Dictionary for each alpha value
+		// PS: there is no documentation about this.
+		var GSname core.PdfObjectName = GSnormal
+
+		GS := core.MakeDict()
+		GS.Set("CA", core.MakeFloat(float64(StrokeSettings[HighlighterRender].Opacity)))
+		page.AddExtGState(GShighlighter, GS)
+
+		GS = core.MakeDict()
+		GS.Set("CA", core.MakeFloat(float64(StrokeSettings[FinelineRender].Opacity)))
+		page.AddExtGState(GSnormal, GS)
+
+		var GScount uint32 = 0
+
 		for _, layer := range pageAnnotations.Data.Layers {
 			for _, line := range layer.Lines {
 				if len(line.Points) < 1 {
 					continue
 				}
-				if line.BrushType == rm.Eraser {
+
+				if StrokeMap[line.BrushType] == EraserRender || StrokeMap[line.BrushType] == EraseAreaRender {
 					continue
 				}
 
-				if line.BrushType == rm.HighlighterV5 {
-					last := len(line.Points) - 1
-					x1, y1 := normalized(line.Points[0], scale)
-					x2, _ := normalized(line.Points[last], scale)
-					// make horizontal lines only, use y1
-					width := scale * 30
-					y1 += width / 2
+				ss, ok := StrokeSettings[StrokeMap[line.BrushType]]
+				if !ok {
+					ss = StrokeSettings[FinelineRender]
+				}
 
-					lineDef := annotator.LineAnnotationDef{X1: x1 - 1, Y1: c.Height() - y1, X2: x2, Y2: c.Height() - y1}
-					lineDef.LineColor = pdf.NewPdfColorDeviceRGB(1.0, 1.0, 0.0) //yellow
-					lineDef.Opacity = 0.5
-					lineDef.LineWidth = width
-					ann, err := annotator.CreateLineAnnotation(lineDef)
-					if err != nil {
-						return err
+				ss.Ratio = float32(scale)
+				ss.Line = line
+				var lastwidth float32 = 0
+				var opacity float32 = 1
+				var colour float32 = 0
+				var points []PointRender
+				for j := 0; j < len(line.Points); j++ {
+					ss.Point = line.Points[j]
+					ss.LastWidth = lastwidth
+					if j%ss.Length == 0 {
+						lastwidth = ss.GetWidth()
+						opacity = ss.GetOpacity()
+						colour = ss.GetColour()
 					}
-					page.AddAnnotation(ann)
-				} else {
+
+					points = append(points, PointRender{
+						X:       float64(ss.Point.X) * float64(ss.Ratio),
+						Y:       c.Height() - float64(ss.Point.Y)*float64(ss.Ratio),
+						Width:   float64(lastwidth),
+						Opacity: float64(opacity),
+						Colour:  float64(colour),
+						Render:  ss.Render,
+					})
+
+					ss.LastWidth = lastwidth
+				}
+
+				for j := PathSkip; j < len(points); j++ {
+					// Did tried Bezier: useless.
+					//Draw Path
 					path := draw.NewPath()
-					for i := 0; i < len(line.Points); i++ {
-						x1, y1 := normalized(line.Points[i], scale)
-						path = path.AppendPoint(draw.NewPoint(x1, c.Height()-y1))
+					path = path.AppendPoint(draw.NewPoint(points[j-PathSkip].X, points[j-PathSkip].Y))
+					path = path.AppendPoint(draw.NewPoint(points[j].X, points[j].Y))
+
+					// Style
+
+					// Set colour
+					// TODO: Cool features: set colour
+					// -string in layer
+					// -type of pen
+
+					contentCreator.Add_RG(points[j-1].Colour, points[j-1].Colour, points[j-1].Colour)
+
+					// Set Cap
+					var Cap string = "Round cap."
+					if points[j-1].Render == HighlighterRender {
+						Cap = "Butt cap" // Projecting square cap
+					}
+					contentCreator.Add_J(Cap)
+
+					// Set join
+					var Join string = "Round  join"
+					if points[j-1].Render == HighlighterRender {
+						Cap = "Miter join" // Bevel  join
+					}
+					contentCreator.Add_j(Join)
+
+					//Set Tranparency
+					if points[j-1].Render == HighlighterRender {
+						contentCreator.Add_gs(GShighlighter)
+					} else if points[j-1].Render == TiltPencilRender {
+						GSname = core.PdfObjectName(fmt.Sprintf("GS%d", GScount))
+						for page.HasExtGState(GSname) {
+							GScount++
+							GSname = core.PdfObjectName(fmt.Sprintf("GS%d", GScount))
+						}
+						GS = core.MakeDict()
+						GS.Set("CA", core.MakeFloat(points[j-1].Opacity))
+						page.AddExtGState(GSname, GS)
+						contentCreator.Add_gs(GSname)
+					} else {
+						contentCreator.Add_gs(GSnormal)
 					}
 
-					contentCreator.Add_w(float64(line.BrushSize / 100))
+					// Set width
+					contentCreator.Add_w(points[j-1].Width)
 
-					switch line.BrushColor {
-					case rm.Black:
-						contentCreator.Add_rg(1.0, 1.0, 1.0)
-					case rm.White:
-						contentCreator.Add_rg(0.0, 0.0, 0.0)
-					case rm.Grey:
-						contentCreator.Add_rg(0.8, 0.8, 0.8)
-					}
-
-					//TODO: use bezier
 					draw.DrawPathWithCreator(path, contentCreator)
 
-					contentCreator.Add_S()
+					// Be able to set a new style for next line
+					if points[j-1].Render != HighlighterRender && j%ss.Length == 0 {
+						contentCreator.Add_S()
+					}
+
+					// annotator Version: have some serious bug with width > 0.1
+					// Should be the right way to go, but waiting that unipdf fix the bugs
+
+					// lineDef := annotator.LineAnnotationDef{X1: points[i-PathSkip].X,
+					//	Y1:        points[i-PathSkip].Y,
+					//	X2:        points[i].X,
+					//	Y2:        points[i].Y,
+					//	LineColor: pdf.NewPdfColorDeviceRGB(points[i].Colour, points[i].Colour, points[i].Colour),
+					//	Opacity:   points[i].Opacity,
+					//	LineWidth: points[i].Width,
+					// }
+					// ann, err := annotator.CreateLineAnnotation(lineDef)
+					// if err != nil {
+					// 	return err
+					// }
+					// page.AddAnnotation(ann)
+
 				}
+
+				contentCreator.Add_S()
 			}
 		}
+
 		contentCreator.Add_Q()
 		drawingOperations := contentCreator.Operations().String()
 		pageContentStreams, err := page.GetAllContentStreams()

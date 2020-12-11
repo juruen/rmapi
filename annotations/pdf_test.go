@@ -38,3 +38,6 @@ func TestGenerateTmpl(t *testing.T) {
 func TestGenerateStrangeBug(t *testing.T) {
 	test("strange", t)
 }
+func TestGenerateAllPen(t *testing.T) {
+	test("allPen", t)
+}
