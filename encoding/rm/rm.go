@@ -55,7 +55,7 @@ const (
 
 // Width and Height of the device in pixels.
 const (
-	Width  int = 1404
+	Width  int = 1404 // 1408 in case of rm2
 	Height int = 1872
 )
 
@@ -95,6 +95,7 @@ const (
 	TiltPencilV5  BrushType = 14
 	BrushV5       BrushType = 12
 	HighlighterV5 BrushType = 18
+	CalligraphyV5 BrushType = 21
 )
 
 // BrushSize represents the base brush sizes.
