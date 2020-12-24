@@ -47,7 +47,7 @@ The first time you run it, it will ask you to go to `https://my.remarkable.com/`
 You will see a prompt like this where you just need to introduce the activation code.
 
 ```bash
-Enter one-time code (go to https://my.remarkable.com):
+Enter one-time code (go to https://my.remarkable.com/connect/desktop):
 ```
 
 If everything goes OK, you wil have access to the shell:
