@@ -14,7 +14,8 @@ func mvCmd(ctx *ShellCtxt) *ishell.Cmd {
 		Help:      "mv file or directory",
 		Completer: createEntryCompleter(ctx),
 		Func: func(c *ishell.Context) {
-			if len(c.Args) == 1 {
+			if len(c.Args) < 2 {
+				c.Err(errors.New("missing source and/or destination"))
 				return
 			}
 
