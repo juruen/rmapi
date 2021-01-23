@@ -40,7 +40,7 @@ docker build -t rmapi .
 create the .config/rmapi config folder
 
 ```
-docker build -t rmapi .
+mkdir -p $HOME/.config/rmapi
 ``` 
 
 and run by mounting the .config/rmapi folder
