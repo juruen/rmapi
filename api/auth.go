@@ -53,6 +53,7 @@ func AuthHttpCtx(reAuth, nonInteractive bool) *transport.HttpClientCtx {
 		log.Trace.Println("user token:", userToken)
 
 		authTokens.UserToken = userToken
+		httpClientCtx.Tokens.UserToken = userToken
 
 		config.SaveTokens(configPath, authTokens)
 	}
