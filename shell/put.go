@@ -15,7 +15,7 @@ func putCmd(ctx *ShellCtxt) *ishell.Cmd {
 		Completer: createFsEntryCompleter(),
 		Func: func(c *ishell.Context) {
 			if len(c.Args) == 0 {
-				c.Println("missing source file")
+				c.Err(errors.New("missing source file"))
 				return
 			}
 
