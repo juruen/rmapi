@@ -12,6 +12,7 @@ import (
 	"github.com/juruen/rmapi/log"
 	"github.com/juruen/rmapi/util"
 	"github.com/nfnt/resize"
+	uuid "github.com/satori/go.uuid"
 	pdfmodel "github.com/unidoc/unipdf/v3/model"
 	"github.com/unidoc/unipdf/v3/render"
 )
@@ -62,6 +63,7 @@ func GetIdFromZip(srcPath string) (id string, err error) {
 
 func CreateZipDocument(id, srcPath string) (zipPath string, err error) {
 	_, ext := util.DocPathToName(srcPath)
+	fileType := ext
 
 	if ext == "zip" {
 		zipPath = srcPath
@@ -88,7 +90,25 @@ func CreateZipDocument(id, srcPath string) (zipPath string, err error) {
 	w := zip.NewWriter(tmp)
 	defer w.Close()
 
-	f, err := w.Create(fmt.Sprintf("%s.%s", id, ext))
+	var documentPath string
+
+	pages := make([]string, 0)
+	if ext == "rm" {
+		var pageUUID uuid.UUID
+
+		pageUUID, err = uuid.NewV4()
+		if err != nil {
+			return
+		}
+		pageID := pageUUID.String()
+		documentPath = fmt.Sprintf("%s/%s.rm", id, pageID)
+		fileType = "notebook"
+		pages = append(pages, pageID)
+	} else {
+		documentPath = fmt.Sprintf("%s.%s", id, ext)
+	}
+
+	f, err := w.Create(documentPath)
 	if err != nil {
 		log.Error.Println("failed to create doc entry in zip file", err)
 		return
@@ -126,7 +146,7 @@ func CreateZipDocument(id, srcPath string) (zipPath string, err error) {
 		return
 	}
 
-	c, err := createZipContent(ext)
+	c, err := createZipContent(fileType, pages)
 	if err != nil {
 		return
 	}
@@ -161,7 +181,7 @@ func CreateZipDirectory(id string) (string, error) {
 	return tmp.Name(), nil
 }
 
-func createZipContent(ext string) (string, error) {
+func createZipContent(ext string, pageIDs []string) (string, error) {
 	c := Content{
 		DummyDocument: false,
 		ExtraMetadata: ExtraMetadata{
@@ -186,6 +206,7 @@ func createZipContent(ext string) (string, error) {
 			M32: 0,
 			M33: 1,
 		},
+		Pages: pageIDs,
 	}
 
 	cstring, err := json.Marshal(c)
