@@ -15,6 +15,7 @@ var supportedExt = map[string]bool{
 	"epub": true,
 	"pdf":  true,
 	"zip":  true,
+	"rm":   true,
 }
 
 func IsFileTypeSupported(ext string) bool {
