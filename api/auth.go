@@ -18,7 +18,8 @@ const (
 )
 
 func AuthHttpCtx(reAuth, nonInteractive bool) *transport.HttpClientCtx {
-	authTokens := config.LoadTokens(config.ConfigPath())
+	configPath := config.ConfigPath()
+	authTokens := config.LoadTokens(configPath)
 	httpClientCtx := transport.CreateHttpClientCtx(authTokens)
 
 	if authTokens.DeviceToken == "" {
@@ -36,20 +37,25 @@ func AuthHttpCtx(reAuth, nonInteractive bool) *transport.HttpClientCtx {
 		authTokens.DeviceToken = deviceToken
 		httpClientCtx.Tokens.DeviceToken = deviceToken
 
-		config.SaveTokens(config.ConfigPath(), authTokens)
+		config.SaveTokens(configPath, authTokens)
 	}
 
 	if authTokens.UserToken == "" || reAuth {
 		userToken, err := newUserToken(&httpClientCtx)
 
-		if err != nil {
-			log.Error.Fatal("failed to create user token from device token")
+		if err == transport.UnAuthorizedError {
+			log.Trace.Println("Invalid deviceToken, resetting")
+			authTokens.DeviceToken = ""
+		} else if err != nil {
+			log.Error.Fatalln("failed to create user token from device token", err)
 		}
+
 		log.Trace.Println("user token:", userToken)
 
 		authTokens.UserToken = userToken
+		httpClientCtx.Tokens.UserToken = userToken
 
-		config.SaveTokens(config.ConfigPath(), authTokens)
+		config.SaveTokens(configPath, authTokens)
 	}
 
 	return &httpClientCtx
@@ -96,8 +102,6 @@ func newUserToken(http *transport.HttpClientCtx) (string, error) {
 	err := http.Post(transport.DeviceBearer, newUserDevice, nil, &resp)
 
 	if err != nil {
-		log.Error.Fatal("failed to create a new user token")
-
 		return "", err
 	}
 
