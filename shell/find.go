@@ -41,7 +41,13 @@ func findCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			filetree.WalkTree(startNode, filetree.FileTreeVistor{
 				Visit: func(node *model.Node, path []string) bool {
-					entryName := filepath.Join(strings.Join(path, "/"), node.Name())
+					var entryType string
+					if node.IsDirectory() {
+						entryType = "[d] "
+					} else {
+						entryType = "[f] "
+					}
+					entryName := entryType + filepath.Join(strings.Join(path, "/"), node.Name())
 
 					if matchRegexp == nil {
 						c.Println(entryName)
