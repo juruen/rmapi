@@ -79,7 +79,7 @@ Run the `Automator` app and create a   new `Print Plugin` document as shown belo
 
 ![Automator I](create-print-plugin.png)
 
-Selct a `Run Shell Script` action:
+Select a `Run Shell Script` action:
 
 ![Automator II](run-shell-script-1.png)
 
