@@ -168,8 +168,10 @@ func (ctx HttpClientCtx) Request(authType AuthType, verb, url string, body io.Re
 	ctx.addAuthorization(request, authType)
 	request.Header.Add("User-Agent", RmapiUserAGent)
 
-	drequest, err := httputil.DumpRequest(request, true)
-	log.Trace.Printf("request: %s", string(drequest))
+	if log.TracingEnabled {
+		drequest, err := httputil.DumpRequest(request, true)
+		log.Trace.Printf("request: %s %v", string(drequest), err)
+	}
 
 	response, err := ctx.Client.Do(request)
 
@@ -178,10 +180,11 @@ func (ctx HttpClientCtx) Request(authType AuthType, verb, url string, body io.Re
 		return nil, err
 	}
 
-	defer response.Body.Close()
-
-	dresponse, err := httputil.DumpResponse(response, true)
-	log.Trace.Print(string(dresponse))
+	if log.TracingEnabled {
+		defer response.Body.Close()
+		dresponse, err := httputil.DumpResponse(response, true)
+		log.Trace.Printf("%s %v", string(dresponse), err)
+	}
 
 	if response.StatusCode != 200 {
 		log.Trace.Printf("request failed with status %d\n", response.StatusCode)
