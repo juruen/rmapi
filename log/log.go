@@ -8,10 +8,11 @@ import (
 )
 
 var (
-	Trace   *log.Logger
-	Info    *log.Logger
-	Warning *log.Logger
-	Error   *log.Logger
+	Trace          *log.Logger
+	Info           *log.Logger
+	Warning        *log.Logger
+	Error          *log.Logger
+	TracingEnabled bool
 )
 
 func Init(
@@ -41,6 +42,7 @@ func InitLog() {
 	var trace io.Writer
 	if os.Getenv("RMAPI_TRACE") == "1" {
 		trace = os.Stdout
+		TracingEnabled = true
 	} else {
 		trace = ioutil.Discard
 	}
