@@ -1,6 +1,7 @@
 package shell
 
 import (
+	"encoding/json"
 	"errors"
 
 	"github.com/abiosoft/ishell"
@@ -26,7 +27,14 @@ func statCmd(ctx *ShellCtxt) *ishell.Cmd {
 				return
 			}
 
-			c.Printf("%+v\n", node.Document)
+			jsn, err := json.MarshalIndent(node.Document, "", "  ")
+
+			if err != nil {
+				c.Err(errors.New("can't serialize to json"))
+				return
+			}
+
+			c.Println(string(jsn))
 		},
 	}
 }
