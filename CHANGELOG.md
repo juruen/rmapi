@@ -1,3 +1,9 @@
+## rmapi (master)
+
+* Fix authentication URL
+
+* stats outputs JSON now
+
 ## rmapi 0.0.14 (May 03, 2021)
 
 * Don't dump request/responses when tracing disabled
