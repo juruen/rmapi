@@ -12,7 +12,7 @@ var deleteEntry string
 
 func init() {
 	docHost := "https://document-storage-production-dot-remarkable-production.appspot.com"
-	authHost := "https://my.remarkable.com"
+	authHost := "https://webapp-production-dot-remarkable-production.appspot.com"
 
 	host := os.Getenv("RMAPI_DOC")
 	if host != "" {
