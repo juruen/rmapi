@@ -1,4 +1,4 @@
-## rmapi (master)
+## rmapi 0.0.15 (May 19, 2021)
 
 * Fix authentication URL
 
