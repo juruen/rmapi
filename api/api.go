@@ -30,6 +30,27 @@ func CreateApiCtx(http *transport.HttpClientCtx) (*ApiCtx, error) {
 	return &ApiCtx{http, fileTree}, nil
 }
 
+// Nuke removes all documents from the account
+func Nuke(http *transport.HttpClientCtx) error {
+	documents := make([]model.Document, 0)
+
+	if err := http.Get(transport.UserBearer, listDocs, nil, &documents); err != nil {
+		return err
+	}
+
+	for _, d := range documents {
+		log.Info.Println("Deleting: ", d.VissibleName)
+
+		err := http.Put(transport.UserBearer, deleteEntry, d, nil)
+		if err != nil {
+			log.Error.Println("failed to remove entry", err)
+			return err
+		}
+	}
+
+	return nil
+}
+
 // DocumentsFileTree reads your remote documents and builds a file tree
 // structure to represent them
 func DocumentsFileTree(http *transport.HttpClientCtx) (*filetree.FileTreeCtx, error) {
@@ -129,12 +150,13 @@ func (ctx *ApiCtx) CreateDir(parentId, name string) (model.Document, error) {
 	}
 
 	f, err := os.Open(zippath)
-	defer f.Close()
 
 	if err != nil {
 		log.Error.Println("failed to read zip file to upload", zippath, err)
 		return model.Document{}, err
 	}
+
+	defer f.Close()
 
 	err = ctx.Http.PutStream(transport.UserBearer, uploadRsp.BlobURLPut, f)
 
