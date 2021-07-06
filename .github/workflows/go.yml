@@ -32,7 +32,12 @@ jobs:
         fi
 
     - name: Format
-      run: if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then exit 1; fi
+      run: |
+        out="$(gofmt -s -l . )"
+        if [ -n "$out" ]; then
+          echo "gofmt needs to be run on the following files:" >&2
+          echo "$out" >&2
+        fi
 
     - name: Build
       run: go build -v .
