@@ -37,6 +37,7 @@ jobs:
         if [ -n "$out" ]; then
           echo "gofmt needs to be run on the following files:" >&2
           echo "$out" >&2
+          exit 1
         fi
 
     - name: Build
