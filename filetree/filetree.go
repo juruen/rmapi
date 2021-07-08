@@ -72,7 +72,7 @@ func (ctx *FileTreeCtx) AddDocument(document model.Document) {
 
 	// Resolve pendingChildren
 	if pendingChildren, ok := ctx.pendingParent[nodeId]; ok {
-		for id, _ := range pendingChildren {
+		for id := range pendingChildren {
 			ctx.idToNode[id].Parent = &node
 			node.Children[id] = ctx.idToNode[id]
 		}
