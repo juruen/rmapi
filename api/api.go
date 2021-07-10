@@ -53,20 +53,20 @@ func DocumentsFileTree(http *transport.HttpClientCtx) (*filetree.FileTreeCtx, er
 	return &fileTree, nil
 }
 
-// FetchDocument downloads a document given its ID and saves it locally into dstPath
-func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
+// FetchDocumentTmp downloads a document given its ID and saves it to a tmp file
+func (ctx *ApiCtx) fetchDocumentTmp(docId string) (string, error) {
 	documents := make([]model.Document, 0)
 
 	url := fmt.Sprintf("%s?withBlob=true&doc=%s", listDocs, docId)
 
 	if err := ctx.Http.Get(transport.UserBearer, url, nil, &documents); err != nil {
 		log.Error.Println("failed to fetch document BlobURLGet", err)
-		return err
+		return "", err
 	}
 
 	if len(documents) == 0 || documents[0].BlobURLGet == "" {
 		log.Error.Println("BlobURLGet for document is empty")
-		return errors.New("no BlobURLGet")
+		return "", errors.New("no BlobURLGet")
 	}
 
 	blobUrl := documents[0].BlobURLGet
@@ -79,26 +79,37 @@ func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
 
 	if err != nil {
 		log.Error.Println("Error fetching blob")
-		return err
+		return "", err
 	}
 
 	dst, err := ioutil.TempFile("", "rmapifile")
 
 	if err != nil {
 		log.Error.Println("failed to create temp fail to download blob")
-		return err
+		return "", err
 	}
 
-	tmpPath := dst.Name()
 	defer dst.Close()
-	defer os.Remove(tmpPath)
 
 	_, err = io.Copy(dst, src)
 
 	if err != nil {
+		os.Remove(dst.Name())
 		log.Error.Println("failed to download blob")
+		return "", err
+	}
+
+	return dst.Name(), nil
+}
+
+// FetchDocument downloads a document given its ID and saves it locally into dstPath
+func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
+	tmpPath, err := ctx.fetchDocumentTmp(docId)
+	if err != nil {
 		return err
 	}
+
+	defer os.Remove(tmpPath)
 
 	_, err = util.CopyFile(tmpPath, dstPath)
 
