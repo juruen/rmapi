@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"image/jpeg"
+	"io"
 	"io/ioutil"
 	"os"
 
@@ -217,4 +218,64 @@ func createZipContent(ext string, pageIDs []string) (string, error) {
 	}
 
 	return string(cstring), nil
+}
+
+// ReplacePayloadInZip takes the given Payload and replaces the Payload at the
+// ZIP file located at zipFileName.
+func ReplacePayloadInZip(id, zipFileName, fileExt string, payload []byte) (string, error) {
+	currentZip, err := zip.OpenReader(zipFileName)
+	if err != nil {
+		return "", err
+	}
+	defer currentZip.Close()
+
+	targetPayloadName := fmt.Sprintf("%s%s", id, fileExt)
+
+	var foundFile bool
+	for _, f := range currentZip.File {
+		if f.Name == targetPayloadName {
+			foundFile = true
+			break
+		}
+	}
+
+	if !foundFile {
+		return "", fmt.Errorf("expected file of type %s", fileExt)
+	}
+
+	tmp, err := ioutil.TempFile("", "rmapizip")
+	defer tmp.Close()
+
+	newZip := zip.NewWriter(tmp)
+	defer newZip.Close()
+
+	for _, file := range currentZip.File {
+		newF, err := newZip.Create(file.Name)
+		if err != nil {
+			defer os.Remove(tmp.Name())
+			return "", err
+		}
+
+		var content []byte
+		if file.Name == targetPayloadName {
+			content = payload
+		} else {
+			f, err := file.Open()
+			if err != nil {
+				defer os.Remove(tmp.Name())
+				return "", err
+			}
+
+			content, err = io.ReadAll(f)
+			f.Close()
+			if err != nil {
+				defer os.Remove(tmp.Name())
+				return "", err
+			}
+		}
+
+		newF.Write(content)
+	}
+
+	return tmp.Name(), nil
 }

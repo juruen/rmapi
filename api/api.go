@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 
 	"github.com/juruen/rmapi/archive"
 	"github.com/juruen/rmapi/filetree"
@@ -214,6 +215,29 @@ func (ctx *ApiCtx) MoveEntry(src, dstDir *model.Node, name string) (*model.Node,
 	return &model.Node{&doc, src.Children, dstDir}, nil
 }
 
+func (ctx *ApiCtx) updateExistingDecument(id, sourceDocPath string) (zipFile string, err error) {
+	currentZipFile, err := ctx.fetchDocumentTmp(id)
+	if err != nil {
+		return "", err
+	}
+
+	defer os.Remove(currentZipFile)
+
+	sourceDocFile, err := os.Open(sourceDocPath)
+	if err != nil {
+		return "", err
+	}
+
+	defer sourceDocFile.Close()
+
+	sourceDoc, err := io.ReadAll(sourceDocFile)
+	if err != nil {
+		return "", err
+	}
+
+	return archive.ReplacePayloadInZip(id, currentZipFile, path.Ext(sourceDocPath), sourceDoc)
+}
+
 // UploadDocument uploads a local document given by sourceDocPath under the parentId directory
 func (ctx *ApiCtx) UploadDocument(parent *model.Node, sourceDocPath string) (*model.Document, error) {
 	name, ext := util.DocPathToName(sourceDocPath)
@@ -226,11 +250,17 @@ func (ctx *ApiCtx) UploadDocument(parent *model.Node, sourceDocPath string) (*mo
 		return nil, errors.New("unsupported file extension: " + ext)
 	}
 
-	var metaDoc model.MetadataDocument
-
 	docName, _ := util.DocPathToName(sourceDocPath)
 
+	var zipFile string
+	var metaDoc model.MetadataDocument
+
 	if node, err := ctx.Filetree.NodeByPath(docName, parent); err == nil {
+		zipFile, err = ctx.updateExistingDecument(node.Id(), sourceDocPath)
+		if err != nil {
+			return nil, err
+		}
+
 		metaDoc = model.CreateUpdateDocumentMeta(
 			node.Id(),
 			model.DocumentType,
@@ -256,8 +286,15 @@ func (ctx *ApiCtx) UploadDocument(parent *model.Node, sourceDocPath string) (*mo
 
 			id = newId.String()
 		}
+
+		zipFile, err = archive.CreateZipDocument(id, sourceDocPath)
+		if err != nil {
+			return nil, err
+		}
+
 		metaDoc = model.CreateUploadDocumentMeta(id, model.DocumentType, parent.Id(), name)
 	}
+	defer os.Remove(zipFile)
 
 	//restore document
 	uploadRsp, err := ctx.uploadRequest(metaDoc.ID, model.DocumentType, metaDoc.Version)
@@ -270,18 +307,16 @@ func (ctx *ApiCtx) UploadDocument(parent *model.Node, sourceDocPath string) (*mo
 		return nil, fmt.Errorf("upload request failed: %s", uploadRsp.Message)
 	}
 
-	zipPath, err := archive.CreateZipDocument(uploadRsp.ID, sourceDocPath)
-
 	if err != nil {
 		log.Error.Println("failed to create zip doc", err)
 		return nil, err
 	}
 
-	f, err := os.Open(zipPath)
+	f, err := os.Open(zipFile)
 	defer f.Close()
 
 	if err != nil {
-		log.Error.Println("failed to read zip file to upload", zipPath, err)
+		log.Error.Println("failed to read zip file to upload", zipFile, err)
 		return nil, err
 	}
 
