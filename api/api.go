@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 
 	"github.com/juruen/rmapi/archive"
 	"github.com/juruen/rmapi/filetree"
@@ -13,6 +14,7 @@ import (
 	"github.com/juruen/rmapi/model"
 	"github.com/juruen/rmapi/transport"
 	"github.com/juruen/rmapi/util"
+	uuid "github.com/satori/go.uuid"
 )
 
 // An ApiCtx allows you interact with the remote reMarkable API
@@ -52,20 +54,20 @@ func DocumentsFileTree(http *transport.HttpClientCtx) (*filetree.FileTreeCtx, er
 	return &fileTree, nil
 }
 
-// FetchDocument downloads a document given its ID and saves it locally into dstPath
-func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
+// FetchDocumentTmp downloads a document given its ID and saves it to a tmp file
+func (ctx *ApiCtx) fetchDocumentTmp(docId string) (string, error) {
 	documents := make([]model.Document, 0)
 
 	url := fmt.Sprintf("%s?withBlob=true&doc=%s", listDocs, docId)
 
 	if err := ctx.Http.Get(transport.UserBearer, url, nil, &documents); err != nil {
 		log.Error.Println("failed to fetch document BlobURLGet", err)
-		return err
+		return "", err
 	}
 
 	if len(documents) == 0 || documents[0].BlobURLGet == "" {
 		log.Error.Println("BlobURLGet for document is empty")
-		return errors.New("no BlobURLGet")
+		return "", errors.New("no BlobURLGet")
 	}
 
 	blobUrl := documents[0].BlobURLGet
@@ -78,26 +80,37 @@ func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
 
 	if err != nil {
 		log.Error.Println("Error fetching blob")
-		return err
+		return "", err
 	}
 
 	dst, err := ioutil.TempFile("", "rmapifile")
 
 	if err != nil {
 		log.Error.Println("failed to create temp fail to download blob")
-		return err
+		return "", err
 	}
 
-	tmpPath := dst.Name()
 	defer dst.Close()
-	defer os.Remove(tmpPath)
 
 	_, err = io.Copy(dst, src)
 
 	if err != nil {
+		os.Remove(dst.Name())
 		log.Error.Println("failed to download blob")
+		return "", err
+	}
+
+	return dst.Name(), nil
+}
+
+// FetchDocument downloads a document given its ID and saves it locally into dstPath
+func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
+	tmpPath, err := ctx.fetchDocumentTmp(docId)
+	if err != nil {
 		return err
 	}
+
+	defer os.Remove(tmpPath)
 
 	_, err = util.CopyFile(tmpPath, dstPath)
 
@@ -111,7 +124,7 @@ func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
 
 // CreateDir creates a remote directory with a given name under the parentId directory
 func (ctx *ApiCtx) CreateDir(parentId, name string) (model.Document, error) {
-	uploadRsp, err := ctx.uploadRequest("", model.DirectoryType)
+	uploadRsp, err := ctx.uploadRequest("", model.DirectoryType, 1)
 
 	if err != nil {
 		return model.Document{}, err
@@ -202,8 +215,31 @@ func (ctx *ApiCtx) MoveEntry(src, dstDir *model.Node, name string) (*model.Node,
 	return &model.Node{&doc, src.Children, dstDir}, nil
 }
 
+func (ctx *ApiCtx) updateExistingDecument(id, sourceDocPath string) (zipFile string, err error) {
+	currentZipFile, err := ctx.fetchDocumentTmp(id)
+	if err != nil {
+		return "", err
+	}
+
+	defer os.Remove(currentZipFile)
+
+	sourceDocFile, err := os.Open(sourceDocPath)
+	if err != nil {
+		return "", err
+	}
+
+	defer sourceDocFile.Close()
+
+	sourceDoc, err := io.ReadAll(sourceDocFile)
+	if err != nil {
+		return "", err
+	}
+
+	return archive.ReplacePayloadInZip(id, currentZipFile, path.Ext(sourceDocPath), sourceDoc)
+}
+
 // UploadDocument uploads a local document given by sourceDocPath under the parentId directory
-func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model.Document, error) {
+func (ctx *ApiCtx) UploadDocument(parent *model.Node, sourceDocPath string) (*model.Document, error) {
 	name, ext := util.DocPathToName(sourceDocPath)
 
 	if name == "" {
@@ -214,42 +250,73 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model
 		return nil, errors.New("unsupported file extension: " + ext)
 	}
 
-	id := ""
-	var err error
+	docName, _ := util.DocPathToName(sourceDocPath)
 
-	//restore document
-	if ext == "zip" {
-		id, err = archive.GetIdFromZip(sourceDocPath)
+	var zipFile string
+	var metaDoc model.MetadataDocument
+
+	if node, err := ctx.Filetree.NodeByPath(docName, parent); err == nil {
+		zipFile, err = ctx.updateExistingDecument(node.Id(), sourceDocPath)
 		if err != nil {
 			return nil, err
 		}
-		if id == "" {
-			return nil, errors.New("could not determine the Document UUID")
-		}
-	}
 
-	uploadRsp, err := ctx.uploadRequest(id, model.DocumentType)
+		metaDoc = model.CreateUpdateDocumentMeta(
+			node.Id(),
+			model.DocumentType,
+			parent.Id(),
+			name,
+			node.Version()+1,
+		)
+	} else {
+		var id string
+		if ext == "zip" {
+			id, err = archive.GetIdFromZip(sourceDocPath)
+			if err != nil {
+				return nil, err
+			}
+			if id == "" {
+				return nil, errors.New("could not determine the Document UUID")
+			}
+		} else {
+			newId, err := uuid.NewV4()
+			if err != nil {
+				panic("failed to create uuid for directory")
+			}
+
+			id = newId.String()
+		}
+
+		zipFile, err = archive.CreateZipDocument(id, sourceDocPath)
+		if err != nil {
+			return nil, err
+		}
+
+		metaDoc = model.CreateUploadDocumentMeta(id, model.DocumentType, parent.Id(), name)
+	}
+	defer os.Remove(zipFile)
+
+	//restore document
+	uploadRsp, err := ctx.uploadRequest(metaDoc.ID, model.DocumentType, metaDoc.Version)
 
 	if err != nil {
 		return nil, err
 	}
 
 	if !uploadRsp.Success {
-		return nil, errors.New("upload request returned success := false")
+		return nil, fmt.Errorf("upload request failed: %s", uploadRsp.Message)
 	}
-
-	zipPath, err := archive.CreateZipDocument(uploadRsp.ID, sourceDocPath)
 
 	if err != nil {
 		log.Error.Println("failed to create zip doc", err)
 		return nil, err
 	}
 
-	f, err := os.Open(zipPath)
+	f, err := os.Open(zipFile)
 	defer f.Close()
 
 	if err != nil {
-		log.Error.Println("failed to read zip file to upload", zipPath, err)
+		log.Error.Println("failed to read zip file to upload", zipFile, err)
 		return nil, err
 	}
 
@@ -259,8 +326,6 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model
 		log.Error.Println("failed to upload zip document", err)
 		return nil, err
 	}
-
-	metaDoc := model.CreateUploadDocumentMeta(uploadRsp.ID, model.DocumentType, parentId, name)
 
 	err = ctx.Http.Put(transport.UserBearer, updateStatus, metaDoc, nil)
 
@@ -274,8 +339,8 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model
 	return &doc, err
 }
 
-func (ctx *ApiCtx) uploadRequest(id string, entryType string) (model.UploadDocumentResponse, error) {
-	uploadReq := model.CreateUploadDocumentRequest(id, entryType)
+func (ctx *ApiCtx) uploadRequest(id string, entryType string, version int) (model.UploadDocumentResponse, error) {
+	uploadReq := model.CreateUploadDocumentRequest(id, entryType, version)
 	uploadRsp := make([]model.UploadDocumentResponse, 0)
 
 	err := ctx.Http.Put(transport.UserBearer, uploadRequest, uploadReq, &uploadRsp)

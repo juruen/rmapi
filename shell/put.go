@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/abiosoft/ishell"
-	"github.com/juruen/rmapi/util"
 )
 
 func putCmd(ctx *ShellCtxt) *ishell.Cmd {
@@ -21,8 +20,6 @@ func putCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			srcName := c.Args[0]
 
-			docName, _ := util.DocPathToName(srcName)
-
 			node := ctx.node
 			var err error
 
@@ -35,17 +32,9 @@ func putCmd(ctx *ShellCtxt) *ishell.Cmd {
 				}
 			}
 
-			_, err = ctx.api.Filetree.NodeByPath(docName, node)
-			if err == nil {
-				c.Err(errors.New("entry already exists"))
-				return
-			}
+			c.Printf("uploading: [%s]...\n", srcName)
 
-			c.Printf("uploading: [%s]...", srcName)
-
-			dstDir := node.Id()
-
-			document, err := ctx.api.UploadDocument(dstDir, srcName)
+			document, err := ctx.api.UploadDocument(node, srcName)
 
 			if err != nil {
 				c.Err(fmt.Errorf("Failed to upload file [%s] %v", srcName, err))

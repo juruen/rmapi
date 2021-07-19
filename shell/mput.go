@@ -190,15 +190,15 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 				// Document does not exist.
 				treeFormat(pC, depth, index, lSize, tFS)
 				pC.Printf("uploading: [%s]...", name)
-				doc, err := pCtx.api.UploadDocument(pCtx.node.Id(), name)
+			}
+			doc, err := pCtx.api.UploadDocument(pCtx.node, name)
 
-				if err != nil {
-					pC.Err(fmt.Errorf("failed to upload file %s", name))
-				} else {
-					// Document uploaded successfully.
-					pC.Println(" complete")
-					pCtx.api.Filetree.AddDocument(*doc)
-				}
+			if err != nil {
+				pC.Err(fmt.Errorf("failed to upload file %s", name))
+			} else {
+				// Document uploaded successfully.
+				pC.Println(" complete")
+				pCtx.api.Filetree.AddDocument(*doc)
 			}
 
 		}
