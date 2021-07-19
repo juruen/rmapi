@@ -163,7 +163,10 @@ func (ctx HttpClientCtx) httpRawReq(authType AuthType, verb, url string, reqBody
 }
 
 func (ctx HttpClientCtx) Request(authType AuthType, verb, url string, body io.Reader) (*http.Response, error) {
-	request, _ := http.NewRequest(verb, url, body)
+	request, err := http.NewRequest(verb, url, body)
+	if err != nil {
+		return nil, err
+	}
 
 	ctx.addAuthorization(request, authType)
 	request.Header.Add("User-Agent", RmapiUserAGent)
