@@ -21,7 +21,7 @@ func mkdirCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			target := c.Args[0]
 
-			_, err := ctx.api.Filetree.NodeByPath(target, ctx.node)
+			_, err := ctx.api.Filetree().NodeByPath(target, ctx.node)
 
 			if err == nil {
 				c.Println("entry already exists")
@@ -36,7 +36,7 @@ func mkdirCmd(ctx *ShellCtxt) *ishell.Cmd {
 				return
 			}
 
-			parentNode, err := ctx.api.Filetree.NodeByPath(parentDir, ctx.node)
+			parentNode, err := ctx.api.Filetree().NodeByPath(parentDir, ctx.node)
 
 			if err != nil || parentNode.IsFile() {
 				c.Err(errors.New("directory doesn't exist"))
@@ -55,7 +55,7 @@ func mkdirCmd(ctx *ShellCtxt) *ishell.Cmd {
 				return
 			}
 
-			ctx.api.Filetree.AddDocument(document)
+			ctx.api.Filetree().AddDocument(document)
 		},
 	}
 }

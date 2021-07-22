@@ -2,12 +2,13 @@ package shell
 
 import (
 	"errors"
-	"github.com/abiosoft/ishell"
-	"github.com/juruen/rmapi/filetree"
-	"github.com/juruen/rmapi/model"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/abiosoft/ishell"
+	"github.com/juruen/rmapi/filetree"
+	"github.com/juruen/rmapi/model"
 )
 
 func findCmd(ctx *ShellCtxt) *ishell.Cmd {
@@ -23,7 +24,7 @@ func findCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			start := c.Args[0]
 
-			startNode, err := ctx.api.Filetree.NodeByPath(start, ctx.node)
+			startNode, err := ctx.api.Filetree().NodeByPath(start, ctx.node)
 
 			if err != nil {
 				c.Err(errors.New("start directory doesn't exist"))

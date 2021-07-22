@@ -11,7 +11,7 @@ import (
 
 type ShellCtxt struct {
 	node           *model.Node
-	api            *api.ApiCtx
+	api            api.ApiCtx
 	path           string
 	useHiddenFiles bool
 }
@@ -40,12 +40,12 @@ func useHiddenFiles() bool {
 	return val != "0"
 }
 
-func RunShell(apiCtx *api.ApiCtx, args []string) error {
+func RunShell(apiCtx api.ApiCtx, args []string) error {
 	shell := ishell.New()
 	ctx := &ShellCtxt{
-		node:           apiCtx.Filetree.Root(),
+		node:           apiCtx.Filetree().Root(),
 		api:            apiCtx,
-		path:           apiCtx.Filetree.Root().Name(),
+		path:           apiCtx.Filetree().Root().Name(),
 		useHiddenFiles: useHiddenFiles()}
 
 	shell.SetPrompt(ctx.prompt())

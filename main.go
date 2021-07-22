@@ -11,7 +11,7 @@ import (
 
 const AUTH_RETRIES = 3
 
-func run_shell(ctx *api.ApiCtx, args []string) {
+func run_shell(ctx api.ApiCtx, args []string) {
 	err := shell.RunShell(ctx, args)
 
 	if err != nil {
@@ -26,7 +26,7 @@ func main() {
 	flag.Parse()
 	rstArgs := flag.Args()
 
-	var ctx *api.ApiCtx
+	var ctx api.ApiCtx
 	var err error
 	for i := 0; i < AUTH_RETRIES; i++ {
 		ctx, err = api.CreateApiCtx(api.AuthHttpCtx(i > 0, *ni))
