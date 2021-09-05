@@ -54,7 +54,7 @@ func NewFromStore(ts TokenStore) *Auth {
 }
 
 // RegisterDevice will make an HTTP call to the Remarkable API using the provided code
-// to register a new device. The code should be gathered at https://my.remarkable.com/generator-device.
+// to register a new device. The code should be gathered at https://my.remarkable.com/device/connect/remarkable.
 // The DeviceToken is then attached to the Auth instance.
 func (a *Auth) RegisterDevice(code string) error {
 	uuid, err := uuid.NewV4()
