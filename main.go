@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 
 	"github.com/juruen/rmapi/api"
@@ -39,7 +38,6 @@ func main() {
 			break
 		}
 	}
-	fmt.Println(ctx)
 
 	if err != nil {
 		log.Error.Fatal("failed to build documents tree, last error: ", err)

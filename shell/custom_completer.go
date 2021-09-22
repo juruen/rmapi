@@ -49,7 +49,7 @@ func (ic shellPathCompleter) getWords(w []string, prefix string) []string {
 	}
 
 	args := make([]string, len(w))
-	for i, v := range w[1:len(w)] {
+	for i, v := range w[1:] {
 		args[i] = v
 	}
 	args = append(args, prefix)
