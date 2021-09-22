@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 
 	"github.com/juruen/rmapi/api"
@@ -16,6 +17,7 @@ func run_shell(ctx api.ApiCtx, args []string) {
 
 	if err != nil {
 		log.Error.Println("Error: ", err)
+
 		os.Exit(1)
 	}
 }
@@ -37,8 +39,9 @@ func main() {
 			break
 		}
 	}
+	fmt.Println(ctx)
 
-	if ctx == nil {
+	if err != nil {
 		log.Error.Fatal("failed to build documents tree, last error: ", err)
 	}
 
