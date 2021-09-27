@@ -39,17 +39,15 @@ func CreateApiCtx(http *transport.HttpClientCtx) (ApiCtx, error) {
 		switch f {
 		case "sync:fox":
 			fallthrough
-		case "sync:tortois":
+		case "sync:tortoise":
 			fallthrough
 		case "sync:hare":
-			fmt.Println("New sync 1.5 not supported yet")
 			isSync15 = true
-			break
 		case "sync:default":
-			break
 		}
 	}
 	if isSync15 {
+		fmt.Println("New sync 1.5 not supported yet")
 		return sync10.CreateCtx(http)
 	} else {
 		return sync10.CreateCtx(http)

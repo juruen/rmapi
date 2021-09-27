@@ -1,4 +1,4 @@
-package sync15
+package main
 
 /*
 	New protocol implementation
