@@ -1,4 +1,4 @@
-package main
+package sync15
 
 import (
 	"bufio"
@@ -9,12 +9,14 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/juruen/rmapi/log"
+	"github.com/juruen/rmapi/model"
 )
 
 type FieldReader struct {
@@ -140,15 +142,18 @@ type Tree struct {
 }
 
 type Doc struct {
-	DocName        string
-	CollectionType string
-	Files          []*Entry
+	Files []*Entry
 	Entry
+	Metadata
 }
 
 type Metadata struct {
-	Name string `json:"visibleName"`
-	Type string `json:"type"`
+	DocName        string `json:"visibleName"`
+	CollectionType string `json:"type"`
+	Parent         string `json:"parent"`
+	LastModified   string `json:"lastModified"`
+	LastOpened     string `json:"lastOpened"`
+	Version        int    `json:"version"`
 }
 
 type Entry struct {
@@ -181,17 +186,21 @@ func loadTree() (*Tree, error) {
 		if err != nil {
 			return nil, err
 		}
-		json.Unmarshal(b, &tree)
+		err = json.Unmarshal(b, &tree)
+		if err != nil {
+			log.Error.Println("cache corrupt")
+			return nil, err
+		}
 	} else {
 		os.Create(cacheFile)
 	}
-	fmt.Print(tree)
+	log.Info.Println("cache loaded")
 
 	return &tree, nil
 }
 func saveTree(tree *Tree) error {
 	cacheFile, err := getCachedTreePath()
-	fmt.Println(cacheFile)
+	log.Info.Println("Writing cache: ", cacheFile)
 	if err != nil {
 		return err
 	}
@@ -203,41 +212,10 @@ func saveTree(tree *Tree) error {
 	return err
 }
 
-type RemoteStorage interface {
-	GetRootIndex() (hash string, generation int64, err error)
-	GetReader(hash string) (io.ReadCloser, error)
-}
-
-type LocalStore struct {
-	folder string
-}
-
-func (p *LocalStore) GetRootIndex() (string, int64, error) {
-	rootPath := path.Join(p.folder, "root")
-	root_hash, err := ioutil.ReadFile(rootPath)
-	if err != nil {
-		return "", 0, err
-	}
-	strRootHash := string(root_hash)
-	rootGenPath := path.Join(p.folder, ".root.history")
-	var gen int64
-
-	if fi, err := os.Stat(rootGenPath); err == nil {
-		gen = fi.Size() / 86
-	}
-	fmt.Println("root ->", strRootHash)
-	return strRootHash, gen, nil
-}
-
-func (p *LocalStore) GetReader(hash string) (io.ReadCloser, error) {
-	rootIndexPath := path.Join(p.folder, hash)
-	return os.Open(rootIndexPath)
-}
-
 // Extract the documentname from metadata blob
 func (doc *Doc) SyncName(fileEntry *Entry, r RemoteStorage) error {
 	if strings.HasSuffix(fileEntry.Name, ".metadata") {
-		log.Println("Reading metadata: " + doc.Name)
+		log.Info.Println("Reading metadata: " + doc.Name)
 
 		metadata := Metadata{}
 
@@ -252,12 +230,24 @@ func (doc *Doc) SyncName(fileEntry *Entry, r RemoteStorage) error {
 		}
 		err = json.Unmarshal(content, &metadata)
 		if err != nil {
-			log.Printf("cannot read metadata %v", err)
+			log.Info.Printf("cannot read metadata %v", err)
 		}
-		doc.DocName = metadata.Name
-		doc.CollectionType = metadata.Type
+		log.Info.Println(metadata.DocName)
+		doc.Metadata = metadata
 	}
+
 	return nil
+}
+
+func (doc *Doc) ToDocument() *model.Document {
+	return &model.Document{
+		ID:           doc.Name,
+		VissibleName: doc.Metadata.DocName,
+		Version:      doc.Metadata.Version,
+		Parent:       doc.Metadata.Parent,
+		Type:         doc.Metadata.CollectionType,
+	}
+
 }
 
 func (doc *Doc) Sync(e *Entry, r RemoteStorage) error {
@@ -361,11 +351,14 @@ func (t *Tree) Sync(r RemoteStorage) error {
 	}
 
 	if rootHash == t.Hash {
-		log.Printf("Root hash the same")
+		log.Info.Printf("Root hash the same")
 		return nil
 	}
 
-	rdr, _ := r.GetReader(rootHash)
+	rdr, err := r.GetReader(rootHash)
+	if err != nil {
+		return err
+	}
 	defer rdr.Close()
 
 	entries, err := parseIndex(rdr)
@@ -452,10 +445,10 @@ func main() {
 	err := tree.Sync(provider) // readTree(provider)
 	// tree, err := readTree(provider)
 	if err != nil {
-		log.Fatal(err)
+		log.Info.Fatal(err)
 	}
 	err = saveTree(tree)
 	if err != nil {
-		log.Fatal(err)
+		log.Info.Fatal(err)
 	}
 }

@@ -36,6 +36,8 @@ func ToIOReader(source interface{}) (io.Reader, error) {
 	if source != nil {
 		switch source.(type) {
 		case model.DeviceTokenRequest:
+		case model.BlobStorageResponse:
+		case model.BlobStorageRequest:
 			b, err := json.Marshal(source)
 			if err != nil {
 				return nil, err

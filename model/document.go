@@ -56,6 +56,21 @@ type UploadDocumentResponse struct {
 	BlobURLPutExpires string
 }
 
+// BlobStorageRequest else
+type BlobStorageRequest struct {
+	Method       string `json:"http_method"`
+	Initial      bool   `json:"initial_sync"`
+	RelativePath string `json:"relative_path"`
+}
+
+// BlobStorageResponse  what else
+type BlobStorageResponse struct {
+	Expires      string `json:"expires"`
+	Method       string `json:"method"`
+	RelativePath string `json:"relative_path"`
+	Url          string `json:"url"`
+}
+
 func CreateDirDocument(parent, name string) MetadataDocument {
 	id, err := uuid.NewV4()
 

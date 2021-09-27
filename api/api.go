@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/juruen/rmapi/api/sync10"
+	"github.com/juruen/rmapi/api/sync15"
 	"github.com/juruen/rmapi/filetree"
 	"github.com/juruen/rmapi/model"
 	"github.com/juruen/rmapi/transport"
@@ -32,7 +33,6 @@ func CreateApiCtx(http *transport.HttpClientCtx) (ApiCtx, error) {
 	jwt.ParseWithClaims(userToken, &claims, func(token *jwt.Token) (interface{}, error) {
 		return nil, nil
 	})
-	fmt.Println(claims.Scopes)
 	fld := strings.Fields(claims.Scopes)
 	isSync15 := false
 	for _, f := range fld {
@@ -48,7 +48,7 @@ func CreateApiCtx(http *transport.HttpClientCtx) (ApiCtx, error) {
 	}
 	if isSync15 {
 		fmt.Println("New sync 1.5 not supported yet")
-		return sync10.CreateCtx(http)
+		return sync15.CreateCtx(http)
 	} else {
 		return sync10.CreateCtx(http)
 	}
