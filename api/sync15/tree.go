@@ -38,17 +38,18 @@ func (fr *FieldReader) Next() (string, error) {
 	return res, nil
 }
 
-func FileHash(file string) ([]byte, error) {
+func FileHash(file string) ([]byte, int64, error) {
 	f, err := os.Open(file)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer f.Close()
 
 	hasher := sha256.New()
 	io.Copy(hasher, f)
 	h := hasher.Sum(nil)
-	return h, nil
+	size, err := f.Seek(0, os.SEEK_CUR)
+	return h, size, err
 
 }
 
@@ -78,6 +79,19 @@ func FileHash(file string) ([]byte, error) {
 // 	return dirhash, nil
 
 // }
+
+func NewBlobDoc(name, documentId, colType string) *Doc {
+	return &Doc{
+		MetadataFile: archive.MetadataFile{
+			DocName:        name,
+			CollectionType: colType,
+		},
+		Entry: Entry{
+			DocumentID: documentId,
+		},
+	}
+
+}
 
 func NewFieldReader(line string) FieldReader {
 	fld := strings.FieldsFunc(line, func(r rune) bool { return r == Delimiter })
@@ -110,19 +124,19 @@ func parseEntry(line string) (*Entry, error) {
 	if err != nil {
 		return nil, err
 	}
-	sub, err := rdr.Next()
+	tmp, err := rdr.Next()
 	if err != nil {
 		return nil, err
 	}
-	entry.Subfiles, err = strconv.Atoi(sub)
+	entry.Subfiles, err = strconv.Atoi(tmp)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read subfiles %s %v", line, err)
 	}
-	sub, err = rdr.Next()
+	tmp, err = rdr.Next()
 	if err != nil {
 		return nil, err
 	}
-	entry.Size, err = strconv.Atoi(sub)
+	entry.Size, err = strconv.ParseInt(tmp, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read size %s %v", line, err)
 	}
@@ -215,7 +229,7 @@ func (d *Entry) Line() string {
 	sb.WriteRune(Delimiter)
 	sb.WriteString("0")
 	sb.WriteRune(Delimiter)
-	sb.WriteString(strconv.Itoa(d.Size))
+	sb.WriteString(strconv.FormatInt(d.Size, 10))
 	return sb.String()
 }
 func (d *Doc) Line() string {
@@ -242,7 +256,7 @@ type Entry struct {
 	Type       string
 	DocumentID string
 	Subfiles   int
-	Size       int
+	Size       int64
 }
 
 func getCachedTreePath() (string, error) {

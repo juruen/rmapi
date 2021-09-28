@@ -14,7 +14,6 @@ import (
 
 	uuid "github.com/google/uuid"
 	"github.com/juruen/rmapi/log"
-	"github.com/juruen/rmapi/model"
 	"github.com/juruen/rmapi/util"
 	"github.com/nfnt/resize"
 	pdfmodel "github.com/unidoc/unipdf/v3/model"
@@ -218,20 +217,23 @@ func createZipContent(ext string, pageIDs []string) (string, error) {
 	return string(cstring), nil
 }
 
-func CreateContent(id, doctype, fpath string) (fileName, filePath string, err error) {
+func CreateContent(id, ext, fpath string) (fileName, filePath string, err error) {
 	fileName = id + ".content"
 	filePath = path.Join(fpath, fileName)
+	content := "{}"
 
-	content, err := createZipContent(doctype, nil)
-	if err != nil {
-		return
+	if ext != "" {
+		content, err = createZipContent(ext, nil)
+		if err != nil {
+			return
+		}
 	}
 
 	err = ioutil.WriteFile(filePath, []byte(content), 0600)
 	return
 }
 
-func CreateMetadata(id, name, parent, fpath string) (fileName string, filePath string, err error) {
+func CreateMetadata(id, name, parent, colType, fpath string) (fileName string, filePath string, err error) {
 	fileName = id + ".metadata"
 	filePath = path.Join(fpath, fileName)
 	t := time.Now().Unix()
@@ -239,7 +241,7 @@ func CreateMetadata(id, name, parent, fpath string) (fileName string, filePath s
 	meta := MetadataFile{
 		DocName:        name,
 		Version:        0,
-		CollectionType: model.DocumentType,
+		CollectionType: colType,
 		Parent:         parent,
 		Synced:         true,
 		LastModified:   tf,

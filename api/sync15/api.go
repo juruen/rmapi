@@ -12,7 +12,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/juruen/rmapi/archive"
-	"github.com/juruen/rmapi/config"
 	"github.com/juruen/rmapi/filetree"
 	"github.com/juruen/rmapi/log"
 	"github.com/juruen/rmapi/model"
@@ -93,10 +92,78 @@ func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
 
 // CreateDir creates a remote directory with a given name under the parentId directory
 func (ctx *ApiCtx) CreateDir(parentId, name string) (*model.Document, error) {
-	return nil, ErrorNotImplemented
+	var err error
+
+	files := []FileStuff{}
+
+	tmpDir, err := ioutil.TempDir("", "rmupload")
+	if err != nil {
+		return nil, err
+	}
+	id := uuid.New().String()
+	objectName, filePath, err := archive.CreateMetadata(id, name, parentId, model.DirectoryType, tmpDir)
+	if err != nil {
+		return nil, err
+	}
+	AddStuff(&files, objectName, filePath)
+
+	objectName, filePath, err = archive.CreateContent(id, "", tmpDir)
+	if err != nil {
+		return nil, err
+	}
+	AddStuff(&files, objectName, filePath)
+
+	d := NewBlobDoc(name, id, model.DirectoryType)
+
+	for _, f := range files {
+		log.Info.Printf("File %s, path: %s", f.Name, f.Path)
+		hash, size, err := FileHash(f.Path)
+		if err != nil {
+			return nil, err
+		}
+		hashStr := hex.EncodeToString(hash)
+		fileEntry := &Entry{
+			DocumentID: f.Name,
+			Hash:       hashStr,
+			Type:       FileType,
+			Size:       size,
+		}
+		reader, err := os.Open(f.Path)
+		if err != nil {
+			return nil, err
+		}
+		err = ctx.r.UploadBlob(hashStr, reader)
+
+		if err != nil {
+			return nil, err
+		}
+
+		d.AddFile(fileEntry)
+	}
+
+	log.Info.Println("Uploading new doc index...", d.Hash)
+	indexReader, err := d.IndexReader()
+	if err != nil {
+		return nil, err
+	}
+	defer indexReader.Close()
+	err = ctx.r.UploadBlob(d.Hash, indexReader)
+	if err != nil {
+		return nil, err
+	}
+
+	err = Sync(ctx.r, ctx.t, func(t *Tree) error {
+		return t.Add(d)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return d.ToDocument(), nil
 }
 
-func Sync(b *BlobStorage, tree *Tree, operation func(t *Tree)) error {
+func Sync(b *BlobStorage, tree *Tree, operation func(t *Tree) error) error {
 	synccount := 0
 	for {
 		synccount++
@@ -105,7 +172,10 @@ func Sync(b *BlobStorage, tree *Tree, operation func(t *Tree)) error {
 			break
 		}
 		log.Info.Println("Uploading...")
-		operation(tree)
+		err := operation(tree)
+		if err != nil {
+			return err
+		}
 
 		indexReader, err := tree.IndexReader()
 		if err != nil {
@@ -151,10 +221,8 @@ func (ctx *ApiCtx) DeleteEntry(node *model.Node) error {
 		return errors.New("directory is not empty")
 	}
 
-	//_ := node.Document.ToDeleteDocument()
-
-	err := Sync(ctx.r, ctx.t, func(t *Tree) {
-		t.Remove(node.Document.ID)
+	err := Sync(ctx.r, ctx.t, func(t *Tree) error {
+		return t.Remove(node.Document.ID)
 	})
 	return err
 
@@ -202,6 +270,7 @@ func AddStuff(f *[]FileStuff, name, filepath string) {
 
 // UploadDocument uploads a local document given by sourceDocPath under the parentId directory
 func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model.Document, error) {
+	//TODO: overwrite file
 	name, ext := util.DocPathToName(sourceDocPath)
 
 	if name == "" {
@@ -232,47 +301,40 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model
 		}
 	} else {
 		id = uuid.New().String()
-		objectId := id + "." + ext
+		objectName := id + "." + ext
 		doctype := ext
 		if ext == "rm" {
 			pageId := uuid.New().String()
-			objectId = fmt.Sprintf("%s/%s.rm", id, pageId)
+			objectName = fmt.Sprintf("%s/%s.rm", id, pageId)
 			doctype = "notebook"
 		}
-		AddStuff(&files, objectId, sourceDocPath)
-		objectId, filePath, err := archive.CreateMetadata(id, name, parentId, tmpDir)
+		AddStuff(&files, objectName, sourceDocPath)
+		objectName, filePath, err := archive.CreateMetadata(id, name, parentId, model.DocumentType, tmpDir)
 		if err != nil {
 			return nil, err
 		}
-		AddStuff(&files, objectId, filePath)
+		AddStuff(&files, objectName, filePath)
 
-		objectId, filePath, err = archive.CreateContent(id, doctype, tmpDir)
+		objectName, filePath, err = archive.CreateContent(id, doctype, tmpDir)
 		if err != nil {
 			return nil, err
 		}
-		AddStuff(&files, objectId, filePath)
+		AddStuff(&files, objectName, filePath)
 	}
 
-	d := &Doc{
-		MetadataFile: archive.MetadataFile{
-			DocName: name,
-		},
-		Entry: Entry{
-			DocumentID: id,
-		},
-	}
+	d := NewBlobDoc(name, id, model.DocumentType)
 	for _, f := range files {
 		log.Info.Printf("File %s, path: %s", f.Name, f.Path)
-		hash, err := FileHash(f.Path)
+		hash, size, err := FileHash(f.Path)
 		if err != nil {
 			return nil, err
 		}
 		hashStr := hex.EncodeToString(hash)
-		e := &Entry{
+		fileEntry := &Entry{
 			DocumentID: f.Name,
 			Hash:       hashStr,
 			Type:       FileType,
-			Size:       123,
+			Size:       size,
 		}
 		reader, err := os.Open(f.Path)
 		if err != nil {
@@ -284,22 +346,22 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model
 			return nil, err
 		}
 
-		d.AddFile(e)
+		d.AddFile(fileEntry)
 	}
+
+	log.Info.Println("Uploading new doc index...", d.Hash)
 	indexReader, err := d.IndexReader()
 	if err != nil {
 		return nil, err
 	}
 	defer indexReader.Close()
-	log.Info.Println("Uploading doc index...", d.Hash)
 	err = ctx.r.UploadBlob(d.Hash, indexReader)
 	if err != nil {
 		return nil, err
 	}
-	tree := ctx.t
 
-	err = Sync(ctx.r, ctx.t, func(t *Tree) {
-		tree.Add(d)
+	err = Sync(ctx.r, ctx.t, func(t *Tree) error {
+		return t.Add(d)
 	})
 
 	if err != nil {
@@ -307,20 +369,6 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model
 	}
 
 	return d.ToDocument(), nil
-}
-
-func (ctx *ApiCtx) uploadRequest(id string, entryType string) (model.UploadDocumentResponse, error) {
-	uploadReq := model.CreateUploadDocumentRequest(id, entryType)
-	uploadRsp := make([]model.UploadDocumentResponse, 0)
-
-	err := ctx.Http.Put(transport.UserBearer, config.UploadRequest, uploadReq, &uploadRsp)
-
-	if err != nil {
-		log.Error.Println("failed to to send upload request", err)
-		return model.UploadDocumentResponse{}, err
-	}
-
-	return uploadRsp[0], nil
 }
 
 func CreateCtx(http *transport.HttpClientCtx) (*ApiCtx, error) {
