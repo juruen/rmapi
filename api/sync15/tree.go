@@ -94,7 +94,7 @@ func parseIndex(f io.Reader) ([]*Entry, error) {
 	return entries, nil
 }
 
-func (t *Tree) IndexReader() (io.ReadCloser, error) {
+func (t *HashTree) IndexReader() (io.ReadCloser, error) {
 	pipeReader, pipeWriter := io.Pipe()
 	w := bufio.NewWriter(pipeWriter)
 	go func() {
@@ -111,23 +111,23 @@ func (t *Tree) IndexReader() (io.ReadCloser, error) {
 	return pipeReader, nil
 }
 
-type Tree struct {
+type HashTree struct {
 	Hash       string
 	Generation int64
 	Docs       []*BlobDoc
 }
 
-func (t *Tree) FindDoc(id string) (*BlobDoc, error) {
+func (t *HashTree) FindDoc(id string) (*BlobDoc, error) {
 	//O(n)
 	for _, d := range t.Docs {
 		if d.DocumentID == id {
 			return d, nil
 		}
 	}
-	return nil, errors.New("not found")
+	return nil, fmt.Errorf("doc %s not found", id)
 }
 
-func (t *Tree) Remove(id string) error {
+func (t *HashTree) Remove(id string) error {
 	docIndex := -1
 	for index, d := range t.Docs {
 		if d.DocumentID == id {
@@ -136,7 +136,7 @@ func (t *Tree) Remove(id string) error {
 		}
 	}
 	if docIndex > -1 {
-		log.Info.Printf("Removing %s", id)
+		log.Trace.Printf("Removing %s", id)
 		length := len(t.Docs) - 1
 		t.Docs[docIndex] = t.Docs[length]
 		t.Docs = t.Docs[:length]
@@ -144,10 +144,10 @@ func (t *Tree) Remove(id string) error {
 		t.Rehash()
 		return nil
 	}
-	return errors.New("not found")
+	return fmt.Errorf("%s not found", id)
 }
 
-func (t *Tree) Rehash() error {
+func (t *HashTree) Rehash() error {
 	entries := []*Entry{}
 	for _, e := range t.Docs {
 		entries = append(entries, &e.Entry)
@@ -156,19 +156,19 @@ func (t *Tree) Rehash() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("New root hash: ", hash)
+	log.Info.Println("New root hash: ", hash)
 	t.Hash = hash
 	return nil
 }
 
 /// Mirror makes the tree look like the storage
-func (t *Tree) Mirror(r RemoteStorage) error {
+func (t *HashTree) Mirror(r RemoteStorage) error {
 	rootHash, gen, err := r.GetRootIndex()
 	if err != nil {
 		return err
 	}
 	if rootHash == "" && gen == 0 {
-		log.Info.Println("empty cloud")
+		log.Info.Println("Empty cloud")
 		t.Docs = nil
 		t.Generation = 0
 		return nil
@@ -177,7 +177,7 @@ func (t *Tree) Mirror(r RemoteStorage) error {
 	if rootHash == t.Hash {
 		return nil
 	}
-	log.Info.Printf("Root hash different")
+	log.Info.Printf("remote root hash different")
 
 	rdr, err := r.GetReader(rootHash)
 	if err != nil {
@@ -201,7 +201,7 @@ func (t *Tree) Mirror(r RemoteStorage) error {
 		if entry, ok := new[doc.Entry.DocumentID]; ok {
 			//hash different update
 			if entry.Hash != doc.Hash {
-				log.Info.Println("doc updated: " + doc.DocumentID)
+				log.Trace.Println("doc updated: " + doc.DocumentID)
 				doc.Sync(entry, r)
 			}
 			head = append(head, doc)
@@ -214,7 +214,7 @@ func (t *Tree) Mirror(r RemoteStorage) error {
 	for k, newEntry := range new {
 		if _, ok := current[k]; !ok {
 			doc := &BlobDoc{}
-			log.Info.Println("doc new: " + k)
+			log.Trace.Println("doc new: " + k)
 			doc.Sync(newEntry, r)
 			head = append(head, doc)
 		}
@@ -226,8 +226,8 @@ func (t *Tree) Mirror(r RemoteStorage) error {
 	return nil
 }
 
-func BuildTree(provider RemoteStorage) (*Tree, error) {
-	tree := Tree{}
+func BuildTree(provider RemoteStorage) (*HashTree, error) {
+	tree := HashTree{}
 
 	rootHash, gen, err := provider.GetRootIndex()
 

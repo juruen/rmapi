@@ -39,8 +39,8 @@ func getCachedTreePath() (string, error) {
 	return cacheFile, nil
 }
 
-func loadTree() (*Tree, error) {
-	tree := Tree{}
+func loadTree() (*HashTree, error) {
+	tree := HashTree{}
 	cacheFile, err := getCachedTreePath()
 	if err != nil {
 		return nil, err
@@ -58,12 +58,12 @@ func loadTree() (*Tree, error) {
 	} else {
 		os.Create(cacheFile)
 	}
-	log.Info.Println("cache loaded")
+	log.Info.Println("Cache loaded: ", cacheFile)
 
 	return &tree, nil
 }
 
-func saveTree(tree *Tree) error {
+func saveTree(tree *HashTree) error {
 	cacheFile, err := getCachedTreePath()
 	log.Info.Println("Writing cache: ", cacheFile)
 	if err != nil {

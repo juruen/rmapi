@@ -43,7 +43,7 @@ func (d *BlobDoc) Rehash() error {
 	if err != nil {
 		return err
 	}
-	log.Info.Println("New doc hash: ", hash)
+	log.Trace.Println("New doc hash: ", hash)
 	d.Hash = hash
 	return nil
 }
@@ -56,7 +56,7 @@ func (d *BlobDoc) UpdateMetadata() (hash string, reader io.Reader, err error) {
 	sha := sha256.New()
 	sha.Write(jsn)
 	hash = hex.EncodeToString(sha.Sum(nil))
-	log.Info.Println("new hash", hash)
+	log.Trace.Println("new hash", hash)
 	reader = bytes.NewReader(jsn)
 	found := false
 	for _, f := range d.Files {
@@ -78,7 +78,7 @@ func (d *BlobDoc) AddFile(e *Entry) error {
 	return d.Rehash()
 }
 
-func (t *Tree) Add(d *BlobDoc) error {
+func (t *HashTree) Add(d *BlobDoc) error {
 	if len(d.Files) == 0 {
 		return errors.New("no files")
 	}
@@ -109,7 +109,7 @@ func (t *BlobDoc) IndexReader() (io.ReadCloser, error) {
 // Extract the documentname from metadata blob
 func (doc *BlobDoc) SyncName(fileEntry *Entry, r RemoteStorage) error {
 	if strings.HasSuffix(fileEntry.DocumentID, ".metadata") {
-		log.Info.Println("Reading metadata: " + doc.DocumentID)
+		log.Trace.Println("Reading metadata: " + doc.DocumentID)
 
 		metadata := archive.MetadataFile{}
 
@@ -124,9 +124,9 @@ func (doc *BlobDoc) SyncName(fileEntry *Entry, r RemoteStorage) error {
 		}
 		err = json.Unmarshal(content, &metadata)
 		if err != nil {
-			log.Info.Printf("cannot read metadata %v", err)
+			log.Error.Printf("cannot read metadata %s %v", fileEntry.DocumentID, err)
 		}
-		log.Info.Println(metadata.DocName)
+		log.Trace.Println("name from metadata: ", metadata.DocName)
 		doc.MetadataFile = metadata
 	}
 

@@ -11,8 +11,8 @@ import (
 func TestFieldReader_HasNext(t *testing.T) {
 	storagePath := "../../../rmfakecloud/data/users/test/sync/"
 	provider := &LocalStore{storagePath}
-	tree := &Tree{}
-	err := tree.Sync(provider) // readTree(provider)
+	tree := &HashTree{}
+	err := tree.Mirror(provider) // readTree(provider)
 	// tree, err := readTree(provider)
 	if err != nil {
 		log.Fatal(err)
@@ -58,7 +58,7 @@ func TestParseIndex(t *testing.T) {
 }
 
 func TestCreateDocIndex(t *testing.T) {
-	doc := &Doc{
+	doc := &BlobDoc{
 		Entry: Entry{
 			Hash:       "somehash",
 			DocumentID: "someid",
@@ -92,8 +92,8 @@ blah:0:someid:0:10
 }
 
 func TestCreateRootIndex(t *testing.T) {
-	tree := Tree{}
-	doc := &Doc{
+	tree := HashTree{}
+	doc := &BlobDoc{
 		Entry: Entry{
 			Hash:       "somehash",
 			DocumentID: "someid"},

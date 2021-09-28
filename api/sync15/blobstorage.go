@@ -27,7 +27,7 @@ func (b *BlobStorage) GetUrl(method, hash string) (string, error) {
 }
 
 func (b *BlobStorage) GetReader(hash string) (io.ReadCloser, error) {
-	log.Info.Println("get blob: " + hash)
+	log.Info.Println("Getting get blob url for: " + hash)
 	url, err := b.GetUrl("GET", hash)
 	if err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func (b *BlobStorage) GetReader(hash string) (io.ReadCloser, error) {
 }
 
 func (b *BlobStorage) UploadBlob(hash string, reader io.Reader) error {
-	log.Info.Println("upload blob: " + hash)
+	log.Info.Println("upload blob url for: " + hash)
 	url, err := b.GetUrl("PUT", hash)
 	if err != nil {
 		return err
@@ -49,18 +49,17 @@ func (b *BlobStorage) UploadBlob(hash string, reader io.Reader) error {
 }
 
 func (b *BlobStorage) SyncComplete() error {
-	log.Info.Println("sync complete")
 	return b.http.Post(transport.UserBearer, config.SyncComplete, nil, nil)
 }
 
 func (b *BlobStorage) WriteRootIndex(roothash string, gen int64) (int64, error) {
 
-	log.Info.Println("updating root with gen: ", gen)
+	log.Info.Println("writing root with gen: ", gen)
 	url, err := b.GetUrl("PUT", "root")
 	if err != nil {
 		return 0, err
 	}
-	log.Info.Println("got url:", url)
+	log.Trace.Println("got root url:", url)
 	reader := bytes.NewBufferString(roothash)
 
 	gen, err = b.http.PutBlobStream(url, gen, reader)
@@ -69,12 +68,11 @@ func (b *BlobStorage) WriteRootIndex(roothash string, gen int64) (int64, error) 
 }
 func (b *BlobStorage) GetRootIndex() (string, int64, error) {
 
-	log.Info.Println("get root")
 	url, err := b.GetUrl("GET", "root")
 	if err != nil {
 		return "", 0, err
 	}
-	log.Info.Println("got url:", url)
+	log.Info.Println("got root get url:", url)
 	blob, gen, err := b.http.GetBlobStream(url)
 	if err == transport.ErrNotFound {
 		return "", 0, nil
@@ -87,7 +85,7 @@ func (b *BlobStorage) GetRootIndex() (string, int64, error) {
 	if err != nil {
 		return "", 0, err
 	}
-	log.Info.Println("got gen:", gen)
+	log.Info.Println("got root gen:", gen)
 	return string(content), gen, nil
 
 }

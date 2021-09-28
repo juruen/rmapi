@@ -186,3 +186,4 @@ rMAPI will set the exit code to `0` if the command succeedes, or `1` if it fails
 - `RMAPI_THUMBNAILS`: generate a thumbnail of the first page of a pdf document
 - `RMAPI_AUTH`: override the default authorization url
 - `RMAPI_DOC`: override the default document storage url
+- `RMAPI_HOST`: override all urls 
