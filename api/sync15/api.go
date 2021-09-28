@@ -117,7 +117,7 @@ func (ctx *ApiCtx) CreateDir(parentId, name string) (*model.Document, error) {
 
 	for _, f := range files {
 		log.Info.Printf("File %s, path: %s", f.Name, f.Path)
-		hash, size, err := FileHash(f.Path)
+		hash, size, err := FileHashAndSize(f.Path)
 		if err != nil {
 			return nil, err
 		}
@@ -199,7 +199,7 @@ func Sync(b *BlobStorage, tree *Tree, operation func(t *Tree) error) error {
 		}
 
 		//resync and try again
-		err = tree.Sync(b)
+		err = tree.Mirror(b)
 		if err != nil {
 			return err
 		}
@@ -236,23 +236,56 @@ func (ctx *ApiCtx) MoveEntry(src, dstDir *model.Node, name string) (*model.Node,
 	if dstDir.IsFile() {
 		return nil, errors.New("destination directory is a file")
 	}
+	var err error
 
-	// metaDoc := src.Document.ToMetaDocument()
-	// metaDoc.Version = metaDoc.Version + 1
-	// metaDoc.VissibleName = name
-	// metaDoc.Parent = dstDir.Id()
+	err = Sync(ctx.r, ctx.t, func(t *Tree) error {
+		d, err := t.FindDoc(src.Document.ID)
+		if err != nil {
+			return err
+		}
+		d.MetadataFile.Version += 1
+		d.MetadataFile.DocName = name
+		d.MetadataFile.Parent = dstDir.Id()
+		d.MetadataFile.MetadataModified = true
 
-	// err := ctx.Http.Put(transport.UserBearer, config.UpdateStatus, metaDoc, nil)
+		hashStr, reader, err := d.UpdateMetadata()
+		if err != nil {
+			return err
+		}
+		err = d.Rehash()
+		if err != nil {
+			return err
+		}
+		err = t.Rehash()
 
-	// if err != nil {
-	// 	log.Error.Println("failed to move entry", err)
-	// 	return nil, err
-	// }
+		if err != nil {
+			return err
+		}
 
-	// doc := metaDoc.ToDocument()
+		err = ctx.r.UploadBlob(hashStr, reader)
 
-	// return &model.Node{&doc, src.Children, dstDir}, nil
-	return nil, ErrorNotImplemented
+		if err != nil {
+			return err
+		}
+
+		log.Info.Println("Uploading new doc index...", d.Hash)
+		indexReader, err := d.IndexReader()
+		if err != nil {
+			return err
+		}
+		defer indexReader.Close()
+		return ctx.r.UploadBlob(d.Hash, indexReader)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	d, err := ctx.t.FindDoc(src.Document.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Node{d.ToDocument(), src.Children, dstDir}, nil
 }
 
 type FileStuff struct {
@@ -325,7 +358,7 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model
 	d := NewBlobDoc(name, id, model.DocumentType)
 	for _, f := range files {
 		log.Info.Printf("File %s, path: %s", f.Name, f.Path)
-		hash, size, err := FileHash(f.Path)
+		hash, size, err := FileHashAndSize(f.Path)
 		if err != nil {
 			return nil, err
 		}
@@ -378,7 +411,7 @@ func CreateCtx(http *transport.HttpClientCtx) (*ApiCtx, error) {
 		fmt.Print(err)
 		return nil, err
 	}
-	err = cacheTree.Sync(apiStorage)
+	err = cacheTree.Mirror(apiStorage)
 	if err != nil {
 		return nil, err
 	}

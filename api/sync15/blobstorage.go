@@ -55,7 +55,7 @@ func (b *BlobStorage) SyncComplete() error {
 
 func (b *BlobStorage) WriteRootIndex(roothash string, gen int64) (int64, error) {
 
-	log.Info.Println("updating root")
+	log.Info.Println("updating root with gen: ", gen)
 	url, err := b.GetUrl("PUT", "root")
 	if err != nil {
 		return 0, err
