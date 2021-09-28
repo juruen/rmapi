@@ -201,8 +201,8 @@ func (t *HashTree) Mirror(r RemoteStorage) error {
 		if entry, ok := new[doc.Entry.DocumentID]; ok {
 			//hash different update
 			if entry.Hash != doc.Hash {
-				log.Trace.Println("doc updated: " + doc.DocumentID)
-				doc.Sync(entry, r)
+				log.Info.Println("doc updated: " + doc.DocumentID)
+				doc.Mirror(entry, r)
 			}
 			head = append(head, doc)
 			current[doc.DocumentID] = doc
@@ -215,7 +215,7 @@ func (t *HashTree) Mirror(r RemoteStorage) error {
 		if _, ok := current[k]; !ok {
 			doc := &BlobDoc{}
 			log.Trace.Println("doc new: " + k)
-			doc.Sync(newEntry, r)
+			doc.Mirror(newEntry, r)
 			head = append(head, doc)
 		}
 	}
@@ -256,7 +256,7 @@ func BuildTree(provider RemoteStorage) (*HashTree, error) {
 		items, _ := parseIndex(f)
 		doc.Files = items
 		for _, i := range items {
-			doc.SyncName(i, provider)
+			doc.ReadMetadata(i, provider)
 		}
 	}
 

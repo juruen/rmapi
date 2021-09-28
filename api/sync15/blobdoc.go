@@ -107,7 +107,7 @@ func (t *BlobDoc) IndexReader() (io.ReadCloser, error) {
 }
 
 // Extract the documentname from metadata blob
-func (doc *BlobDoc) SyncName(fileEntry *Entry, r RemoteStorage) error {
+func (doc *BlobDoc) ReadMetadata(fileEntry *Entry, r RemoteStorage) error {
 	if strings.HasSuffix(fileEntry.DocumentID, ".metadata") {
 		log.Trace.Println("Reading metadata: " + doc.DocumentID)
 
@@ -152,7 +152,7 @@ func (d *BlobDoc) Line() string {
 	return sb.String()
 }
 
-func (doc *BlobDoc) Sync(e *Entry, r RemoteStorage) error {
+func (doc *BlobDoc) Mirror(e *Entry, r RemoteStorage) error {
 	doc.Entry = *e
 	entryIndex, err := r.GetReader(e.Hash)
 	if err != nil {
@@ -172,10 +172,11 @@ func (doc *BlobDoc) Sync(e *Entry, r RemoteStorage) error {
 		new[e.DocumentID] = e
 	}
 
+	//updated and existing
 	for _, currentEntry := range doc.Files {
 		if newEntry, ok := new[currentEntry.DocumentID]; ok {
 			if newEntry.Hash != currentEntry.Hash {
-				err = doc.SyncName(newEntry, r)
+				err = doc.ReadMetadata(newEntry, r)
 				if err != nil {
 					return err
 				}
@@ -186,9 +187,10 @@ func (doc *BlobDoc) Sync(e *Entry, r RemoteStorage) error {
 		}
 	}
 
+	//add missing
 	for k, newEntry := range new {
 		if _, ok := current[k]; !ok {
-			err = doc.SyncName(newEntry, r)
+			err = doc.ReadMetadata(newEntry, r)
 			if err != nil {
 				return err
 			}

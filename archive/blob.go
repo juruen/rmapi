@@ -2,9 +2,11 @@ package archive
 
 import (
 	"archive/zip"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -30,24 +32,28 @@ func AddStuff(f *[]*FileMap, name, filepath string) {
 
 func Prepare(name, parentId, sourceDocPath, ext, tmpDir string) (files []*FileMap, id string, err error) {
 	files = []*FileMap{}
-	//TODO extract
 	if ext == "zip" {
-		var hasMetadata bool
-		id, files, hasMetadata, err = UnpackAndFix(sourceDocPath, tmpDir)
+		var metadataPath string
+		id, files, metadataPath, err = UnpackAndFix(sourceDocPath, tmpDir)
 		if err != nil {
 			return
 		}
 		if id == "" {
 			return nil, "", errors.New("could not determine the Document UUID")
 		}
-		if !hasMetadata {
-			log.Warning.Println("missing metadata, creating... for", name)
+		if metadataPath == "" {
+			log.Warning.Println("missing metadata, creating...", name)
 			objectName, filePath, err1 := CreateMetadata(id, name, parentId, model.DocumentType, tmpDir)
 			if err1 != nil {
 				err = err1
 				return
 			}
 			AddStuff(&files, objectName, filePath)
+		} else {
+			err = FixMetadata(parentId, name, metadataPath)
+			if err != nil {
+				return
+			}
 		}
 	} else {
 		id = uuid.New().String()
@@ -74,7 +80,26 @@ func Prepare(name, parentId, sourceDocPath, ext, tmpDir string) (files []*FileMa
 	}
 	return files, id, err
 }
-func UnpackAndFix(src, dest string) (id string, files []*FileMap, hasMetadata bool, err error) {
+
+func FixMetadata(parentId, name, path string) error {
+	meta := MetadataFile{}
+	metaData, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(metaData, &meta)
+	if err != nil {
+		return err
+	}
+	meta.Parent = parentId
+	meta.DocName = name
+	metaData, err = json.Marshal(meta)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(path, metaData, 0600)
+}
+func UnpackAndFix(src, dest string) (id string, files []*FileMap, metadataPath string, err error) {
 	log.Info.Println("Unpacking in: ", dest)
 	r, err := zip.OpenReader(src)
 	if err != nil {
@@ -88,9 +113,6 @@ func UnpackAndFix(src, dest string) (id string, files []*FileMap, hasMetadata bo
 
 		if strings.HasSuffix(fname, ".content") {
 			id = strings.TrimSuffix(fname, path.Ext(fname))
-		}
-		if strings.HasSuffix(fname, ".metadata") {
-			hasMetadata = true
 		}
 		// Store filename/path for returning and using later on
 		fpath := filepath.Join(dest, f.Name)
@@ -107,6 +129,10 @@ func UnpackAndFix(src, dest string) (id string, files []*FileMap, hasMetadata bo
 			continue
 		} else {
 			AddStuff(&files, f.Name, fpath)
+		}
+
+		if strings.HasSuffix(fname, ".metadata") {
+			metadataPath = fpath
 		}
 
 		// Make File
@@ -137,6 +163,5 @@ func UnpackAndFix(src, dest string) (id string, files []*FileMap, hasMetadata bo
 		}
 	}
 
-	return id, files, hasMetadata, nil
-
+	return id, files, metadataPath, nil
 }

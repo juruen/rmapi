@@ -90,7 +90,6 @@ func (z *Zip) readContent(zr *zip.Reader) error {
 
 	if z.Content.Pages != nil && len(z.Content.Pages) > 0 {
 		z.pageMap = make(map[string]int)
-		log.Info.Println("Pages is not empty, using that")
 		z.Pages = make([]Page, len(z.Content.Pages))
 		for i, p := range z.Content.Pages {
 			z.pageMap[p] = i
@@ -236,23 +235,24 @@ func (z *Zip) readThumbnails(zr *zip.Reader) error {
 }
 
 func (z *Zip) pageIndex(namePart string) (idx int, err error) {
-	if z.pageMap != nil {
-		_, err = uuid.Parse(namePart)
-		if err != nil {
-			return -1, errors.New("pages not in uuid format " + namePart)
-		}
-		var ok bool
-		idx, ok = z.pageMap[namePart]
-		if !ok {
-			log.Warning.Println("Page not found in map: ", namePart)
-		}
-
-	} else {
-		idx, err = strconv.Atoi(namePart)
-		if err != nil {
-			return -1, errors.New("error in metadata .json filename")
-		}
+	idx, err = strconv.Atoi(namePart)
+	if err == nil {
+		return idx, nil
 	}
+	_, err = uuid.Parse(namePart)
+	if err != nil {
+		return -1, errors.New("neither int nor uuid page")
+	}
+
+	if z.pageMap == nil {
+		return -1, errors.New("no uuid pagemap")
+	}
+	var ok bool
+	idx, ok = z.pageMap[namePart]
+	if !ok {
+		log.Warning.Println("Page not found in map: ", namePart)
+	}
+
 	return
 }
 
