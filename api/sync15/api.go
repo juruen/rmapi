@@ -298,53 +298,15 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model
 	}
 	tree := ctx.t
 
-	synccount := 0
-	for {
-		synccount++
-		if synccount > 10 {
-			log.Error.Println("Something is wrong")
-			break
-		}
-		log.Info.Println("Uploading...")
+	err = Sync(ctx.r, ctx.t, func(t *Tree) {
 		tree.Add(d)
+	})
 
-		indexReader, err := tree.IndexReader()
-		if err != nil {
-			return nil, err
-		}
-		err = ctx.r.UploadBlob(tree.Hash, indexReader)
-		if err != nil {
-			return nil, err
-		}
-		defer indexReader.Close()
-
-		gen, err := ctx.r.WriteRootIndex(tree.Hash, tree.Generation)
-
-		if err == nil {
-			tree.Generation = gen
-			break
-		}
-
-		if err != transport.ErrWrongGeneration {
-			return nil, err
-		}
-
-		//resync and try again
-		err = tree.Sync(ctx.r)
-		if err != nil {
-			return nil, err
-		}
-	}
-	err = saveTree(ctx.t)
 	if err != nil {
 		return nil, err
 	}
-	err = ctx.r.SyncComplete()
-	if err != nil {
-		log.Error.Printf("cannot send sync %v", err)
-	}
 
-	return d.ToDocument(), err
+	return d.ToDocument(), nil
 }
 
 func (ctx *ApiCtx) uploadRequest(id string, entryType string) (model.UploadDocumentResponse, error) {
