@@ -6,7 +6,9 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 
+	"github.com/google/uuid"
 	"github.com/juruen/rmapi/archive"
 	"github.com/juruen/rmapi/config"
 	"github.com/juruen/rmapi/filetree"
@@ -20,6 +22,8 @@ import (
 type ApiCtx struct {
 	Http *transport.HttpClientCtx
 	ft   *filetree.FileTreeCtx
+	r    RemoteStorage
+	t    *Tree
 }
 
 func (ctx *ApiCtx) Filetree() *filetree.FileTreeCtx {
@@ -49,57 +53,50 @@ func (ctx *ApiCtx) Nuke() error {
 
 // FetchDocument downloads a document given its ID and saves it locally into dstPath
 func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
-	documents := make([]model.Document, 0)
 
-	url := fmt.Sprintf("%s?withBlob=true&doc=%s", config.ListDocs, docId)
-
-	if err := ctx.Http.Get(transport.UserBearer, url, nil, &documents); err != nil {
-		log.Error.Println("failed to fetch document BlobURLGet", err)
-		return err
-	}
-
-	if len(documents) == 0 || documents[0].BlobURLGet == "" {
-		log.Error.Println("BlobURLGet for document is empty")
-		return errors.New("no BlobURLGet")
-	}
-
-	blobUrl := documents[0].BlobURLGet
-
-	src, err := ctx.Http.GetStream(transport.UserBearer, blobUrl)
-
-	if src != nil {
-		defer src.Close()
-	}
-
+	doc, err := ctx.t.FindDoc(docId)
 	if err != nil {
-		log.Error.Println("Error fetching blob")
 		return err
 	}
 
-	dst, err := ioutil.TempFile("", "rmapifile")
-
+	dst, err := ioutil.TempDir("", "rmapifile")
 	if err != nil {
-		log.Error.Println("failed to create temp fail to download blob")
 		return err
 	}
+	log.Info.Print("got files in ", dst)
+	for _, f := range doc.Files {
+		log.Info.Println(f.DocumentID)
+		rc, err := ctx.r.GetReader(f.Hash)
+		if err != nil {
+			return err
+		}
+		defer rc.Close()
+		fp := path.Join(dst, f.DocumentID)
+		root := path.Dir(fp)
+		log.Info.Println(root)
+		err = os.MkdirAll(root, 0744)
+		if err != nil {
+			return fmt.Errorf("cant create forld %v", err)
+		}
+		nf, err := os.Create(fp)
+		if err != nil {
+			return err
+		}
+		_, err = io.Copy(nf, rc)
+		if err != nil {
+			return err
+		}
 
-	tmpPath := dst.Name()
-	defer dst.Close()
-	defer os.Remove(tmpPath)
-
-	_, err = io.Copy(dst, src)
-
-	if err != nil {
-		log.Error.Println("failed to download blob")
-		return err
 	}
+	// defer os.RemoveAll(dst)
+	log.Info.Print("got files in ", dst)
 
-	_, err = util.CopyFile(tmpPath, dstPath)
+	// _, err = util.CopyFile(tmpPath, dstPath)
 
-	if err != nil {
-		log.Error.Printf("failed to copy %s to %s, er: %s\n", tmpPath, dstPath, err.Error())
-		return err
-	}
+	// if err != nil {
+	// 	log.Error.Printf("failed to copy %s to %s, er: %s\n", tmpPath, dstPath, err.Error())
+	// 	return err
+	// }
 
 	return nil
 }
@@ -213,7 +210,7 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model
 	id := ""
 	var err error
 
-	//restore document
+	//TODO extract
 	if ext == "zip" {
 		id, err = archive.GetIdFromZip(sourceDocPath)
 		if err != nil {
@@ -222,50 +219,16 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model
 		if id == "" {
 			return nil, errors.New("could not determine the Document UUID")
 		}
+	} else {
+		id = uuid.New().String()
 	}
 
-	uploadRsp, err := ctx.uploadRequest(id, model.DocumentType)
+	// zipPath, err := archive.CreateZipDocument(id, sourceDocPath)
 
-	if err != nil {
-		return nil, err
-	}
+	doc := model.Document{}
 
-	if !uploadRsp.Success {
-		return nil, errors.New("upload request returned success := false")
-	}
-
-	zipPath, err := archive.CreateZipDocument(uploadRsp.ID, sourceDocPath)
-
-	if err != nil {
-		log.Error.Println("failed to create zip doc", err)
-		return nil, err
-	}
-
-	f, err := os.Open(zipPath)
-	defer f.Close()
-
-	if err != nil {
-		log.Error.Println("failed to read zip file to upload", zipPath, err)
-		return nil, err
-	}
-
-	err = ctx.Http.PutStream(transport.UserBearer, uploadRsp.BlobURLPut, f)
-
-	if err != nil {
-		log.Error.Println("failed to upload zip document", err)
-		return nil, err
-	}
-
-	metaDoc := model.CreateUploadDocumentMeta(uploadRsp.ID, model.DocumentType, parentId, name)
-
-	err = ctx.Http.Put(transport.UserBearer, config.UpdateStatus, metaDoc, nil)
-
-	if err != nil {
-		log.Error.Println("failed to move entry", err)
-		return nil, err
-	}
-
-	doc := metaDoc.ToDocument()
+	//update root
+	//notify
 
 	return &doc, err
 }
@@ -285,69 +248,28 @@ func (ctx *ApiCtx) uploadRequest(id string, entryType string) (model.UploadDocum
 }
 
 func CreateCtx(http *transport.HttpClientCtx) (*ApiCtx, error) {
-
-	apiStorage := &BlobApiStroge{http}
-	tree, err := DocumentsFileTree(apiStorage)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch document tree %v", err)
-	}
-	return &ApiCtx{http, tree}, nil
-}
-
-type BlobApiStroge struct {
-	http *transport.HttpClientCtx
-}
-
-func (b *BlobApiStroge) GetReader(hash string) (io.ReadCloser, error) {
-	fmt.Println("get blobl: " + hash)
-	var req model.BlobStorageRequest
-	var res model.BlobStorageResponse
-	req.Method = "GET"
-	req.RelativePath = hash
-	if err := b.http.Post(transport.UserBearer, config.DownloadBlob, req, &res); err != nil {
-		return nil, err
-	}
-
-	blob, _, err := b.http.GetBlobStream(res.Url)
-	return blob, err
-}
-func (b *BlobApiStroge) GetRootIndex() (string, int64, error) {
-	fmt.Println("get root")
-	var req model.BlobStorageRequest
-	var res model.BlobStorageResponse
-	req.Method = "GET"
-	req.RelativePath = "root"
-	if err := b.http.Post(transport.UserBearer, config.DownloadBlob, req, &res); err != nil {
-		return "", 0, err
-	}
-	fmt.Println("get url:")
-	blob, gen, err := b.http.GetBlobStream(res.Url)
-	if err != nil {
-		return "", 0, err
-	}
-	content, err := ioutil.ReadAll(blob)
-	if err != nil {
-		return "", 0, err
-	}
-	return string(content), gen, nil
-
-}
-
-// DocumentsFileTree reads your remote documents and builds a file tree
-// structure to represent them
-func DocumentsFileTree(str RemoteStorage) (*filetree.FileTreeCtx, error) {
-	//load cache
-
-	tree, err := loadTree()
+	apiStorage := &BlobStorage{http}
+	cacheTree, err := loadTree()
 	if err != nil {
 		fmt.Print(err)
 		return nil, err
 	}
-	err = tree.Sync(str)
+	err = cacheTree.Sync(apiStorage)
 	if err != nil {
 		return nil, err
 	}
-	saveTree(tree)
+	saveTree(cacheTree)
+	tree, err := DocumentsFileTree(cacheTree)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch document tree %v", err)
+	}
+	return &ApiCtx{http, tree, apiStorage, cacheTree}, nil
+}
+
+// DocumentsFileTree reads your remote documents and builds a file tree
+// structure to represent them
+func DocumentsFileTree(tree *Tree) (*filetree.FileTreeCtx, error) {
+
 	documents := make([]model.Document, 0)
 	for _, d := range tree.Docs {
 		doc := *d.ToDocument()

@@ -92,7 +92,7 @@ func parseEntry(line string) (*Entry, error) {
 	if err != nil {
 		return nil, err
 	}
-	entry.Name, err = rdr.Next()
+	entry.DocumentID, err = rdr.Next()
 	if err != nil {
 		return nil, err
 	}
@@ -114,6 +114,7 @@ func parseEntry(line string) (*Entry, error) {
 	}
 	return &entry, nil
 }
+
 func parseIndex(f io.Reader) ([]*Entry, error) {
 	var entries []*Entry
 	scanner := bufio.NewScanner(f)
@@ -157,12 +158,11 @@ type Metadata struct {
 }
 
 type Entry struct {
-	Hash     string
-	Type     string
-	Name     string
-	Subfiles int
-	Size     int
-	IsNew    bool
+	Hash       string
+	Type       string
+	DocumentID string
+	Subfiles   int
+	Size       int
 }
 
 func getCachedTreePath() (string, error) {
@@ -214,8 +214,8 @@ func saveTree(tree *Tree) error {
 
 // Extract the documentname from metadata blob
 func (doc *Doc) SyncName(fileEntry *Entry, r RemoteStorage) error {
-	if strings.HasSuffix(fileEntry.Name, ".metadata") {
-		log.Info.Println("Reading metadata: " + doc.Name)
+	if strings.HasSuffix(fileEntry.DocumentID, ".metadata") {
+		log.Info.Println("Reading metadata: " + doc.DocumentID)
 
 		metadata := Metadata{}
 
@@ -241,13 +241,22 @@ func (doc *Doc) SyncName(fileEntry *Entry, r RemoteStorage) error {
 
 func (doc *Doc) ToDocument() *model.Document {
 	return &model.Document{
-		ID:           doc.Name,
+		ID:           doc.DocumentID,
 		VissibleName: doc.Metadata.DocName,
 		Version:      doc.Metadata.Version,
 		Parent:       doc.Metadata.Parent,
 		Type:         doc.Metadata.CollectionType,
 	}
 
+}
+
+func (doc *Tree) FindDoc(id string) (*Doc, error) {
+	for _, d := range doc.Docs {
+		if d.DocumentID == id {
+			return d, nil
+		}
+	}
+	return nil, errors.New("not found")
 }
 
 func (doc *Doc) Sync(e *Entry, r RemoteStorage) error {
@@ -267,11 +276,11 @@ func (doc *Doc) Sync(e *Entry, r RemoteStorage) error {
 	new := make(map[string]*Entry)
 
 	for _, e := range entries {
-		new[e.Name] = e
+		new[e.DocumentID] = e
 	}
 
 	for _, currentEntry := range doc.Files {
-		if newEntry, ok := new[currentEntry.Name]; ok {
+		if newEntry, ok := new[currentEntry.DocumentID]; ok {
 			if newEntry.Hash != currentEntry.Hash {
 				err = doc.SyncName(newEntry, r)
 				if err != nil {
@@ -280,7 +289,7 @@ func (doc *Doc) Sync(e *Entry, r RemoteStorage) error {
 				currentEntry.Hash = newEntry.Hash
 			}
 			head = append(head, currentEntry)
-			current[currentEntry.Name] = currentEntry
+			current[currentEntry.DocumentID] = currentEntry
 		}
 	}
 
@@ -293,14 +302,14 @@ func (doc *Doc) Sync(e *Entry, r RemoteStorage) error {
 			head = append(head, newEntry)
 		}
 	}
-	sort.Slice(head, func(i, j int) bool { return head[i].Name < head[j].Name })
+	sort.Slice(head, func(i, j int) bool { return head[i].DocumentID < head[j].DocumentID })
 	doc.Files = head
 	return nil
 
 }
 
 func Hash(entries []*Entry) (string, error) {
-	sort.Slice(entries, func(i, j int) bool { return entries[i].Name < entries[j].Name })
+	sort.Slice(entries, func(i, j int) bool { return entries[i].DocumentID < entries[j].DocumentID })
 	hasher := sha256.New()
 	for _, d := range entries {
 
@@ -351,9 +360,9 @@ func (t *Tree) Sync(r RemoteStorage) error {
 	}
 
 	if rootHash == t.Hash {
-		log.Info.Printf("Root hash the same")
 		return nil
 	}
+	log.Info.Printf("Root hash different")
 
 	rdr, err := r.GetReader(rootHash)
 	if err != nil {
@@ -370,30 +379,32 @@ func (t *Tree) Sync(r RemoteStorage) error {
 	current := make(map[string]*Doc)
 	new := make(map[string]*Entry)
 	for _, e := range entries {
-		new[e.Name] = e
+		new[e.DocumentID] = e
 	}
 	//current documents
 	for _, doc := range t.Docs {
-		if entry, ok := new[doc.Entry.Name]; ok {
+		if entry, ok := new[doc.Entry.DocumentID]; ok {
 			//hash different update
 			if entry.Hash != doc.Hash {
+				log.Info.Println("doc updated: " + doc.DocumentID)
 				doc.Sync(entry, r)
 			}
 			head = append(head, doc)
-			current[doc.DocName] = doc
+			current[doc.DocumentID] = doc
 		}
 
 	}
 
 	//find new entries
-	for _, newEntry := range new {
-		if _, ok := current[newEntry.Name]; !ok {
+	for k, newEntry := range new {
+		if _, ok := current[k]; !ok {
 			doc := &Doc{}
+			log.Info.Println("doc new: " + k)
 			doc.Sync(newEntry, r)
 			head = append(head, doc)
 		}
 	}
-	sort.Slice(head, func(i, j int) bool { return head[i].Name < head[j].Name })
+	sort.Slice(head, func(i, j int) bool { return head[i].DocumentID < head[j].DocumentID })
 	t.Docs = head
 	t.Generation = gen
 	t.Hash = rootHash
