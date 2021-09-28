@@ -35,6 +35,8 @@ func CreateApiCtx(http *transport.HttpClientCtx) (ApiCtx, error) {
 	})
 	fld := strings.Fields(claims.Scopes)
 	isSync15 := false
+
+forloop:
 	for _, f := range fld {
 		switch f {
 		case "sync:fox":
@@ -43,7 +45,7 @@ func CreateApiCtx(http *transport.HttpClientCtx) (ApiCtx, error) {
 			fallthrough
 		case "sync:hare":
 			isSync15 = true
-		case "sync:default":
+			break forloop
 		}
 	}
 	if isSync15 {

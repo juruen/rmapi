@@ -96,16 +96,67 @@ func (ctx *ApiCtx) CreateDir(parentId, name string) (*model.Document, error) {
 	return nil, ErrorNotImplemented
 }
 
+func Sync(b *BlobStorage, tree *Tree, operation func(t *Tree)) error {
+	synccount := 0
+	for {
+		synccount++
+		if synccount > 10 {
+			log.Error.Println("Something is wrong")
+			break
+		}
+		log.Info.Println("Uploading...")
+		operation(tree)
+
+		indexReader, err := tree.IndexReader()
+		if err != nil {
+			return err
+		}
+		err = b.UploadBlob(tree.Hash, indexReader)
+		if err != nil {
+			return err
+		}
+		defer indexReader.Close()
+
+		gen, err := b.WriteRootIndex(tree.Hash, tree.Generation)
+
+		if err == nil {
+			tree.Generation = gen
+			break
+		}
+
+		if err != transport.ErrWrongGeneration {
+			return err
+		}
+
+		//resync and try again
+		err = tree.Sync(b)
+		if err != nil {
+			return err
+		}
+	}
+	err := saveTree(tree)
+	if err != nil {
+		return err
+	}
+	err = b.SyncComplete()
+	if err != nil {
+		log.Error.Printf("cannot send sync %v", err)
+	}
+	return err
+}
+
 // DeleteEntry removes an entry: either an empty directory or a file
 func (ctx *ApiCtx) DeleteEntry(node *model.Node) error {
 	if node.IsDirectory() && len(node.Children) > 0 {
 		return errors.New("directory is not empty")
 	}
-	return ErrorNotImplemented
 
-	// _ := node.Document.ToDeleteDocument()
+	//_ := node.Document.ToDeleteDocument()
 
-	// err := ctx.Http.Put(transport.UserBearer, config.DeleteEntry, deleteDoc, nil)
+	err := Sync(ctx.r, ctx.t, func(t *Tree) {
+		t.Remove(node.Document.ID)
+	})
+	return err
 
 }
 

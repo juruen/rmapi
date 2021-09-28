@@ -32,28 +32,33 @@ func DocPathToName(p string) (name string, ext string) {
 
 func ToIOReader(source interface{}) (io.Reader, error) {
 	var content []byte
+	var err error
 
 	if source != nil {
 		switch source.(type) {
-		case model.DeviceTokenRequest:
 		case model.BlobStorageResponse:
-		case model.BlobStorageRequest:
-			b, err := json.Marshal(source)
+			content, err = json.Marshal(source)
 			if err != nil {
 				return nil, err
 			}
-
-			content = b
+		case model.BlobStorageRequest:
+			content, err = json.Marshal(source)
+			if err != nil {
+				return nil, err
+			}
+		case model.DeviceTokenRequest:
+			content, err = json.Marshal(source)
+			if err != nil {
+				return nil, err
+			}
 		default:
 			sources := make([]interface{}, 0)
 			sources = append(sources, source)
 
-			b, err := json.Marshal(sources)
+			content, err = json.Marshal(sources)
 			if err != nil {
 				return nil, err
 			}
-
-			content = b
 		}
 
 	} else {

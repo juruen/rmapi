@@ -155,9 +155,6 @@ func parseIndex(f io.Reader) ([]*Entry, error) {
 }
 
 func (t *Tree) IndexReader() (io.ReadCloser, error) {
-	if len(t.Docs) == 0 {
-		return nil, errors.New("no docs")
-	}
 	pipeReader, pipeWriter := io.Pipe()
 	w := bufio.NewWriter(pipeWriter)
 	go func() {
@@ -334,14 +331,34 @@ func (doc *Doc) ToDocument() *model.Document {
 
 }
 
-func (doc *Tree) FindDoc(id string) (*Doc, error) {
+func (t *Tree) FindDoc(id string) (*Doc, error) {
 	//O(n)
-	for _, d := range doc.Docs {
+	for _, d := range t.Docs {
 		if d.DocumentID == id {
 			return d, nil
 		}
 	}
 	return nil, errors.New("not found")
+}
+
+func (t *Tree) Remove(id string) error {
+	docIndex := -1
+	for index, d := range t.Docs {
+		if d.DocumentID == id {
+			docIndex = index
+			break
+		}
+	}
+	if docIndex > -1 {
+		log.Info.Printf("Removing %s", id)
+		length := len(t.Docs) - 1
+		t.Docs[docIndex] = t.Docs[length]
+		t.Docs = t.Docs[:length]
+
+		t.Rehash()
+		return nil
+	}
+	return errors.New("not found")
 }
 
 func (doc *Doc) Sync(e *Entry, r RemoteStorage) error {
