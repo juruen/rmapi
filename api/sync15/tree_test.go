@@ -4,24 +4,7 @@ import (
 	"io/ioutil"
 	"strings"
 	"testing"
-
-	"log"
 )
-
-func TestFieldReader_HasNext(t *testing.T) {
-	storagePath := "../../../rmfakecloud/data/users/test/sync/"
-	provider := &LocalStore{storagePath}
-	tree := &HashTree{}
-	err := tree.Mirror(provider) // readTree(provider)
-	// tree, err := readTree(provider)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = saveTree(tree)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
 
 func TestParseLine(t *testing.T) {
 	line := "hash:0:docid:0:993"

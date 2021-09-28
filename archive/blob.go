@@ -22,7 +22,7 @@ type FileMap struct {
 	Path string
 }
 
-func AddStuff(f *[]*FileMap, name, filepath string) {
+func AddMap(f *[]*FileMap, name, filepath string) {
 	fs := &FileMap{
 		Name: name,
 		Path: filepath,
@@ -48,7 +48,7 @@ func Prepare(name, parentId, sourceDocPath, ext, tmpDir string) (files []*FileMa
 				err = err1
 				return
 			}
-			AddStuff(&files, objectName, filePath)
+			AddMap(&files, objectName, filePath)
 		} else {
 			err = FixMetadata(parentId, name, metadataPath)
 			if err != nil {
@@ -64,19 +64,19 @@ func Prepare(name, parentId, sourceDocPath, ext, tmpDir string) (files []*FileMa
 			objectName = fmt.Sprintf("%s/%s.rm", id, pageId)
 			doctype = "notebook"
 		}
-		AddStuff(&files, objectName, sourceDocPath)
+		AddMap(&files, objectName, sourceDocPath)
 		objectName, filePath, err1 := CreateMetadata(id, name, parentId, model.DocumentType, tmpDir)
 		if err1 != nil {
 			err = err1
 			return
 		}
-		AddStuff(&files, objectName, filePath)
+		AddMap(&files, objectName, filePath)
 
 		objectName, filePath, err = CreateContent(id, doctype, tmpDir)
 		if err != nil {
 			return
 		}
-		AddStuff(&files, objectName, filePath)
+		AddMap(&files, objectName, filePath)
 	}
 	return files, id, err
 }
@@ -128,7 +128,7 @@ func UnpackAndFix(src, dest string) (id string, files []*FileMap, metadataPath s
 			os.MkdirAll(fpath, os.ModePerm)
 			continue
 		} else {
-			AddStuff(&files, f.Name, fpath)
+			AddMap(&files, f.Name, fpath)
 		}
 
 		if strings.HasSuffix(fname, ".metadata") {

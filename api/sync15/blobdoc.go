@@ -48,7 +48,7 @@ func (d *BlobDoc) Rehash() error {
 	return nil
 }
 
-func (d *BlobDoc) UpdateMetadata() (hash string, reader io.Reader, err error) {
+func (d *BlobDoc) MetadataHashAndReader() (hash string, reader io.Reader, err error) {
 	jsn, err := json.Marshal(d.MetadataFile)
 	if err != nil {
 		return
