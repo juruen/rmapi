@@ -214,6 +214,9 @@ func (ctx HttpClientCtx) GetBlobStream(url string) (io.ReadCloser, int64, error)
 	if err != nil {
 		return nil, 0, err
 	}
+	if response.StatusCode == http.StatusNotFound {
+		return nil, 0, ErrNotFound
+	}
 	if response.StatusCode != http.StatusOK {
 		return nil, 0, fmt.Errorf("status code not ok %d", response.StatusCode)
 	}
@@ -229,8 +232,9 @@ func (ctx HttpClientCtx) GetBlobStream(url string) (io.ReadCloser, int64, error)
 }
 
 var ErrWrongGeneration = errors.New("wrong generation")
+var ErrNotFound = errors.New("not found")
 
-func (ctx HttpClientCtx) PutBlobStream(url string, gen int64, reader io.ReadCloser) (int64, error) {
+func (ctx HttpClientCtx) PutBlobStream(url string, gen int64, reader io.Reader) (int64, error) {
 	req, err := http.NewRequest(http.MethodPut, url, reader)
 	if err != nil {
 		return 0, err

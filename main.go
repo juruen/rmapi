@@ -22,7 +22,7 @@ func run_shell(ctx api.ApiCtx, args []string) {
 }
 
 func main() {
-	log.InitLog()
+	// log.InitLog()
 	ni := flag.Bool("ni", false, "not interactive")
 	flag.Parse()
 	rstArgs := flag.Args()

@@ -15,73 +15,87 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/juruen/rmapi/archive"
 	"github.com/juruen/rmapi/log"
 	"github.com/juruen/rmapi/model"
 )
 
 type FieldReader struct {
-	index int
-	slc   []string
+	index  int
+	fields []string
 }
 
-func (txt *FieldReader) HasNext() bool {
-	return txt.index < len(txt.slc)
+func (fr *FieldReader) HasNext() bool {
+	return fr.index < len(fr.fields)
 }
 
-func (txt *FieldReader) Next() (string, error) {
-	if txt.index >= len(txt.slc) {
+func (fr *FieldReader) Next() (string, error) {
+	if fr.index >= len(fr.fields) {
 		return "", fmt.Errorf("out of bounds")
 	}
-	res := txt.slc[txt.index]
-	txt.index++
+	res := fr.fields[fr.index]
+	fr.index++
 	return res, nil
-
 }
 
-func fileHash(file string) ([]byte, error) {
+func FileHash(file string) ([]byte, error) {
 	f, err := os.Open(file)
 	if err != nil {
 		return nil, err
 	}
+	defer f.Close()
+
 	hasher := sha256.New()
 	io.Copy(hasher, f)
 	h := hasher.Sum(nil)
 	return h, nil
 
 }
-func dirHash(dir string) ([]byte, error) {
 
-	hashes := make([][]byte, 0)
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println(entries)
+// func dirHash(dir string) ([]byte, error) {
 
-	for _, f := range entries {
-		fp := path.Join(dir, f.Name())
-		fmt.Println(fp)
-		fh, err := fileHash(fp)
-		if err != nil {
-			return nil, err
-		}
-		hashes = append(hashes, fh)
+// 	hashes := make([][]byte, 0)
+// 	entries, err := os.ReadDir(dir)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	fmt.Println(entries)
+
+// 	for _, f := range entries {
+// 		fp := path.Join(dir, f.Name())
+// 		fmt.Println(fp)
+// 		fh, err := fileHash(fp)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		hashes = append(hashes, fh)
+// 	}
+// 	hasher := sha256.New()
+// 	for _, h := range hashes {
+// 		hasher.Write(h)
+// 	}
+// 	dirhash := hasher.Sum(nil)
+// 	return dirhash, nil
+
+// }
+
+func NewFieldReader(line string) FieldReader {
+	fld := strings.FieldsFunc(line, func(r rune) bool { return r == Delimiter })
+
+	fr := FieldReader{
+		index:  0,
+		fields: fld,
 	}
-	hasher := sha256.New()
-	for _, h := range hashes {
-		hasher.Write(h)
-	}
-	dirhash := hasher.Sum(nil)
-	return dirhash, nil
+	return fr
 
 }
-
 func parseEntry(line string) (*Entry, error) {
 	entry := Entry{}
-	fld := strings.FieldsFunc(line, func(r rune) bool { return r == ':' })
-	rdr := FieldReader{
-		index: 0,
-		slc:   fld,
+	rdr := NewFieldReader(line)
+	numFields := len(rdr.fields)
+	if numFields != 5 {
+		return nil, fmt.Errorf("wrong number of fields %d", numFields)
+
 	}
 	var err error
 	entry.Hash, err = rdr.Next()
@@ -102,7 +116,7 @@ func parseEntry(line string) (*Entry, error) {
 	}
 	entry.Subfiles, err = strconv.Atoi(sub)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot read subfiles %s %v", line, err)
 	}
 	sub, err = rdr.Next()
 	if err != nil {
@@ -110,10 +124,14 @@ func parseEntry(line string) (*Entry, error) {
 	}
 	entry.Size, err = strconv.Atoi(sub)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot read size %s %v", line, err)
 	}
 	return &entry, nil
 }
+
+const SchemaVersion = "3"
+const DocType = "80000000"
+const FileType = "0"
 
 func parseIndex(f io.Reader) ([]*Entry, error) {
 	var entries []*Entry
@@ -121,19 +139,59 @@ func parseIndex(f io.Reader) ([]*Entry, error) {
 	scanner.Scan()
 	schema := scanner.Text()
 
-	if schema != "3" {
+	if schema != SchemaVersion {
 		return nil, errors.New("wrong schema")
 	}
 	for scanner.Scan() {
 		line := scanner.Text()
 		entry, err := parseEntry(line)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("cant parse line '%s', %w", line, err)
 		}
 
 		entries = append(entries, entry)
 	}
 	return entries, nil
+}
+
+func (t *Tree) IndexReader() (io.ReadCloser, error) {
+	if len(t.Docs) == 0 {
+		return nil, errors.New("no docs")
+	}
+	pipeReader, pipeWriter := io.Pipe()
+	w := bufio.NewWriter(pipeWriter)
+	go func() {
+		defer pipeWriter.Close()
+		w.WriteString(SchemaVersion)
+		w.WriteString("\n")
+		for _, d := range t.Docs {
+			w.WriteString(d.Line())
+			w.WriteString("\n")
+		}
+		w.Flush()
+	}()
+
+	return pipeReader, nil
+}
+
+func (t *Doc) IndexReader() (io.ReadCloser, error) {
+	if len(t.Files) == 0 {
+		return nil, errors.New("no files")
+	}
+	pipeReader, pipeWriter := io.Pipe()
+	w := bufio.NewWriter(pipeWriter)
+	go func() {
+		defer pipeWriter.Close()
+		w.WriteString(SchemaVersion)
+		w.WriteString("\n")
+		for _, d := range t.Files {
+			w.WriteString(d.Line())
+			w.WriteString("\n")
+		}
+		w.Flush()
+	}()
+
+	return pipeReader, nil
 }
 
 type Tree struct {
@@ -145,16 +203,41 @@ type Tree struct {
 type Doc struct {
 	Files []*Entry
 	Entry
-	Metadata
+	archive.MetadataFile
 }
 
-type Metadata struct {
-	DocName        string `json:"visibleName"`
-	CollectionType string `json:"type"`
-	Parent         string `json:"parent"`
-	LastModified   string `json:"lastModified"`
-	LastOpened     string `json:"lastOpened"`
-	Version        int    `json:"version"`
+const Delimiter = ':'
+
+func (d *Entry) Line() string {
+	var sb strings.Builder
+	sb.WriteString(d.Hash)
+	sb.WriteRune(Delimiter)
+	sb.WriteString(FileType)
+	sb.WriteRune(Delimiter)
+	sb.WriteString(d.DocumentID)
+	sb.WriteRune(Delimiter)
+	sb.WriteString("0")
+	sb.WriteRune(Delimiter)
+	sb.WriteString(strconv.Itoa(d.Size))
+	return sb.String()
+}
+func (d *Doc) Line() string {
+	var sb strings.Builder
+	if d.Hash == "" {
+		log.Error.Print("missing hash for: ", d.DocumentID)
+	}
+	sb.WriteString(d.Hash)
+	sb.WriteRune(Delimiter)
+	sb.WriteString(DocType)
+	sb.WriteRune(Delimiter)
+	sb.WriteString(d.DocumentID)
+	sb.WriteRune(Delimiter)
+
+	numFilesStr := strconv.Itoa(len(d.Files))
+	sb.WriteString(numFilesStr)
+	sb.WriteRune(Delimiter)
+	sb.WriteString("0")
+	return sb.String()
 }
 
 type Entry struct {
@@ -175,6 +258,7 @@ func getCachedTreePath() (string, error) {
 	cacheFile := path.Join(x, ".tree")
 	return cacheFile, nil
 }
+
 func loadTree() (*Tree, error) {
 	tree := Tree{}
 	cacheFile, err := getCachedTreePath()
@@ -217,7 +301,7 @@ func (doc *Doc) SyncName(fileEntry *Entry, r RemoteStorage) error {
 	if strings.HasSuffix(fileEntry.DocumentID, ".metadata") {
 		log.Info.Println("Reading metadata: " + doc.DocumentID)
 
-		metadata := Metadata{}
+		metadata := archive.MetadataFile{}
 
 		meta, err := r.GetReader(fileEntry.Hash)
 		if err != nil {
@@ -233,7 +317,7 @@ func (doc *Doc) SyncName(fileEntry *Entry, r RemoteStorage) error {
 			log.Info.Printf("cannot read metadata %v", err)
 		}
 		log.Info.Println(metadata.DocName)
-		doc.Metadata = metadata
+		doc.MetadataFile = metadata
 	}
 
 	return nil
@@ -242,15 +326,16 @@ func (doc *Doc) SyncName(fileEntry *Entry, r RemoteStorage) error {
 func (doc *Doc) ToDocument() *model.Document {
 	return &model.Document{
 		ID:           doc.DocumentID,
-		VissibleName: doc.Metadata.DocName,
-		Version:      doc.Metadata.Version,
-		Parent:       doc.Metadata.Parent,
-		Type:         doc.Metadata.CollectionType,
+		VissibleName: doc.MetadataFile.DocName,
+		Version:      doc.MetadataFile.Version,
+		Parent:       doc.MetadataFile.Parent,
+		Type:         doc.MetadataFile.CollectionType,
 	}
 
 }
 
 func (doc *Tree) FindDoc(id string) (*Doc, error) {
+	//O(n)
 	for _, d := range doc.Docs {
 		if d.DocumentID == id {
 			return d, nil
@@ -348,6 +433,9 @@ func (d *Doc) AddFile(e *Entry) error {
 }
 
 func (t *Tree) Add(d *Doc) error {
+	if len(d.Files) == 0 {
+		return errors.New("no files")
+	}
 	t.Docs = append(t.Docs, d)
 	return t.Rehash()
 }
@@ -357,6 +445,12 @@ func (t *Tree) Sync(r RemoteStorage) error {
 	rootHash, gen, err := r.GetRootIndex()
 	if err != nil {
 		return err
+	}
+	if rootHash == "" && gen == 0 {
+		log.Info.Println("empty cloud")
+		t.Docs = nil
+		t.Generation = 0
+		return nil
 	}
 
 	if rootHash == t.Hash {
@@ -447,19 +541,4 @@ func readTree(provider RemoteStorage) (*Tree, error) {
 
 	return &tree, nil
 
-}
-
-func main() {
-	storagePath := "../../../rmfakecloud/data/users/test/sync/"
-	provider := &LocalStore{storagePath}
-	tree := &Tree{}
-	err := tree.Sync(provider) // readTree(provider)
-	// tree, err := readTree(provider)
-	if err != nil {
-		log.Info.Fatal(err)
-	}
-	err = saveTree(tree)
-	if err != nil {
-		log.Info.Fatal(err)
-	}
 }

@@ -197,7 +197,7 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 				} else {
 					// Document uploaded successfully.
 					pC.Println(" complete")
-					pCtx.api.Filetree().AddDocument(*doc)
+					pCtx.api.Filetree().AddDocument(doc)
 				}
 			}
 

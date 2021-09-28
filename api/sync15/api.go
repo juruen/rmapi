@@ -1,12 +1,14 @@
 package sync15
 
 import (
+	"archive/zip"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
-	"path"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/juruen/rmapi/archive"
@@ -18,11 +20,13 @@ import (
 	"github.com/juruen/rmapi/util"
 )
 
+var ErrorNotImplemented = errors.New("not implemented")
+
 // An ApiCtx allows you interact with the remote reMarkable API
 type ApiCtx struct {
 	Http *transport.HttpClientCtx
 	ft   *filetree.FileTreeCtx
-	r    RemoteStorage
+	r    *BlobStorage
 	t    *Tree
 }
 
@@ -32,23 +36,7 @@ func (ctx *ApiCtx) Filetree() *filetree.FileTreeCtx {
 
 // Nuke removes all documents from the account
 func (ctx *ApiCtx) Nuke() error {
-	documents := make([]model.Document, 0)
-
-	if err := ctx.Http.Get(transport.UserBearer, config.ListDocs, nil, &documents); err != nil {
-		return err
-	}
-
-	for _, d := range documents {
-		log.Info.Println("Deleting: ", d.VissibleName)
-
-		err := ctx.Http.Put(transport.UserBearer, config.DeleteEntry, d, nil)
-		if err != nil {
-			log.Error.Println("failed to remove entry", err)
-			return err
-		}
-	}
-
-	return nil
+	return ErrorNotImplemented
 }
 
 // FetchDocument downloads a document given its ID and saves it locally into dstPath
@@ -59,96 +47,53 @@ func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
 		return err
 	}
 
-	dst, err := ioutil.TempDir("", "rmapifile")
+	tmp, err := ioutil.TempFile("", "rmapizip")
+
 	if err != nil {
+		log.Error.Println("failed to create tmpfile for zip dir", err)
 		return err
 	}
-	log.Info.Print("got files in ", dst)
+	defer tmp.Close()
+
+	w := zip.NewWriter(tmp)
+	defer w.Close()
 	for _, f := range doc.Files {
 		log.Info.Println(f.DocumentID)
-		rc, err := ctx.r.GetReader(f.Hash)
+		blobReader, err := ctx.r.GetReader(f.Hash)
 		if err != nil {
 			return err
 		}
-		defer rc.Close()
-		fp := path.Join(dst, f.DocumentID)
-		root := path.Dir(fp)
-		log.Info.Println(root)
-		err = os.MkdirAll(root, 0744)
-		if err != nil {
-			return fmt.Errorf("cant create forld %v", err)
-		}
-		nf, err := os.Create(fp)
+		defer blobReader.Close()
+		header := zip.FileHeader{}
+		header.Name = f.DocumentID
+		header.Modified = time.Now()
+		zipWriter, err := w.CreateHeader(&header)
 		if err != nil {
 			return err
 		}
-		_, err = io.Copy(nf, rc)
-		if err != nil {
-			return err
-		}
+		_, err = io.Copy(zipWriter, blobReader)
 
+		if err != nil {
+			return err
+		}
 	}
-	// defer os.RemoveAll(dst)
-	log.Info.Print("got files in ", dst)
+	w.Close()
+	tmpPath := tmp.Name()
+	_, err = util.CopyFile(tmpPath, dstPath)
 
-	// _, err = util.CopyFile(tmpPath, dstPath)
+	if err != nil {
+		log.Error.Printf("failed to copy %s to %s, er: %s\n", tmpPath, dstPath, err.Error())
+		return err
+	}
 
-	// if err != nil {
-	// 	log.Error.Printf("failed to copy %s to %s, er: %s\n", tmpPath, dstPath, err.Error())
-	// 	return err
-	// }
+	defer os.RemoveAll(tmp.Name())
 
 	return nil
 }
 
 // CreateDir creates a remote directory with a given name under the parentId directory
-func (ctx *ApiCtx) CreateDir(parentId, name string) (model.Document, error) {
-	uploadRsp, err := ctx.uploadRequest("", model.DirectoryType)
-
-	if err != nil {
-		return model.Document{}, err
-	}
-
-	if !uploadRsp.Success {
-		return model.Document{}, errors.New("upload request returned success := false")
-	}
-
-	zippath, err := archive.CreateZipDirectory(uploadRsp.ID)
-
-	if err != nil {
-		log.Error.Println("failed to create zip directory", err)
-		return model.Document{}, err
-	}
-
-	f, err := os.Open(zippath)
-
-	if err != nil {
-		log.Error.Println("failed to read zip file to upload", zippath, err)
-		return model.Document{}, err
-	}
-
-	defer f.Close()
-
-	err = ctx.Http.PutStream(transport.UserBearer, uploadRsp.BlobURLPut, f)
-
-	if err != nil {
-		log.Error.Println("failed to upload directory", err)
-		return model.Document{}, err
-	}
-
-	metaDoc := model.CreateUploadDocumentMeta(uploadRsp.ID, model.DirectoryType, parentId, name)
-
-	err = ctx.Http.Put(transport.UserBearer, config.UpdateStatus, metaDoc, nil)
-
-	if err != nil {
-		log.Error.Println("failed to move entry", err)
-		return model.Document{}, err
-	}
-
-	doc := metaDoc.ToDocument()
-
-	return doc, err
-
+func (ctx *ApiCtx) CreateDir(parentId, name string) (*model.Document, error) {
+	return nil, ErrorNotImplemented
 }
 
 // DeleteEntry removes an entry: either an empty directory or a file
@@ -156,17 +101,12 @@ func (ctx *ApiCtx) DeleteEntry(node *model.Node) error {
 	if node.IsDirectory() && len(node.Children) > 0 {
 		return errors.New("directory is not empty")
 	}
+	return ErrorNotImplemented
 
-	deleteDoc := node.Document.ToDeleteDocument()
+	// _ := node.Document.ToDeleteDocument()
 
-	err := ctx.Http.Put(transport.UserBearer, config.DeleteEntry, deleteDoc, nil)
+	// err := ctx.Http.Put(transport.UserBearer, config.DeleteEntry, deleteDoc, nil)
 
-	if err != nil {
-		log.Error.Println("failed to remove entry", err)
-		return err
-	}
-
-	return nil
 }
 
 // MoveEntry moves an entry (either a directory or a file)
@@ -178,21 +118,35 @@ func (ctx *ApiCtx) MoveEntry(src, dstDir *model.Node, name string) (*model.Node,
 		return nil, errors.New("destination directory is a file")
 	}
 
-	metaDoc := src.Document.ToMetaDocument()
-	metaDoc.Version = metaDoc.Version + 1
-	metaDoc.VissibleName = name
-	metaDoc.Parent = dstDir.Id()
+	// metaDoc := src.Document.ToMetaDocument()
+	// metaDoc.Version = metaDoc.Version + 1
+	// metaDoc.VissibleName = name
+	// metaDoc.Parent = dstDir.Id()
 
-	err := ctx.Http.Put(transport.UserBearer, config.UpdateStatus, metaDoc, nil)
+	// err := ctx.Http.Put(transport.UserBearer, config.UpdateStatus, metaDoc, nil)
 
-	if err != nil {
-		log.Error.Println("failed to move entry", err)
-		return nil, err
+	// if err != nil {
+	// 	log.Error.Println("failed to move entry", err)
+	// 	return nil, err
+	// }
+
+	// doc := metaDoc.ToDocument()
+
+	// return &model.Node{&doc, src.Children, dstDir}, nil
+	return nil, ErrorNotImplemented
+}
+
+type FileStuff struct {
+	Name string
+	Path string
+}
+
+func AddStuff(f *[]FileStuff, name, filepath string) {
+	fs := FileStuff{
+		Name: name,
+		Path: filepath,
 	}
-
-	doc := metaDoc.ToDocument()
-
-	return &model.Node{&doc, src.Children, dstDir}, nil
+	*f = append(*f, fs)
 }
 
 // UploadDocument uploads a local document given by sourceDocPath under the parentId directory
@@ -210,6 +164,12 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model
 	id := ""
 	var err error
 
+	files := []FileStuff{}
+
+	tmpDir, err := ioutil.TempDir("", "rmupload")
+	if err != nil {
+		return nil, err
+	}
 	//TODO extract
 	if ext == "zip" {
 		id, err = archive.GetIdFromZip(sourceDocPath)
@@ -221,16 +181,119 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model
 		}
 	} else {
 		id = uuid.New().String()
+		objectId := id + "." + ext
+		doctype := ext
+		if ext == "rm" {
+			pageId := uuid.New().String()
+			objectId = fmt.Sprintf("%s/%s.rm", id, pageId)
+			doctype = "notebook"
+		}
+		AddStuff(&files, objectId, sourceDocPath)
+		objectId, filePath, err := archive.CreateMetadata(id, name, parentId, tmpDir)
+		if err != nil {
+			return nil, err
+		}
+		AddStuff(&files, objectId, filePath)
+
+		objectId, filePath, err = archive.CreateContent(id, doctype, tmpDir)
+		if err != nil {
+			return nil, err
+		}
+		AddStuff(&files, objectId, filePath)
 	}
 
-	// zipPath, err := archive.CreateZipDocument(id, sourceDocPath)
+	d := &Doc{
+		MetadataFile: archive.MetadataFile{
+			DocName: name,
+		},
+		Entry: Entry{
+			DocumentID: id,
+		},
+	}
+	for _, f := range files {
+		log.Info.Printf("File %s, path: %s", f.Name, f.Path)
+		hash, err := FileHash(f.Path)
+		if err != nil {
+			return nil, err
+		}
+		hashStr := hex.EncodeToString(hash)
+		e := &Entry{
+			DocumentID: f.Name,
+			Hash:       hashStr,
+			Type:       FileType,
+			Size:       123,
+		}
+		reader, err := os.Open(f.Path)
+		if err != nil {
+			return nil, err
+		}
+		err = ctx.r.UploadBlob(hashStr, reader)
 
-	doc := model.Document{}
+		if err != nil {
+			return nil, err
+		}
 
-	//update root
-	//notify
+		d.AddFile(e)
+	}
+	indexReader, err := d.IndexReader()
+	if err != nil {
+		return nil, err
+	}
+	defer indexReader.Close()
+	log.Info.Println("Uploading doc index...", d.Hash)
+	err = ctx.r.UploadBlob(d.Hash, indexReader)
+	if err != nil {
+		return nil, err
+	}
+	tree := ctx.t
 
-	return &doc, err
+	synccount := 0
+	for {
+		synccount++
+		if synccount > 10 {
+			log.Error.Println("Something is wrong")
+			break
+		}
+		log.Info.Println("Uploading...")
+		tree.Add(d)
+
+		indexReader, err := tree.IndexReader()
+		if err != nil {
+			return nil, err
+		}
+		err = ctx.r.UploadBlob(tree.Hash, indexReader)
+		if err != nil {
+			return nil, err
+		}
+		defer indexReader.Close()
+
+		gen, err := ctx.r.WriteRootIndex(tree.Hash, tree.Generation)
+
+		if err == nil {
+			tree.Generation = gen
+			break
+		}
+
+		if err != transport.ErrWrongGeneration {
+			return nil, err
+		}
+
+		//resync and try again
+		err = tree.Sync(ctx.r)
+		if err != nil {
+			return nil, err
+		}
+	}
+	err = saveTree(ctx.t)
+	if err != nil {
+		return nil, err
+	}
+	err = ctx.r.SyncComplete()
+	if err != nil {
+		log.Error.Printf("cannot send sync %v", err)
+	}
+
+	return d.ToDocument(), err
 }
 
 func (ctx *ApiCtx) uploadRequest(id string, entryType string) (model.UploadDocumentResponse, error) {
@@ -270,9 +333,9 @@ func CreateCtx(http *transport.HttpClientCtx) (*ApiCtx, error) {
 // structure to represent them
 func DocumentsFileTree(tree *Tree) (*filetree.FileTreeCtx, error) {
 
-	documents := make([]model.Document, 0)
+	documents := make([]*model.Document, 0)
 	for _, d := range tree.Docs {
-		doc := *d.ToDocument()
+		doc := d.ToDocument()
 		documents = append(documents, doc)
 	}
 

@@ -37,6 +37,9 @@ func Init(
 		"ERROR: ",
 		log.Ldate|log.Ltime|log.Lshortfile)
 }
+func init() {
+	InitLog()
+}
 
 func InitLog() {
 	var trace io.Writer

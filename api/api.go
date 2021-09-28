@@ -15,7 +15,7 @@ import (
 type ApiCtx interface {
 	Filetree() *filetree.FileTreeCtx
 	FetchDocument(docId, dstPath string) error
-	CreateDir(parentId, name string) (model.Document, error)
+	CreateDir(parentId, name string) (*model.Document, error)
 	UploadDocument(parentId string, sourceDocPath string) (*model.Document, error)
 	MoveEntry(src, dstDir *model.Node, name string) (*model.Node, error)
 	DeleteEntry(node *model.Node) error

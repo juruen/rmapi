@@ -1,6 +1,7 @@
 package sync15
 
 import (
+	"bytes"
 	"io"
 	"io/ioutil"
 
@@ -26,7 +27,7 @@ func (b *BlobStorage) GetUrl(method, hash string) (string, error) {
 }
 
 func (b *BlobStorage) GetReader(hash string) (io.ReadCloser, error) {
-	log.Info.Println("get blobl: " + hash)
+	log.Info.Println("get blob: " + hash)
 	url, err := b.GetUrl("GET", hash)
 	if err != nil {
 		return nil, err
@@ -34,6 +35,37 @@ func (b *BlobStorage) GetReader(hash string) (io.ReadCloser, error) {
 
 	blob, _, err := b.http.GetBlobStream(url)
 	return blob, err
+}
+
+func (b *BlobStorage) UploadBlob(hash string, reader io.Reader) error {
+	log.Info.Println("upload blob: " + hash)
+	url, err := b.GetUrl("PUT", hash)
+	if err != nil {
+		return err
+	}
+
+	_, err = b.http.PutBlobStream(url, -1, reader)
+	return err
+}
+
+func (b *BlobStorage) SyncComplete() error {
+	log.Info.Println("sync complete")
+	return b.http.Post(transport.UserBearer, config.SyncComplete, nil, nil)
+}
+
+func (b *BlobStorage) WriteRootIndex(roothash string, gen int64) (int64, error) {
+
+	log.Info.Println("updating root")
+	url, err := b.GetUrl("PUT", "root")
+	if err != nil {
+		return 0, err
+	}
+	log.Info.Println("got url:", url)
+	reader := bytes.NewBufferString(roothash)
+
+	gen, err = b.http.PutBlobStream(url, gen, reader)
+	return gen, err
+
 }
 func (b *BlobStorage) GetRootIndex() (string, int64, error) {
 
@@ -44,6 +76,10 @@ func (b *BlobStorage) GetRootIndex() (string, int64, error) {
 	}
 	log.Info.Println("got url:", url)
 	blob, gen, err := b.http.GetBlobStream(url)
+	if err == transport.ErrNotFound {
+		return "", 0, nil
+
+	}
 	if err != nil {
 		return "", 0, err
 	}

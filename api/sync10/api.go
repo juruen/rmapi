@@ -105,29 +105,29 @@ func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
 }
 
 // CreateDir creates a remote directory with a given name under the parentId directory
-func (ctx *ApiCtx) CreateDir(parentId, name string) (model.Document, error) {
+func (ctx *ApiCtx) CreateDir(parentId, name string) (*model.Document, error) {
 	uploadRsp, err := ctx.uploadRequest("", model.DirectoryType)
 
 	if err != nil {
-		return model.Document{}, err
+		return nil, err
 	}
 
 	if !uploadRsp.Success {
-		return model.Document{}, errors.New("upload request returned success := false")
+		return nil, errors.New("upload request returned success := false")
 	}
 
 	zippath, err := archive.CreateZipDirectory(uploadRsp.ID)
 
 	if err != nil {
 		log.Error.Println("failed to create zip directory", err)
-		return model.Document{}, err
+		return nil, err
 	}
 
 	f, err := os.Open(zippath)
 
 	if err != nil {
 		log.Error.Println("failed to read zip file to upload", zippath, err)
-		return model.Document{}, err
+		return nil, err
 	}
 
 	defer f.Close()
@@ -136,7 +136,7 @@ func (ctx *ApiCtx) CreateDir(parentId, name string) (model.Document, error) {
 
 	if err != nil {
 		log.Error.Println("failed to upload directory", err)
-		return model.Document{}, err
+		return nil, err
 	}
 
 	metaDoc := model.CreateUploadDocumentMeta(uploadRsp.ID, model.DirectoryType, parentId, name)
@@ -145,12 +145,12 @@ func (ctx *ApiCtx) CreateDir(parentId, name string) (model.Document, error) {
 
 	if err != nil {
 		log.Error.Println("failed to move entry", err)
-		return model.Document{}, err
+		return nil, err
 	}
 
 	doc := metaDoc.ToDocument()
 
-	return doc, err
+	return &doc, err
 
 }
 
@@ -296,7 +296,7 @@ func CreateCtx(http *transport.HttpClientCtx) (*ApiCtx, error) {
 // DocumentsFileTree reads your remote documents and builds a file tree
 // structure to represent them
 func DocumentsFileTree(http *transport.HttpClientCtx) (*filetree.FileTreeCtx, error) {
-	documents := make([]model.Document, 0)
+	documents := make([]*model.Document, 0)
 
 	if err := http.Get(transport.UserBearer, config.ListDocs, nil, &documents); err != nil {
 		return nil, err
