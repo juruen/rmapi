@@ -49,7 +49,7 @@ forloop:
 		}
 	}
 	if isSync15 {
-		fmt.Println("New sync 1.5 not supported fully yet")
+		fmt.Println("sync 1.5 not tested fully yet")
 		return sync15.CreateCtx(http)
 	} else {
 		return sync10.CreateCtx(http)

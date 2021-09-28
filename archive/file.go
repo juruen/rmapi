@@ -13,6 +13,7 @@ type Zip struct {
 	Pages   []Page
 	Payload []byte
 	UUID    string
+	pageMap map[string]int
 }
 
 // NewZip creates a File with sane defaults.
