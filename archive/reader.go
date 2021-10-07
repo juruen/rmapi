@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -275,7 +276,12 @@ func zipExtFinder(zr *zip.Reader, ext string) ([]*zip.File, error) {
 	var files []*zip.File
 
 	for _, file := range zr.File {
-		if _, e := splitExt(file.FileInfo().Name()); e == ext {
+		parentFolderName := path.Dir(file.FileHeader.Name)
+		if strings.HasSuffix(parentFolderName, ".highlights") {
+			continue
+		}
+		filename := file.FileInfo().Name()
+		if _, e := splitExt(filename); e == ext {
 			files = append(files, file)
 		}
 	}
