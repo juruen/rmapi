@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/golang-jwt/jwt"
@@ -27,15 +26,16 @@ type UserToken struct {
 }
 
 // CreateApiCtx initializes an instance of ApiCtx
-func CreateApiCtx(http *transport.HttpClientCtx) (ApiCtx, error) {
+func CreateApiCtx(http *transport.HttpClientCtx) (ctx ApiCtx, isSync15 bool, err error) {
 	userToken := http.Tokens.UserToken
 	claims := UserToken{}
 	jwt.ParseWithClaims(userToken, &claims, func(token *jwt.Token) (interface{}, error) {
 		return nil, nil
 	})
+	if err != nil {
+		return
+	}
 	fld := strings.Fields(claims.Scopes)
-	isSync15 := false
-
 forloop:
 	for _, f := range fld {
 		switch f {
@@ -49,10 +49,9 @@ forloop:
 		}
 	}
 	if isSync15 {
-		fmt.Println("sync 1.5 not tested fully yet")
-		return sync15.CreateCtx(http)
+		ctx, err = sync15.CreateCtx(http)
 	} else {
-		return sync10.CreateCtx(http)
+		ctx, err = sync10.CreateCtx(http)
 	}
-
+	return
 }
