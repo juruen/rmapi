@@ -36,11 +36,11 @@ func putCmd(ctx *ShellCtxt) *ishell.Cmd {
 			}
 
 			_, err = ctx.api.Filetree().NodeByPath(docName, node)
-			//TODO: force flag
-			// if err == nil {
-			// 	c.Err(errors.New("entry already exists"))
-			// 	return
-			// }
+			//TODO: force flag and overwrite
+			if err == nil {
+				c.Err(errors.New("entry already exists"))
+				return
+			}
 
 			c.Printf("uploading: [%s]...", srcName)
 

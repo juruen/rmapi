@@ -20,6 +20,7 @@ type ApiCtx interface {
 	DeleteEntry(node *model.Node) error
 	Nuke() error
 }
+
 type UserToken struct {
 	Scopes string
 	*jwt.StandardClaims

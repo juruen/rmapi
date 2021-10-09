@@ -34,7 +34,7 @@ func Prepare(name, parentId, sourceDocPath, ext, tmpDir string) (files []*FileMa
 	files = []*FileMap{}
 	if ext == "zip" {
 		var metadataPath string
-		id, files, metadataPath, err = UnpackAndFix(sourceDocPath, tmpDir)
+		id, files, metadataPath, err = Unpack(sourceDocPath, tmpDir)
 		if err != nil {
 			return
 		}
@@ -81,6 +81,7 @@ func Prepare(name, parentId, sourceDocPath, ext, tmpDir string) (files []*FileMa
 	return files, id, err
 }
 
+// FixMetadata fixes the metadata with the new parent and filename
 func FixMetadata(parentId, name, path string) error {
 	meta := MetadataFile{}
 	metaData, err := ioutil.ReadFile(path)
@@ -99,7 +100,9 @@ func FixMetadata(parentId, name, path string) error {
 	}
 	return ioutil.WriteFile(path, metaData, 0600)
 }
-func UnpackAndFix(src, dest string) (id string, files []*FileMap, metadataPath string, err error) {
+
+// Unpack unpacks a rmapi .zip file
+func Unpack(src, dest string) (id string, files []*FileMap, metadataPath string, err error) {
 	log.Info.Println("Unpacking in: ", dest)
 	r, err := zip.OpenReader(src)
 	if err != nil {
