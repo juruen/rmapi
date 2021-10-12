@@ -370,6 +370,7 @@ func CreateCtx(http *transport.HttpClientCtx) (*ApiCtx, error) {
 		fmt.Print(err)
 		return nil, err
 	}
+	fmt.Println("Refreshing tree...")
 	err = cacheTree.Mirror(apiStorage)
 	if err != nil {
 		return nil, err

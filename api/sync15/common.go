@@ -40,7 +40,7 @@ func getCachedTreePath() (string, error) {
 }
 
 func loadTree() (*HashTree, error) {
-	tree := HashTree{}
+	tree := &HashTree{}
 	cacheFile, err := getCachedTreePath()
 	if err != nil {
 		return nil, err
@@ -50,17 +50,17 @@ func loadTree() (*HashTree, error) {
 		if err != nil {
 			return nil, err
 		}
-		err = json.Unmarshal(b, &tree)
+		err = json.Unmarshal(b, tree)
 		if err != nil {
 			log.Error.Println("cache corrupt")
-			return nil, err
+			return tree, nil
 		}
 	} else {
 		os.Create(cacheFile)
 	}
-	log.Info.Println("Cache loaded: ", cacheFile)
+	log.Info.Println("cache loaded: ", cacheFile)
 
-	return &tree, nil
+	return tree, nil
 }
 
 func saveTree(tree *HashTree) error {
