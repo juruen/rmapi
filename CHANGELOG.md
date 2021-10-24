@@ -1,4 +1,4 @@
-## rmapi (master)
+## rmapi 0.0.16 (October 24, 2021)
 
 * Use Go 1.16
 
