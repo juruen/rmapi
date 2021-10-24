@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/juruen/rmapi/encoding/rm"
 	"github.com/juruen/rmapi/log"
 	"github.com/juruen/rmapi/util"
@@ -38,8 +39,6 @@ func (z *Zip) Read(r io.ReaderAt, size int64) error {
 		log.Warning.Printf("PageCount is 0")
 		return nil
 	}
-	// instantiate the slice of pages
-	z.Pages = make([]Page, z.Content.PageCount)
 
 	if err := z.readMetadata(zr); err != nil {
 		return err
@@ -89,6 +88,17 @@ func (z *Zip) readContent(zr *zip.Reader) error {
 	p := contentFile.FileInfo().Name()
 	id, _ := util.DocPathToName(p)
 	z.UUID = id
+
+	if z.Content.Pages != nil && len(z.Content.Pages) > 0 {
+		z.pageMap = make(map[string]int)
+		z.Pages = make([]Page, len(z.Content.Pages))
+		for i, p := range z.Content.Pages {
+			z.pageMap[p] = i
+		}
+	} else {
+		// instantiate the slice of pages
+		z.Pages = make([]Page, z.Content.PageCount)
+	}
 	return nil
 }
 
@@ -163,9 +173,9 @@ func (z *Zip) readData(zr *zip.Reader) error {
 	for _, file := range files {
 		name, _ := splitExt(file.FileInfo().Name())
 
-		idx, err := strconv.Atoi(name)
+		idx, err := z.pageIndex(name)
 		if err != nil {
-			return errors.New("error in .rm filename")
+			return err
 		}
 
 		if len(z.Pages) <= idx {
@@ -225,6 +235,28 @@ func (z *Zip) readThumbnails(zr *zip.Reader) error {
 	return nil
 }
 
+func (z *Zip) pageIndex(namePart string) (idx int, err error) {
+	idx, err = strconv.Atoi(namePart)
+	if err == nil {
+		return idx, nil
+	}
+	_, err = uuid.Parse(namePart)
+	if err != nil {
+		return -1, errors.New("neither int nor uuid page")
+	}
+
+	if z.pageMap == nil {
+		return -1, errors.New("no uuid pagemap")
+	}
+	var ok bool
+	idx, ok = z.pageMap[namePart]
+	if !ok {
+		log.Warning.Println("Page not found in map: ", namePart)
+	}
+
+	return
+}
+
 // readMetadata extracts existing .json metadata files from an archive.
 func (z *Zip) readMetadata(zr *zip.Reader) error {
 	files, err := zipExtFinder(zr, ".json")
@@ -235,10 +267,11 @@ func (z *Zip) readMetadata(zr *zip.Reader) error {
 	for _, file := range files {
 		name, _ := splitExt(file.FileInfo().Name())
 
-		// name is 0-metadata.json
-		idx, err := strconv.Atoi(strings.Split(name, "-")[0])
+		// name is 0-metadata.json or uuid-metadata
+		namePart := strings.TrimSuffix(name, "-metadata")
+		idx, err := z.pageIndex(namePart)
 		if err != nil {
-			return errors.New("error in metadata .json filename")
+			return err
 		}
 
 		if len(z.Pages) <= idx {

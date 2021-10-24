@@ -17,7 +17,7 @@ func lsCmd(ctx *ShellCtxt) *ishell.Cmd {
 			if len(c.Args) == 1 {
 				target := c.Args[0]
 
-				argNode, err := ctx.api.Filetree.NodeByPath(target, ctx.node)
+				argNode, err := ctx.api.Filetree().NodeByPath(target, ctx.node)
 
 				if err != nil || node.IsFile() {
 					c.Err(errors.New("directory doesn't exist"))

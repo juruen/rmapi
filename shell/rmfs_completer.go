@@ -23,7 +23,7 @@ func prefixToNodeDir(ctx *ShellCtxt, s []string) (*model.Node, string) {
 
 	log.Trace.Println("prefix", prefix)
 
-	node, err := ctx.api.Filetree.NodeByPath(prefix, ctx.node)
+	node, err := ctx.api.Filetree().NodeByPath(prefix, ctx.node)
 
 	// Prefix matches an entry
 	if err == nil {
@@ -48,7 +48,7 @@ func prefixToNodeDir(ctx *ShellCtxt, s []string) (*model.Node, string) {
 
 	log.Trace.Println("dir", dir)
 
-	node, err = ctx.api.Filetree.NodeByPath(dir, ctx.node)
+	node, err = ctx.api.Filetree().NodeByPath(dir, ctx.node)
 
 	if err != nil {
 		return nil, ""

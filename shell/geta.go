@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+
 	"github.com/abiosoft/ishell"
 	"github.com/juruen/rmapi/annotations"
 )
@@ -33,7 +34,7 @@ func getACmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			srcName := argRest[0]
 
-			node, err := ctx.api.Filetree.NodeByPath(srcName, ctx.node)
+			node, err := ctx.api.Filetree().NodeByPath(srcName, ctx.node)
 
 			if err != nil || node.IsDirectory() {
 				c.Err(errors.New("file doesn't exist"))

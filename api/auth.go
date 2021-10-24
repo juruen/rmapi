@@ -87,7 +87,7 @@ func newDeviceToken(http *transport.HttpClientCtx, code string) (string, error) 
 	req := model.DeviceTokenRequest{code, defaultDeviceDesc, uuid.String()}
 
 	resp := transport.BodyString{}
-	err = http.Post(transport.EmptyBearer, newTokenDevice, req, &resp)
+	err = http.Post(transport.EmptyBearer, config.NewTokenDevice, req, &resp)
 
 	if err != nil {
 		log.Error.Fatal("failed to create a new device token")
@@ -99,7 +99,7 @@ func newDeviceToken(http *transport.HttpClientCtx, code string) (string, error) 
 
 func newUserToken(http *transport.HttpClientCtx) (string, error) {
 	resp := transport.BodyString{}
-	err := http.Post(transport.DeviceBearer, newUserDevice, nil, &resp)
+	err := http.Post(transport.DeviceBearer, config.NewUserDevice, nil, &resp)
 
 	if err != nil {
 		return "", err

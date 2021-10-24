@@ -13,6 +13,7 @@ type Zip struct {
 	Pages   []Page
 	Payload []byte
 	UUID    string
+	pageMap map[string]int
 }
 
 // NewZip creates a File with sane defaults.
@@ -134,4 +135,19 @@ type Transform struct {
 	M31 float32 `json:"m31"`
 	M32 float32 `json:"m32"`
 	M33 float32 `json:"m33"`
+}
+
+// MetadataFile content
+type MetadataFile struct {
+	DocName          string `json:"visibleName"`
+	CollectionType   string `json:"type"`
+	Parent           string `json:"parent"`
+	LastModified     string `json:"lastModified"`
+	LastOpened       string `json:"lastOpened"`
+	Version          int    `json:"version"`
+	Pinned           bool   `json:"pinned"`
+	Synced           bool   `json:"synced"`
+	Modified         bool   `json:"modified"`
+	Deleted          bool   `json:"deleted"`
+	MetadataModified bool   `json:"metadatamodified"`
 }

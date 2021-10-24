@@ -32,14 +32,14 @@ func mputCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			// Past this point, the number of arguments is 1.
 
-			node, err := ctx.api.Filetree.NodeByPath(c.Args[0], ctx.node)
+			node, err := ctx.api.Filetree().NodeByPath(c.Args[0], ctx.node)
 
 			if err != nil || node.IsFile() {
 				c.Err(errors.New("remote directory does not exist"))
 				return
 			}
 
-			path, err := ctx.api.Filetree.NodeToPath(node)
+			path, err := ctx.api.Filetree().NodeToPath(node)
 
 			if err != nil || node.IsFile() {
 				c.Err(errors.New("remote directory does not exist"))
@@ -132,7 +132,7 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 		case mode.IsDir():
 
 			// Is a directory. Create directory and make a recursive call.
-			_, err := pCtx.api.Filetree.NodeByPath(name, pCtx.node)
+			_, err := pCtx.api.Filetree().NodeByPath(name, pCtx.node)
 
 			if err != nil {
 				// Directory does not exist. Create directory.
@@ -145,7 +145,7 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 					continue
 				} else {
 					pC.Println(" complete")
-					pCtx.api.Filetree.AddDocument(doc) // Add dir to file tree.
+					pCtx.api.Filetree().AddDocument(doc) // Add dir to file tree.
 				}
 			} else {
 				// Directory already exists.
@@ -156,8 +156,8 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 			// Error checking not required? Unless, someone deletes
 			// or renames the directory meanwhile.
 
-			node, _ := pCtx.api.Filetree.NodeByPath(name, pCtx.node)
-			path, _ := pCtx.api.Filetree.NodeToPath(node)
+			node, _ := pCtx.api.Filetree().NodeByPath(name, pCtx.node)
+			path, _ := pCtx.api.Filetree().NodeToPath(node)
 
 			// Back up current remote location.
 			currCtxPath := pCtx.path
@@ -180,7 +180,7 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 				continue
 			}
 
-			_, err := pCtx.api.Filetree.NodeByPath(docName, pCtx.node)
+			_, err := pCtx.api.Filetree().NodeByPath(docName, pCtx.node)
 
 			if err == nil {
 				// Document already exists.
@@ -197,7 +197,7 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 				} else {
 					// Document uploaded successfully.
 					pC.Println(" complete")
-					pCtx.api.Filetree.AddDocument(*doc)
+					pCtx.api.Filetree().AddDocument(doc)
 				}
 			}
 

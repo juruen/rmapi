@@ -8,11 +8,14 @@ import (
 	"image/jpeg"
 	"io/ioutil"
 	"os"
+	"path"
+	"strconv"
+	"time"
 
+	uuid "github.com/google/uuid"
 	"github.com/juruen/rmapi/log"
 	"github.com/juruen/rmapi/util"
 	"github.com/nfnt/resize"
-	uuid "github.com/satori/go.uuid"
 	pdfmodel "github.com/unidoc/unipdf/v3/model"
 	"github.com/unidoc/unipdf/v3/render"
 )
@@ -94,12 +97,7 @@ func CreateZipDocument(id, srcPath string) (zipPath string, err error) {
 
 	pages := make([]string, 0)
 	if ext == "rm" {
-		var pageUUID uuid.UUID
-
-		pageUUID, err = uuid.NewV4()
-		if err != nil {
-			return
-		}
+		pageUUID := uuid.New()
 		pageID := pageUUID.String()
 		documentPath = fmt.Sprintf("%s/%s.rm", id, pageID)
 		fileType = "notebook"
@@ -159,12 +157,12 @@ func CreateZipDocument(id, srcPath string) (zipPath string, err error) {
 
 func CreateZipDirectory(id string) (string, error) {
 	tmp, err := ioutil.TempFile("", "rmapizip")
-	defer tmp.Close()
 
 	if err != nil {
 		log.Error.Println("failed to create tmpfile for zip dir", err)
 		return "", err
 	}
+	defer tmp.Close()
 
 	w := zip.NewWriter(tmp)
 	defer w.Close()
@@ -217,4 +215,43 @@ func createZipContent(ext string, pageIDs []string) (string, error) {
 	}
 
 	return string(cstring), nil
+}
+
+func CreateContent(id, ext, fpath string) (fileName, filePath string, err error) {
+	fileName = id + ".content"
+	filePath = path.Join(fpath, fileName)
+	content := "{}"
+
+	if ext != "" {
+		content, err = createZipContent(ext, nil)
+		if err != nil {
+			return
+		}
+	}
+
+	err = ioutil.WriteFile(filePath, []byte(content), 0600)
+	return
+}
+
+func CreateMetadata(id, name, parent, colType, fpath string) (fileName string, filePath string, err error) {
+	fileName = id + ".metadata"
+	filePath = path.Join(fpath, fileName)
+	t := time.Now().Unix()
+	tf := strconv.FormatInt(t, 10)
+	meta := MetadataFile{
+		DocName:        name,
+		Version:        0,
+		CollectionType: colType,
+		Parent:         parent,
+		Synced:         true,
+		LastModified:   tf,
+	}
+
+	c, err := json.Marshal(meta)
+	if err != nil {
+		return
+	}
+
+	err = ioutil.WriteFile(filePath, c, 0600)
+	return
 }

@@ -47,8 +47,8 @@ func (ctx *FileTreeCtx) NodeById(id string) *model.Node {
 	}
 }
 
-func (ctx *FileTreeCtx) AddDocument(document model.Document) {
-	node := model.CreateNode(document)
+func (ctx *FileTreeCtx) AddDocument(document *model.Document) {
+	node := model.CreateNode(*document)
 	nodeId := document.ID
 	parentId := document.Parent
 

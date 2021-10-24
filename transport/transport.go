@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
+	"strconv"
 	"strings"
 	"time"
 
@@ -201,4 +202,68 @@ func (ctx HttpClientCtx) Request(authType AuthType, verb, url string, body io.Re
 	default:
 		return response, errors.New(fmt.Sprintf("request failed with status %d", response.StatusCode))
 	}
+}
+
+func (ctx HttpClientCtx) GetBlobStream(url string) (io.ReadCloser, int64, error) {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, 0, err
+	}
+	client := &http.Client{}
+	response, err := client.Do(req)
+	if err != nil {
+		return nil, 0, err
+	}
+	if response.StatusCode == http.StatusNotFound {
+		return nil, 0, ErrNotFound
+	}
+	if response.StatusCode != http.StatusOK {
+		return nil, 0, fmt.Errorf("status code not ok %d", response.StatusCode)
+	}
+	var gen int64
+	if response.Header != nil {
+		genh := response.Header.Get("x-goog-generation")
+		if genh != "" {
+			gen, err = strconv.ParseInt(genh, 10, 64)
+		}
+	}
+
+	return response.Body, gen, err
+}
+
+var ErrWrongGeneration = errors.New("wrong generation")
+var ErrNotFound = errors.New("not found")
+
+func (ctx HttpClientCtx) PutBlobStream(url string, gen int64, reader io.Reader) (int64, error) {
+	req, err := http.NewRequest(http.MethodPut, url, reader)
+	if err != nil {
+		return 0, err
+	}
+	if gen > 0 {
+		req.Header.Add("x-goog-if-generation-match", strconv.FormatInt(gen, 10))
+	}
+	client := &http.Client{}
+	response, err := client.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	if response.StatusCode == http.StatusPreconditionFailed {
+		return 0, ErrWrongGeneration
+
+	}
+	if response.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("got status code %d", response.StatusCode)
+	}
+
+	if response.Header != nil {
+		genh := response.Header.Get("x-goog-generation")
+		if genh != "" {
+			gen, err = strconv.ParseInt(genh, 10, 64)
+			if err != nil {
+				log.Error.Print(err)
+			}
+		}
+	}
+
+	return gen, nil
 }

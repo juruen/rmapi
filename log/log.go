@@ -13,6 +13,7 @@ var (
 	Warning        *log.Logger
 	Error          *log.Logger
 	TracingEnabled bool
+	TraceLevel     int
 )
 
 func Init(
@@ -37,15 +38,21 @@ func Init(
 		"ERROR: ",
 		log.Ldate|log.Ltime|log.Lshortfile)
 }
+func init() {
+	InitLog()
+}
 
 func InitLog() {
-	var trace io.Writer
-	if os.Getenv("RMAPI_TRACE") == "1" {
+	info := ioutil.Discard
+	trace := ioutil.Discard
+	traceRmapi := os.Getenv("RMAPI_TRACE")
+	switch traceRmapi {
+	case "1":
 		trace = os.Stdout
 		TracingEnabled = true
-	} else {
-		trace = ioutil.Discard
+	case "2":
+		info = os.Stdout
 	}
 
-	Init(trace, os.Stdout, os.Stdout, os.Stderr)
+	Init(trace, info, os.Stdout, os.Stderr)
 }

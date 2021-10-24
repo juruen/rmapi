@@ -45,7 +45,7 @@ func mgetCmd(ctx *ShellCtxt) *ishell.Cmd {
 			}
 			srcName := argRest[0]
 
-			node, err := ctx.api.Filetree.NodeByPath(srcName, ctx.node)
+			node, err := ctx.api.Filetree().NodeByPath(srcName, ctx.node)
 
 			if err != nil || node.IsFile() {
 				c.Err(errors.New("directory doesn't exist"))

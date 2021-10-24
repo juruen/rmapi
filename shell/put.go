@@ -27,7 +27,7 @@ func putCmd(ctx *ShellCtxt) *ishell.Cmd {
 			var err error
 
 			if len(c.Args) == 2 {
-				node, err = ctx.api.Filetree.NodeByPath(c.Args[1], ctx.node)
+				node, err = ctx.api.Filetree().NodeByPath(c.Args[1], ctx.node)
 
 				if err != nil || node.IsFile() {
 					c.Err(errors.New("directory doesn't exist"))
@@ -35,7 +35,8 @@ func putCmd(ctx *ShellCtxt) *ishell.Cmd {
 				}
 			}
 
-			_, err = ctx.api.Filetree.NodeByPath(docName, node)
+			_, err = ctx.api.Filetree().NodeByPath(docName, node)
+			//TODO: force flag and overwrite
 			if err == nil {
 				c.Err(errors.New("entry already exists"))
 				return
@@ -54,7 +55,7 @@ func putCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			c.Println("OK")
 
-			ctx.api.Filetree.AddDocument(*document)
+			ctx.api.Filetree().AddDocument(document)
 		},
 	}
 }
