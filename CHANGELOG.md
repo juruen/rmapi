@@ -2,6 +2,10 @@
 
 * Use Go 1.16
 
+* Fixed OTP url in CLI and docs
+
+* Add experimental support for new sync protocol
+
 ## rmapi 0.0.15 (May 19, 2021)
 
 * Fix authentication URL
