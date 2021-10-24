@@ -17,6 +17,24 @@ taking automatic backups or uploading documents programmatically.
 
 [Tutorial on how to directly print to your reMarkable on Mac with rMAPI](docs/tutorial-print-macosx.md)
 
+# Warning: experimental support for the new sync protocol
+
+If `rmapi` stopped working for you in a such way that `gets` were working fine but `puts` didn't seem to work, this
+is relevant for you.
+
+A few months ago, the `Remarkable` folks introduced a new sync protocol. This new protocol is being rolling out 
+incrementally. Some users are being forced to use it, and some other users are still using the old protocol that
+`rmapi` has supported well for a few years now.
+
+Unfortunately, the `rmapi` contributors are still on the old protocol and this makes it more difficult to test
+the new protocol's implementation. However, as we know that there are many users who would like to use
+`rmapi` with the new protocol, we have added experimental support for it. The always awesome @ddvk did all the work
+here!
+
+Although `rmapi` will warn you if it needs to use the new protocol, we'd like to take this opportunity again to reiterate that the
+support for the new protocol is experimental, and you should make sure you have a back-up of your files in case something goes wrong.
+
+
 # Install
 
 ## From sources
