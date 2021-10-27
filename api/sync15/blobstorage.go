@@ -15,10 +15,23 @@ type BlobStorage struct {
 	http *transport.HttpClientCtx
 }
 
-func (b *BlobStorage) GetUrl(method, hash string) (string, error) {
+func (b *BlobStorage) PutUrl(hash string) (string, error) {
+	log.Trace.Println("fetching PUT blob url for: " + hash)
 	var req model.BlobStorageRequest
 	var res model.BlobStorageResponse
-	req.Method = method
+	req.Method = "PUT"
+	req.RelativePath = hash
+	if err := b.http.Post(transport.UserBearer, config.UploadBlob, req, &res); err != nil {
+		return "", err
+	}
+	return res.Url, nil
+}
+
+func (b *BlobStorage) GetUrl(hash string) (string, error) {
+	log.Trace.Println("fetching GET blob url for: " + hash)
+	var req model.BlobStorageRequest
+	var res model.BlobStorageResponse
+	req.Method = "GET"
 	req.RelativePath = hash
 	if err := b.http.Post(transport.UserBearer, config.DownloadBlob, req, &res); err != nil {
 		return "", err
@@ -27,22 +40,22 @@ func (b *BlobStorage) GetUrl(method, hash string) (string, error) {
 }
 
 func (b *BlobStorage) GetReader(hash string) (io.ReadCloser, error) {
-	log.Info.Println("Getting get blob url for: " + hash)
-	url, err := b.GetUrl("GET", hash)
+	url, err := b.GetUrl(hash)
 	if err != nil {
 		return nil, err
 	}
+	log.Trace.Println("get url: " + url)
 
 	blob, _, err := b.http.GetBlobStream(url)
 	return blob, err
 }
 
 func (b *BlobStorage) UploadBlob(hash string, reader io.Reader) error {
-	log.Info.Println("upload blob url for: " + hash)
-	url, err := b.GetUrl("PUT", hash)
+	url, err := b.PutUrl(hash)
 	if err != nil {
 		return err
 	}
+	log.Trace.Println("put url: " + url)
 
 	_, err = b.http.PutBlobStream(url, -1, reader)
 	return err
@@ -55,7 +68,7 @@ func (b *BlobStorage) SyncComplete() error {
 func (b *BlobStorage) WriteRootIndex(roothash string, gen int64) (int64, error) {
 
 	log.Info.Println("writing root with gen: ", gen)
-	url, err := b.GetUrl("PUT", "root")
+	url, err := b.PutUrl("root")
 	if err != nil {
 		return 0, err
 	}
@@ -68,7 +81,7 @@ func (b *BlobStorage) WriteRootIndex(roothash string, gen int64) (int64, error) 
 }
 func (b *BlobStorage) GetRootIndex() (string, int64, error) {
 
-	url, err := b.GetUrl("GET", "root")
+	url, err := b.GetUrl("root")
 	if err != nil {
 		return "", 0, err
 	}
