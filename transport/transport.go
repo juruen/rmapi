@@ -218,7 +218,7 @@ func (ctx HttpClientCtx) GetBlobStream(url string) (io.ReadCloser, int64, error)
 		return nil, 0, ErrNotFound
 	}
 	if response.StatusCode != http.StatusOK {
-		return nil, 0, fmt.Errorf("status code not ok %d", response.StatusCode)
+		return nil, 0, fmt.Errorf("GetBlobStream, status code not ok %d", response.StatusCode)
 	}
 	var gen int64
 	if response.Header != nil {
@@ -252,7 +252,7 @@ func (ctx HttpClientCtx) PutBlobStream(url string, gen int64, reader io.Reader) 
 
 	}
 	if response.StatusCode != http.StatusOK {
-		return 0, fmt.Errorf("got status code %d", response.StatusCode)
+		return 0, fmt.Errorf("PutBlobStream: got status code %d", response.StatusCode)
 	}
 
 	if response.Header != nil {
