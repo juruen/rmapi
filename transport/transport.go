@@ -211,6 +211,7 @@ func (ctx HttpClientCtx) GetBlobStream(url string) (io.ReadCloser, int64, error)
 	}
 	client := &http.Client{}
 	response, err := client.Do(req)
+
 	if err != nil {
 		return nil, 0, err
 	}
@@ -222,14 +223,19 @@ func (ctx HttpClientCtx) GetBlobStream(url string) (io.ReadCloser, int64, error)
 	}
 	var gen int64
 	if response.Header != nil {
-		genh := response.Header.Get("x-goog-generation")
+		genh := response.Header.Get(HeaderGeneration)
 		if genh != "" {
+			log.Trace.Println("got generation header: ", genh)
 			gen, err = strconv.ParseInt(genh, 10, 64)
 		}
 	}
 
 	return response.Body, gen, err
 }
+
+const HeaderGeneration = "x-goog-generation"
+const HeaderGenerationIfMatch = "x-goog-if-generation-match"
+const HeaderContentMD5 = "Content-MD5"
 
 var ErrWrongGeneration = errors.New("wrong generation")
 var ErrNotFound = errors.New("not found")
@@ -239,14 +245,28 @@ func (ctx HttpClientCtx) PutBlobStream(url string, gen int64, reader io.Reader) 
 	if err != nil {
 		return 0, err
 	}
+	req.Header.Add("User-Agent", RmapiUserAGent)
+
 	if gen > 0 {
-		req.Header.Add("x-goog-if-generation-match", strconv.FormatInt(gen, 10))
+		req.Header.Add(HeaderGenerationIfMatch, strconv.FormatInt(gen, 10))
+	}
+
+	if log.TracingEnabled {
+		drequest, err := httputil.DumpRequest(req, true)
+		log.Trace.Printf("PutBlobStream: %s %v", string(drequest), err)
 	}
 	client := &http.Client{}
 	response, err := client.Do(req)
 	if err != nil {
 		return 0, err
 	}
+
+	if log.TracingEnabled {
+		defer response.Body.Close()
+		dresponse, err := httputil.DumpResponse(response, true)
+		log.Trace.Printf("PutBlobSteam:Response: %s %v", string(dresponse), err)
+	}
+
 	if response.StatusCode == http.StatusPreconditionFailed {
 		return 0, ErrWrongGeneration
 
@@ -256,8 +276,9 @@ func (ctx HttpClientCtx) PutBlobStream(url string, gen int64, reader io.Reader) 
 	}
 
 	if response.Header != nil {
-		genh := response.Header.Get("x-goog-generation")
+		genh := response.Header.Get(HeaderGeneration)
 		if genh != "" {
+			log.Trace.Println("new generation header: ", genh)
 			gen, err = strconv.ParseInt(genh, 10, 64)
 			if err != nil {
 				log.Error.Print(err)
