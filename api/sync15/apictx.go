@@ -186,10 +186,14 @@ func Sync(b *BlobStorage, tree *HashTree, operation func(t *HashTree) error) err
 		}
 		defer indexReader.Close()
 
-		gen, err := b.WriteRootIndex(tree.Hash, tree.Generation)
+		log.Info.Println("updating root, old gen: ", tree.Generation)
+
+		newGeneration, err := b.WriteRootIndex(tree.Hash, tree.Generation)
+
+		log.Info.Println("wrote root, new gen: ", newGeneration)
 
 		if err == nil {
-			tree.Generation = gen
+			tree.Generation = newGeneration
 			break
 		}
 
@@ -197,7 +201,7 @@ func Sync(b *BlobStorage, tree *HashTree, operation func(t *HashTree) error) err
 			return err
 		}
 
-		log.Info.Println("re-reading remote tree")
+		log.Info.Println("wrong generation, re-reading remote tree")
 		//resync and try again
 		err = tree.Mirror(b)
 		if err != nil {

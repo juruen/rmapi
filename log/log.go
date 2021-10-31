@@ -48,8 +48,9 @@ func InitLog() {
 	traceRmapi := os.Getenv("RMAPI_TRACE")
 	switch traceRmapi {
 	case "1":
-		trace = os.Stdout
 		TracingEnabled = true
+		trace = os.Stdout
+		fallthrough
 	case "2":
 		info = os.Stdout
 	}

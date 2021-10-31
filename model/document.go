@@ -59,8 +59,9 @@ type UploadDocumentResponse struct {
 // BlobStorageRequest else
 type BlobStorageRequest struct {
 	Method       string `json:"http_method"`
-	Initial      bool   `json:"initial_sync"`
+	Initial      bool   `json:"initial_sync,omitempty"`
 	RelativePath string `json:"relative_path"`
+	Generation   string `json:"generation,omitempty"`
 }
 
 // BlobStorageResponse  what else
