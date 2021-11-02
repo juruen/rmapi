@@ -1,4 +1,4 @@
-## rmapi (master)
+## rmapi 0.0.17 (November 02, 2021)
 
 * Some fixes for new sync protocol (@ddvk)
 
