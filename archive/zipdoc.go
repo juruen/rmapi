@@ -68,7 +68,7 @@ func CreateZipDocument(id, srcPath string) (zipPath string, err error) {
 	_, ext := util.DocPathToName(srcPath)
 	fileType := ext
 
-	if ext == "zip" {
+	if ext == util.ZIP {
 		zipPath = srcPath
 		return
 	}
@@ -96,7 +96,7 @@ func CreateZipDocument(id, srcPath string) (zipPath string, err error) {
 	var documentPath string
 
 	pages := make([]string, 0)
-	if ext == "rm" {
+	if ext == util.RM {
 		pageUUID := uuid.New()
 		pageID := pageUUID.String()
 		documentPath = fmt.Sprintf("%s/%s.rm", id, pageID)
@@ -115,7 +115,7 @@ func CreateZipDocument(id, srcPath string) (zipPath string, err error) {
 
 	//try to create a thumbnail
 	//due to a bug somewhere in unipdf the generation is opt-in
-	if ext == "pdf" && os.Getenv("RMAPI_THUMBNAILS") != "" {
+	if ext == util.PDF && os.Getenv("RMAPI_THUMBNAILS") != "" {
 		thumbnail, err := makeThumbnail(doc)
 		if err != nil {
 			log.Error.Println("cannot generate thumbnail", err)
@@ -217,13 +217,13 @@ func createZipContent(ext string, pageIDs []string) (string, error) {
 	return string(cstring), nil
 }
 
-func CreateContent(id, ext, fpath string) (fileName, filePath string, err error) {
+func CreateContent(id, ext, fpath string, pageIds []string) (fileName, filePath string, err error) {
 	fileName = id + ".content"
 	filePath = path.Join(fpath, fileName)
 	content := "{}"
 
 	if ext != "" {
-		content, err = createZipContent(ext, nil)
+		content, err = createZipContent(ext, pageIds)
 		if err != nil {
 			return
 		}

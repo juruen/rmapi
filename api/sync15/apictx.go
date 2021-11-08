@@ -93,7 +93,7 @@ func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
 func (ctx *ApiCtx) CreateDir(parentId, name string) (*model.Document, error) {
 	var err error
 
-	files := []*archive.FileMap{}
+	files := &archive.DocumentFiles{}
 
 	tmpDir, err := ioutil.TempDir("", "rmupload")
 	if err != nil {
@@ -104,17 +104,17 @@ func (ctx *ApiCtx) CreateDir(parentId, name string) (*model.Document, error) {
 	if err != nil {
 		return nil, err
 	}
-	archive.AddMap(&files, objectName, filePath)
+	files.AddMap(objectName, filePath)
 
-	objectName, filePath, err = archive.CreateContent(id, "", tmpDir)
+	objectName, filePath, err = archive.CreateContent(id, "", tmpDir, nil)
 	if err != nil {
 		return nil, err
 	}
-	archive.AddMap(&files, objectName, filePath)
+	files.AddMap(objectName, filePath)
 
-	d := NewBlobDoc(name, id, model.DirectoryType)
+	doc := NewBlobDoc(name, id, model.DirectoryType, parentId)
 
-	for _, f := range files {
+	for _, f := range files.Files {
 		log.Info.Printf("File %s, path: %s", f.Name, f.Path)
 		hash, size, err := FileHashAndSize(f.Path)
 		if err != nil {
@@ -137,29 +137,29 @@ func (ctx *ApiCtx) CreateDir(parentId, name string) (*model.Document, error) {
 			return nil, err
 		}
 
-		d.AddFile(fileEntry)
+		doc.AddFile(fileEntry)
 	}
 
-	log.Info.Println("Uploading new doc index...", d.Hash)
-	indexReader, err := d.IndexReader()
+	log.Info.Println("Uploading new doc index...", doc.Hash)
+	indexReader, err := doc.IndexReader()
 	if err != nil {
 		return nil, err
 	}
 	defer indexReader.Close()
-	err = ctx.blobStorage.UploadBlob(d.Hash, indexReader)
+	err = ctx.blobStorage.UploadBlob(doc.Hash, indexReader)
 	if err != nil {
 		return nil, err
 	}
 
 	err = Sync(ctx.blobStorage, ctx.hashTree, func(t *HashTree) error {
-		return t.Add(d)
+		return t.Add(doc)
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	return d.ToDocument(), nil
+	return doc.ToDocument(), nil
 }
 
 func Sync(b *BlobStorage, tree *HashTree, operation func(t *HashTree) error) error {
@@ -311,15 +311,16 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model
 	if err != nil {
 		return nil, err
 	}
-	//defer os.RemoveAll(tmpDir)
 
-	files, id, err := archive.Prepare(name, parentId, sourceDocPath, ext, tmpDir)
+	defer os.RemoveAll(tmpDir)
+
+	docFiles, id, err := archive.Prepare(name, parentId, sourceDocPath, ext, tmpDir)
 	if err != nil {
 		return nil, err
 	}
 
-	d := NewBlobDoc(name, id, model.DocumentType)
-	for _, f := range files {
+	d := NewBlobDoc(name, id, model.DocumentType, parentId)
+	for _, f := range docFiles.Files {
 		log.Info.Printf("File %s, path: %s", f.Name, f.Path)
 		hash, size, err := FileHashAndSize(f.Path)
 		if err != nil {

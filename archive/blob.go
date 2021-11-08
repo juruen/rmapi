@@ -15,24 +15,29 @@ import (
 	"github.com/google/uuid"
 	"github.com/juruen/rmapi/log"
 	"github.com/juruen/rmapi/model"
+	"github.com/juruen/rmapi/util"
 )
 
-type FileMap struct {
+type NamePath struct {
 	Name string
 	Path string
 }
 
-func AddMap(f *[]*FileMap, name, filepath string) {
-	fs := &FileMap{
+type DocumentFiles struct {
+	Files []NamePath
+}
+
+func (d *DocumentFiles) AddMap(name, filepath string) {
+	fs := NamePath{
 		Name: name,
 		Path: filepath,
 	}
-	*f = append(*f, fs)
+	d.Files = append(d.Files, fs)
 }
 
-func Prepare(name, parentId, sourceDocPath, ext, tmpDir string) (files []*FileMap, id string, err error) {
-	files = []*FileMap{}
-	if ext == "zip" {
+func Prepare(name, parentId, sourceDocPath, ext, tmpDir string) (files *DocumentFiles, id string, err error) {
+	files = &DocumentFiles{}
+	if ext == util.ZIP {
 		var metadataPath string
 		id, files, metadataPath, err = Unpack(sourceDocPath, tmpDir)
 		if err != nil {
@@ -48,7 +53,7 @@ func Prepare(name, parentId, sourceDocPath, ext, tmpDir string) (files []*FileMa
 				err = err1
 				return
 			}
-			AddMap(&files, objectName, filePath)
+			files.AddMap(objectName, filePath)
 		} else {
 			err = FixMetadata(parentId, name, metadataPath)
 			if err != nil {
@@ -59,24 +64,26 @@ func Prepare(name, parentId, sourceDocPath, ext, tmpDir string) (files []*FileMa
 		id = uuid.New().String()
 		objectName := id + "." + ext
 		doctype := ext
-		if ext == "rm" {
+		var pageIds []string
+		if ext == util.RM {
 			pageId := uuid.New().String()
 			objectName = fmt.Sprintf("%s/%s.rm", id, pageId)
 			doctype = "notebook"
+			pageIds = []string{pageId}
 		}
-		AddMap(&files, objectName, sourceDocPath)
+		files.AddMap(objectName, sourceDocPath)
 		objectName, filePath, err1 := CreateMetadata(id, name, parentId, model.DocumentType, tmpDir)
 		if err1 != nil {
 			err = err1
 			return
 		}
-		AddMap(&files, objectName, filePath)
+		files.AddMap(objectName, filePath)
 
-		objectName, filePath, err = CreateContent(id, doctype, tmpDir)
+		objectName, filePath, err = CreateContent(id, doctype, tmpDir, pageIds)
 		if err != nil {
 			return
 		}
-		AddMap(&files, objectName, filePath)
+		files.AddMap(objectName, filePath)
 	}
 	return files, id, err
 }
@@ -102,14 +109,14 @@ func FixMetadata(parentId, name, path string) error {
 }
 
 // Unpack unpacks a rmapi .zip file
-func Unpack(src, dest string) (id string, files []*FileMap, metadataPath string, err error) {
+func Unpack(src, dest string) (id string, files *DocumentFiles, metadataPath string, err error) {
 	log.Info.Println("Unpacking in: ", dest)
 	r, err := zip.OpenReader(src)
 	if err != nil {
 		return
 	}
 	defer r.Close()
-	files = []*FileMap{}
+	files = &DocumentFiles{}
 
 	for _, f := range r.File {
 		fname := f.Name
@@ -131,7 +138,7 @@ func Unpack(src, dest string) (id string, files []*FileMap, metadataPath string,
 			os.MkdirAll(fpath, os.ModePerm)
 			continue
 		} else {
-			AddMap(&files, f.Name, fpath)
+			files.AddMap(f.Name, fpath)
 		}
 
 		if strings.HasSuffix(fname, ".metadata") {

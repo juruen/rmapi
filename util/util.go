@@ -11,11 +11,18 @@ import (
 	"github.com/juruen/rmapi/model"
 )
 
+const (
+	PDF  = "pdf"
+	ZIP  = "zip"
+	RM   = "rm"
+	EPUB = "epub"
+)
+
 var supportedExt = map[string]bool{
-	"epub": true,
-	"pdf":  true,
-	"zip":  true,
-	"rm":   true,
+	EPUB: true,
+	PDF:  true,
+	ZIP:  true,
+	RM:   true,
 }
 
 func IsFileTypeSupported(ext string) bool {

@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/juruen/rmapi/archive"
 	"github.com/juruen/rmapi/log"
@@ -24,11 +25,13 @@ type BlobDoc struct {
 	archive.MetadataFile
 }
 
-func NewBlobDoc(name, documentId, colType string) *BlobDoc {
+func NewBlobDoc(name, documentId, colType, parentId string) *BlobDoc {
 	return &BlobDoc{
 		MetadataFile: archive.MetadataFile{
 			DocName:        name,
 			CollectionType: colType,
+			LastModified:   time.Now().UTC().Format(time.RFC3339),
+			Parent:         parentId,
 		},
 		Entry: Entry{
 			DocumentID: documentId,
