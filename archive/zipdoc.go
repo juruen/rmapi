@@ -233,18 +233,22 @@ func CreateContent(id, ext, fpath string, pageIds []string) (fileName, filePath 
 	return
 }
 
+func TimestampUnixString() string {
+	t := time.Now().UnixNano()
+	tf := strconv.FormatInt(t, 10)
+	return tf
+}
+
 func CreateMetadata(id, name, parent, colType, fpath string) (fileName string, filePath string, err error) {
 	fileName = id + ".metadata"
 	filePath = path.Join(fpath, fileName)
-	t := time.Now().Unix()
-	tf := strconv.FormatInt(t, 10)
 	meta := MetadataFile{
 		DocName:        name,
 		Version:        0,
 		CollectionType: colType,
 		Parent:         parent,
 		Synced:         true,
-		LastModified:   tf,
+		LastModified:   TimestampUnixString(),
 	}
 
 	c, err := json.Marshal(meta)

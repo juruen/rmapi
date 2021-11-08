@@ -65,6 +65,7 @@ func (b *BlobStorage) UploadBlob(hash string, reader io.Reader) error {
 	return err
 }
 
+// SyncComplete notifies that the sync is done
 func (b *BlobStorage) SyncComplete() error {
 	return b.http.Post(transport.UserBearer, config.SyncComplete, nil, nil)
 }

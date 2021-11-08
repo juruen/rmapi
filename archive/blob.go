@@ -35,6 +35,7 @@ func (d *DocumentFiles) AddMap(name, filepath string) {
 	d.Files = append(d.Files, fs)
 }
 
+// Prepare prepares a file for uploading (creates needed temp files or unpacks a zip)
 func Prepare(name, parentId, sourceDocPath, ext, tmpDir string) (files *DocumentFiles, id string, err error) {
 	files = &DocumentFiles{}
 	if ext == util.ZIP {
@@ -101,6 +102,8 @@ func FixMetadata(parentId, name, path string) error {
 	}
 	meta.Parent = parentId
 	meta.DocName = name
+	meta.LastModified = TimestampUnixString()
+
 	metaData, err = json.Marshal(meta)
 	if err != nil {
 		return err

@@ -162,6 +162,7 @@ func (ctx *ApiCtx) CreateDir(parentId, name string) (*model.Document, error) {
 	return doc.ToDocument(), nil
 }
 
+// Sync applies changes to the local tree and syncs with the remote storage
 func Sync(b *BlobStorage, tree *HashTree, operation func(t *HashTree) error) error {
 	synccount := 0
 	for {
@@ -319,7 +320,7 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model
 		return nil, err
 	}
 
-	d := NewBlobDoc(name, id, model.DocumentType, parentId)
+	doc := NewBlobDoc(name, id, model.DocumentType, parentId)
 	for _, f := range docFiles.Files {
 		log.Info.Printf("File %s, path: %s", f.Name, f.Path)
 		hash, size, err := FileHashAndSize(f.Path)
@@ -343,29 +344,29 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model
 			return nil, err
 		}
 
-		d.AddFile(fileEntry)
+		doc.AddFile(fileEntry)
 	}
 
-	log.Info.Println("Uploading new doc index...", d.Hash)
-	indexReader, err := d.IndexReader()
+	log.Info.Println("Uploading new doc index...", doc.Hash)
+	indexReader, err := doc.IndexReader()
 	if err != nil {
 		return nil, err
 	}
 	defer indexReader.Close()
-	err = ctx.blobStorage.UploadBlob(d.Hash, indexReader)
+	err = ctx.blobStorage.UploadBlob(doc.Hash, indexReader)
 	if err != nil {
 		return nil, err
 	}
 
 	err = Sync(ctx.blobStorage, ctx.hashTree, func(t *HashTree) error {
-		return t.Add(d)
+		return t.Add(doc)
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	return d.ToDocument(), nil
+	return doc.ToDocument(), nil
 }
 
 func CreateCtx(http *transport.HttpClientCtx) (*ApiCtx, error) {
