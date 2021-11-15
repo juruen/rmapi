@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/juruen/rmapi/archive"
 	"github.com/juruen/rmapi/log"
@@ -24,11 +25,13 @@ type BlobDoc struct {
 	archive.MetadataFile
 }
 
-func NewBlobDoc(name, documentId, colType string) *BlobDoc {
+func NewBlobDoc(name, documentId, colType, parentId string) *BlobDoc {
 	return &BlobDoc{
 		MetadataFile: archive.MetadataFile{
 			DocName:        name,
 			CollectionType: colType,
+			LastModified:   archive.TimestampUnixString(),
+			Parent:         parentId,
 		},
 		Entry: Entry{
 			DocumentID: documentId,
@@ -86,8 +89,8 @@ func (t *HashTree) Add(d *BlobDoc) error {
 	return t.Rehash()
 }
 
-func (t *BlobDoc) IndexReader() (io.ReadCloser, error) {
-	if len(t.Files) == 0 {
+func (d *BlobDoc) IndexReader() (io.ReadCloser, error) {
+	if len(d.Files) == 0 {
 		return nil, errors.New("no files")
 	}
 	pipeReader, pipeWriter := io.Pipe()
@@ -96,7 +99,7 @@ func (t *BlobDoc) IndexReader() (io.ReadCloser, error) {
 		defer pipeWriter.Close()
 		w.WriteString(SchemaVersion)
 		w.WriteString("\n")
-		for _, d := range t.Files {
+		for _, d := range d.Files {
 			w.WriteString(d.Line())
 			w.WriteString("\n")
 		}
@@ -106,10 +109,10 @@ func (t *BlobDoc) IndexReader() (io.ReadCloser, error) {
 	return pipeReader, nil
 }
 
-// Extract the documentname from metadata blob
-func (doc *BlobDoc) ReadMetadata(fileEntry *Entry, r RemoteStorage) error {
+// ReadMetadata the document metadata from remote blob
+func (d *BlobDoc) ReadMetadata(fileEntry *Entry, r RemoteStorage) error {
 	if strings.HasSuffix(fileEntry.DocumentID, ".metadata") {
-		log.Trace.Println("Reading metadata: " + doc.DocumentID)
+		log.Trace.Println("Reading metadata: " + d.DocumentID)
 
 		metadata := archive.MetadataFile{}
 
@@ -127,7 +130,7 @@ func (doc *BlobDoc) ReadMetadata(fileEntry *Entry, r RemoteStorage) error {
 			log.Error.Printf("cannot read metadata %s %v", fileEntry.DocumentID, err)
 		}
 		log.Trace.Println("name from metadata: ", metadata.DocName)
-		doc.MetadataFile = metadata
+		d.MetadataFile = metadata
 	}
 
 	return nil
@@ -152,8 +155,9 @@ func (d *BlobDoc) Line() string {
 	return sb.String()
 }
 
-func (doc *BlobDoc) Mirror(e *Entry, r RemoteStorage) error {
-	doc.Entry = *e
+// Mirror updates the document to be the same as the remote
+func (d *BlobDoc) Mirror(e *Entry, r RemoteStorage) error {
+	d.Entry = *e
 	entryIndex, err := r.GetReader(e.Hash)
 	if err != nil {
 		return err
@@ -173,10 +177,10 @@ func (doc *BlobDoc) Mirror(e *Entry, r RemoteStorage) error {
 	}
 
 	//updated and existing
-	for _, currentEntry := range doc.Files {
+	for _, currentEntry := range d.Files {
 		if newEntry, ok := new[currentEntry.DocumentID]; ok {
 			if newEntry.Hash != currentEntry.Hash {
-				err = doc.ReadMetadata(newEntry, r)
+				err = d.ReadMetadata(newEntry, r)
 				if err != nil {
 					return err
 				}
@@ -190,7 +194,7 @@ func (doc *BlobDoc) Mirror(e *Entry, r RemoteStorage) error {
 	//add missing
 	for k, newEntry := range new {
 		if _, ok := current[k]; !ok {
-			err = doc.ReadMetadata(newEntry, r)
+			err = d.ReadMetadata(newEntry, r)
 			if err != nil {
 				return err
 			}
@@ -198,17 +202,23 @@ func (doc *BlobDoc) Mirror(e *Entry, r RemoteStorage) error {
 		}
 	}
 	sort.Slice(head, func(i, j int) bool { return head[i].DocumentID < head[j].DocumentID })
-	doc.Files = head
+	d.Files = head
 	return nil
 
 }
-func (doc *BlobDoc) ToDocument() *model.Document {
-	return &model.Document{
-		ID:           doc.DocumentID,
-		VissibleName: doc.MetadataFile.DocName,
-		Version:      doc.MetadataFile.Version,
-		Parent:       doc.MetadataFile.Parent,
-		Type:         doc.MetadataFile.CollectionType,
+func (d *BlobDoc) ToDocument() *model.Document {
+	var lastModified string
+	unixNano, err := strconv.ParseInt(d.MetadataFile.LastModified, 10, 64)
+	if err == nil {
+		t := time.Unix(0, unixNano)
+		lastModified = t.UTC().Format(time.RFC3339Nano)
 	}
-
+	return &model.Document{
+		ID:             d.DocumentID,
+		VissibleName:   d.MetadataFile.DocName,
+		Version:        d.MetadataFile.Version,
+		Parent:         d.MetadataFile.Parent,
+		Type:           d.MetadataFile.CollectionType,
+		ModifiedClient: lastModified,
+	}
 }

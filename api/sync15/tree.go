@@ -207,7 +207,6 @@ func (t *HashTree) Mirror(r RemoteStorage) error {
 			head = append(head, doc)
 			current[doc.DocumentID] = doc
 		}
-
 	}
 
 	//find new entries
