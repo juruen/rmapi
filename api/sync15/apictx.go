@@ -159,6 +159,11 @@ func (ctx *ApiCtx) CreateDir(parentId, name string) (*model.Document, error) {
 		return nil, err
 	}
 
+	err = ctx.SyncComplete()
+	if err != nil {
+		return nil, err
+	}
+
 	return doc.ToDocument(), nil
 }
 
@@ -209,15 +214,7 @@ func Sync(b *BlobStorage, tree *HashTree, operation func(t *HashTree) error) err
 			return err
 		}
 	}
-	err := saveTree(tree)
-	if err != nil {
-		return err
-	}
-	err = b.SyncComplete()
-	if err != nil {
-		log.Error.Printf("cannot send sync %v", err)
-	}
-	return err
+	return saveTree(tree)
 }
 
 // DeleteEntry removes an entry: either an empty directory or a file
@@ -229,8 +226,11 @@ func (ctx *ApiCtx) DeleteEntry(node *model.Node) error {
 	err := Sync(ctx.blobStorage, ctx.hashTree, func(t *HashTree) error {
 		return t.Remove(node.Document.ID)
 	})
-	return err
+	if err != nil {
+		return err
+	}
 
+	return ctx.SyncComplete()
 }
 
 // MoveEntry moves an entry (either a directory or a file)
@@ -285,6 +285,12 @@ func (ctx *ApiCtx) MoveEntry(src, dstDir *model.Node, name string) (*model.Node,
 	if err != nil {
 		return nil, err
 	}
+
+	err = ctx.SyncComplete()
+	if err != nil {
+		return nil, err
+	}
+
 	d, err := ctx.hashTree.FindDoc(src.Document.ID)
 	if err != nil {
 		return nil, err
@@ -294,7 +300,7 @@ func (ctx *ApiCtx) MoveEntry(src, dstDir *model.Node, name string) (*model.Node,
 }
 
 // UploadDocument uploads a local document given by sourceDocPath under the parentId directory
-func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model.Document, error) {
+func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string, notify bool) (*model.Document, error) {
 	//TODO: overwrite file
 	name, ext := util.DocPathToName(sourceDocPath)
 
@@ -365,6 +371,12 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model
 	if err != nil {
 		return nil, err
 	}
+	if notify {
+		err = ctx.SyncComplete()
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	return doc.ToDocument(), nil
 }
@@ -410,4 +422,13 @@ func DocumentsFileTree(tree *HashTree) (*filetree.FileTreeCtx, error) {
 	}
 
 	return &fileTree, nil
+}
+
+// SyncComplete notfies that somethings has changed (triggers tablet sync)
+func (ctx *ApiCtx) SyncComplete() error {
+	err := ctx.blobStorage.SyncComplete()
+	if err != nil {
+		log.Error.Printf("cannot send sync %v", err)
+	}
+	return nil
 }
