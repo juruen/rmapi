@@ -199,7 +199,7 @@ func (ctx *ApiCtx) MoveEntry(src, dstDir *model.Node, name string) (*model.Node,
 }
 
 // UploadDocument uploads a local document given by sourceDocPath under the parentId directory
-func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string) (*model.Document, error) {
+func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string, notify bool) (*model.Document, error) {
 	name, ext := util.DocPathToName(sourceDocPath)
 
 	if name == "" {
@@ -313,4 +313,9 @@ func DocumentsFileTree(http *transport.HttpClientCtx) (*filetree.FileTreeCtx, er
 	}
 
 	return &fileTree, nil
+}
+
+// SyncComplete does nothing for this version
+func (ctx *ApiCtx) SyncComplete() error {
+	return nil
 }
