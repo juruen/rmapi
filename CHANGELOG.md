@@ -1,3 +1,9 @@
+## rmapi 0.0.19 (January 29, 2022)
+
+- Fix issue with rate limiting and mput (@ddvk)
+
+- Fix type in help test (@myersjustinc)
+
 ## rmapi 0.0.18 (November 15, 2021)
 
 * More fixes for new sync protocol (@ddvk)
