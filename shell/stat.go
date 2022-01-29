@@ -10,7 +10,7 @@ import (
 func statCmd(ctx *ShellCtxt) *ishell.Cmd {
 	return &ishell.Cmd{
 		Name:      "stat",
-		Help:      "fetch entry metatada",
+		Help:      "fetch entry metadata",
 		Completer: createEntryCompleter(ctx),
 		Func: func(c *ishell.Context) {
 			if len(c.Args) == 0 {
