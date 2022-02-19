@@ -104,6 +104,7 @@ func CreateZipDocument(id, srcPath string) (zipPath string, err error) {
 		pages = append(pages, pageID)
 	} else {
 		documentPath = fmt.Sprintf("%s.%s", id, ext)
+		pages = append(pages, "")
 	}
 
 	f, err := w.Create(documentPath)
