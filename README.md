@@ -64,13 +64,13 @@ mkdir -p $HOME/.config/rmapi
 and run by mounting the .config/rmapi folder
 
 ```
-docker run -v $HOME/.config/rmapi/:/home/user/.config/rmapi/ -it rmapi
+docker run -v $HOME/.config/rmapi/:/home/app/.config/rmapi/ -it rmapi
 ```
 
 Issue non-interactive commands by appending to the `docker run` command:
 
 ```
-docker run -v $HOME/.config/rmapi/:/home/user/.config/rmapi/ rmapi help
+docker run -v $HOME/.config/rmapi/:/home/app/.config/rmapi/ rmapi help
 ```
 
 # API support
