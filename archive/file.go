@@ -144,6 +144,7 @@ type MetadataFile struct {
 	Parent           string `json:"parent"`
 	LastModified     string `json:"lastModified"`
 	LastOpened       string `json:"lastOpened"`
+	LastOpenedPage   int    `json:"lastOpenedPage"`
 	Version          int    `json:"version"`
 	Pinned           bool   `json:"pinned"`
 	Synced           bool   `json:"synced"`
