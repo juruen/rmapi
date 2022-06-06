@@ -208,9 +208,9 @@ func (d *BlobDoc) Mirror(e *Entry, r RemoteStorage) error {
 }
 func (d *BlobDoc) ToDocument() *model.Document {
 	var lastModified string
-	unixNano, err := strconv.ParseInt(d.MetadataFile.LastModified, 10, 64)
+	unixTime, err := strconv.ParseInt(d.MetadataFile.LastModified, 10, 64)
 	if err == nil {
-		t := time.Unix(0, unixNano)
+		t := time.Unix(unixTime/1000, 0)
 		lastModified = t.UTC().Format(time.RFC3339Nano)
 	}
 	return &model.Document{
@@ -219,6 +219,7 @@ func (d *BlobDoc) ToDocument() *model.Document {
 		Version:        d.MetadataFile.Version,
 		Parent:         d.MetadataFile.Parent,
 		Type:           d.MetadataFile.CollectionType,
+		CurrentPage:    d.MetadataFile.LastOpenedPage,
 		ModifiedClient: lastModified,
 	}
 }
