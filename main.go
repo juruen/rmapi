@@ -38,7 +38,7 @@ func main() {
 			log.Trace.Println(err)
 		} else {
 			if isSync15 {
-				fmt.Println(`WARNING!!!
+				fmt.Fprintln(os.Stderr, `WARNING!!!
   Using the new 1.5 sync, this has not been fully tested yet!!!
   Make sure you have a backup, in case there is a bug that could cause data loss!`)
 			}
