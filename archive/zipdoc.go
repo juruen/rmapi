@@ -235,7 +235,7 @@ func CreateContent(id, ext, fpath string, pageIds []string) (fileName, filePath 
 }
 
 func UnixTimestamp() string {
-	t := time.Now().UnixMilli()
+	t := time.Now().UnixNano() / 1000000
 	tf := strconv.FormatInt(t, 10)
 	return tf
 }
