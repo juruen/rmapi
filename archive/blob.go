@@ -102,7 +102,7 @@ func FixMetadata(parentId, name, path string) error {
 	}
 	meta.Parent = parentId
 	meta.DocName = name
-	meta.LastModified = TimestampUnixString()
+	meta.LastModified = UnixTimestamp()
 
 	metaData, err = json.Marshal(meta)
 	if err != nil {

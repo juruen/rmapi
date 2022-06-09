@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"sort"
@@ -30,7 +31,7 @@ func NewBlobDoc(name, documentId, colType, parentId string) *BlobDoc {
 		MetadataFile: archive.MetadataFile{
 			DocName:        name,
 			CollectionType: colType,
-			LastModified:   archive.TimestampUnixString(),
+			LastModified:   archive.UnixTimestamp(),
 			Parent:         parentId,
 		},
 		Entry: Entry{
@@ -210,8 +211,14 @@ func (d *BlobDoc) ToDocument() *model.Document {
 	var lastModified string
 	unixTime, err := strconv.ParseInt(d.MetadataFile.LastModified, 10, 64)
 	if err == nil {
+		//HACK: convert wrong nano timestamps to millis
+		if len(d.MetadataFile.LastModified) > 18 {
+			unixTime /= 1000000
+		}
+
 		t := time.Unix(unixTime/1000, 0)
 		lastModified = t.UTC().Format(time.RFC3339Nano)
+		fmt.Println(" Time " + lastModified + " " + d.MetadataFile.DocName)
 	}
 	return &model.Document{
 		ID:             d.DocumentID,

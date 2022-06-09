@@ -139,9 +139,10 @@ type Transform struct {
 
 // MetadataFile content
 type MetadataFile struct {
-	DocName          string `json:"visibleName"`
-	CollectionType   string `json:"type"`
-	Parent           string `json:"parent"`
+	DocName        string `json:"visibleName"`
+	CollectionType string `json:"type"`
+	Parent         string `json:"parent"`
+	//LastModified in milliseconds
 	LastModified     string `json:"lastModified"`
 	LastOpened       string `json:"lastOpened"`
 	LastOpenedPage   int    `json:"lastOpenedPage"`
