@@ -41,7 +41,11 @@ support for the new protocol is experimental, and you should make sure you have 
 
 Install and build the project:
 
-`GO111MODULE=on go get github.com/juruen/rmapi@latest`
+```
+git clone https://github.com/juruen/rmapi
+cd rmapi
+go install
+```
 
 ## Binary
 
