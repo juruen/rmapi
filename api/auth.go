@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
+	"github.com/golang-jwt/jwt"
 	"github.com/juruen/rmapi/config"
 	"github.com/juruen/rmapi/log"
 	"github.com/juruen/rmapi/model"
@@ -23,13 +25,20 @@ func AuthHttpCtx(reAuth, nonInteractive bool) *transport.HttpClientCtx {
 	httpClientCtx := transport.CreateHttpClientCtx(authTokens)
 
 	if authTokens.DeviceToken == "" {
+		var oneTimeCode string
 		if nonInteractive {
-			log.Error.Fatal("missing token, not asking, aborting")
+			if code, ok := os.LookupEnv("RMAPI_DEVICE_CODE"); ok && len(code) == 8 {
+				oneTimeCode = code
+			} else {
+				log.Error.Fatal("missing token, not asking, aborting")
+			}
+		} else {
+			oneTimeCode = readCode()
 		}
-		deviceToken, err := newDeviceToken(&httpClientCtx, readCode())
 
+		deviceToken, err := newDeviceToken(&httpClientCtx, oneTimeCode)
 		if err != nil {
-			log.Error.Fatal("failed to crete device token from on-time code")
+			log.Error.Fatal("failed to create device token from on-time code")
 		}
 
 		log.Trace.Println("device token", deviceToken)
@@ -40,7 +49,7 @@ func AuthHttpCtx(reAuth, nonInteractive bool) *transport.HttpClientCtx {
 		config.SaveTokens(configPath, authTokens)
 	}
 
-	if authTokens.UserToken == "" || reAuth {
+	if authTokens.UserToken == "" || reAuth || userTokenExpires(authTokens.UserToken) {
 		userToken, err := newUserToken(&httpClientCtx)
 
 		if err == transport.UnAuthorizedError {
@@ -75,6 +84,26 @@ func readCode() string {
 	}
 
 	return code
+}
+
+func userTokenExpires(token string) bool {
+	// if there are parsing errors or the registered claim 'exp' is missing/invalid, consider the token to be expired
+	// TODO: check if the v1 API JWT's contain the exp claim... if not, return false for the above mentioned cases
+	p := jwt.Parser{}
+	res, _, err := p.ParseUnverified(token, jwt.MapClaims{})
+	if err != nil {
+		return true
+	}
+	claims := res.Claims.(jwt.MapClaims)
+	if _, ok := claims["exp"]; !ok {
+		return true
+	}
+	exp := time.Unix(int64(claims["exp"].(float64)), 0).UTC()
+	// add 1 hour to the actual time, assuming the max. session duration of AuthHttpCtx is 1 hour...
+	if time.Now().UTC().Add(time.Hour).After(exp) {
+		return true
+	}
+	return false
 }
 
 func newDeviceToken(http *transport.HttpClientCtx, code string) (string, error) {
