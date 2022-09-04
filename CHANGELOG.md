@@ -1,4 +1,4 @@
-## rmapi master
+## rmapi 0.0.21 (September 04, 2022)
 
 - Fix time conversion (@ddvk)
 
