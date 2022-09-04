@@ -1,6 +1,20 @@
+## rmapi master
+
+- Fix time conversion (@ddvk)
+
+- Update install instructions (@ddvk)
+
+- Tweak export brush size (@pacien)
+
+- Update x/sys dep to fix builds with newer Go versions (@andrew-d)
+
+- Use Go 1.18
+
 ## rmapi 0.0.20 (July 6, 2022)
 - Fix timestamps for sync 1.5 (@ddvk)
+
 - Output warnings for to stderr for sync 1.5 (@ddvk)
+
 - Some hack with pages (@abmantis)
 
 ## rmapi 0.0.19 (January 29, 2022)
