@@ -157,7 +157,7 @@ func (p *PdfGenerator) Generate() error {
 						path = path.AppendPoint(draw.NewPoint(x1, c.Height()-y1))
 					}
 
-					contentCreator.Add_w(float64(line.BrushSize * 6.0 - 10.8))
+					contentCreator.Add_w(float64(line.BrushSize*6.0 - 10.8))
 
 					switch line.BrushColor {
 					case rm.Black:
