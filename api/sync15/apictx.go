@@ -426,7 +426,7 @@ func DocumentsFileTree(tree *HashTree) (*filetree.FileTreeCtx, error) {
 
 // SyncComplete notfies that somethings has changed (triggers tablet sync)
 func (ctx *ApiCtx) SyncComplete() error {
-	err := ctx.blobStorage.SyncComplete()
+	err := ctx.blobStorage.SyncComplete(ctx.hashTree.Generation)
 	if err != nil {
 		log.Error.Printf("cannot send sync %v", err)
 	}

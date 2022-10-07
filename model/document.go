@@ -56,7 +56,7 @@ type UploadDocumentResponse struct {
 	BlobURLPutExpires string
 }
 
-// BlobStorageRequest else
+// BlobStorageRequest request
 type BlobStorageRequest struct {
 	Method       string `json:"http_method"`
 	Initial      bool   `json:"initial_sync,omitempty"`
@@ -64,12 +64,17 @@ type BlobStorageRequest struct {
 	Generation   string `json:"generation,omitempty"`
 }
 
-// BlobStorageResponse  what else
+// BlobStorageResponse response
 type BlobStorageResponse struct {
 	Expires      string `json:"expires"`
 	Method       string `json:"method"`
 	RelativePath string `json:"relative_path"`
 	Url          string `json:"url"`
+}
+
+// SyncCompleteRequest payload of the sync completion
+type SyncCompletedRequest struct {
+	Generation int64 `json:"generation"`
 }
 
 func CreateDirDocument(parent, name string) MetadataDocument {

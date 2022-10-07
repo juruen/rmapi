@@ -7,8 +7,6 @@ import (
 	"os"
 	"path"
 	"strings"
-
-	"github.com/juruen/rmapi/model"
 )
 
 const (
@@ -41,38 +39,13 @@ func ToIOReader(source interface{}) (io.Reader, error) {
 	var content []byte
 	var err error
 
-	if source != nil {
-		switch source.(type) {
-		case model.BlobStorageResponse:
-			content, err = json.Marshal(source)
-			if err != nil {
-				return nil, err
-			}
-		case model.BlobStorageRequest:
-			content, err = json.Marshal(source)
-			if err != nil {
-				return nil, err
-			}
-		case model.DeviceTokenRequest:
-			content, err = json.Marshal(source)
-			if err != nil {
-				return nil, err
-			}
-		default:
-			sources := make([]interface{}, 0)
-			sources = append(sources, source)
-
-			content, err = json.Marshal(sources)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-	} else {
-		content = make([]byte, 0)
+	if source == nil {
+		return bytes.NewReader(nil), nil
 	}
 
-	return bytes.NewReader(content), nil
+	content, err = json.Marshal(source)
+
+	return bytes.NewReader(content), err
 }
 
 func CopyFile(src, dst string) (int64, error) {
@@ -94,4 +67,11 @@ func CopyFile(src, dst string) (int64, error) {
 	}
 
 	return n, nil
+}
+
+// Wraps a request in a slice (serialize as json array)
+func InSlice(req interface{}) []interface{} {
+	slice := make([]interface{}, 0)
+	slice = append(slice, req)
+	return slice
 }

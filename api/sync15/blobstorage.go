@@ -66,8 +66,11 @@ func (b *BlobStorage) UploadBlob(hash string, reader io.Reader) error {
 }
 
 // SyncComplete notifies that the sync is done
-func (b *BlobStorage) SyncComplete() error {
-	return b.http.Post(transport.UserBearer, config.SyncComplete, nil, nil)
+func (b *BlobStorage) SyncComplete(gen int64) error {
+	req := model.SyncCompletedRequest{
+		Generation: gen,
+	}
+	return b.http.Post(transport.UserBearer, config.SyncComplete, req, nil)
 }
 
 func (b *BlobStorage) WriteRootIndex(roothash string, gen int64) (int64, error) {
