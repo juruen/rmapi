@@ -240,16 +240,61 @@ const HeaderContentMD5 = "Content-MD5"
 var ErrWrongGeneration = errors.New("wrong generation")
 var ErrNotFound = errors.New("not found")
 
-func (ctx HttpClientCtx) PutBlobStream(url string, gen int64, reader io.Reader) (int64, error) {
+func (ctx HttpClientCtx) PutRootBlobStream(url string, gen int64, reader io.Reader) (newGeneration int64, err error) {
 	req, err := http.NewRequest(http.MethodPut, url, reader)
 	if err != nil {
-		return 0, err
+		return
 	}
 	req.Header.Add("User-Agent", RmapiUserAGent)
+	//don't change the header case
+	req.Header[HeaderGenerationIfMatch] = []string{strconv.FormatInt(gen, 10)}
 
-	if gen > 0 {
-		req.Header.Add(HeaderGenerationIfMatch, strconv.FormatInt(gen, 10))
+	if log.TracingEnabled {
+		drequest, err := httputil.DumpRequest(req, true)
+		log.Trace.Printf("PutRootBlobStream: %s %v", string(drequest), err)
 	}
+	client := &http.Client{}
+	response, err := client.Do(req)
+	if err != nil {
+		return
+	}
+
+	if log.TracingEnabled {
+		defer response.Body.Close()
+		dresponse, err := httputil.DumpResponse(response, true)
+		log.Trace.Printf("PutRootBlobSteam:Response: %s %v", string(dresponse), err)
+	}
+
+	if response.StatusCode == http.StatusPreconditionFailed {
+		return 0, ErrWrongGeneration
+	}
+	if response.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("PutRootBlobStream: got status code %d", response.StatusCode)
+	}
+
+	if response.Header == nil {
+		return 0, fmt.Errorf("PutRootBlobStream: no response headers")
+	}
+	generationHeader := response.Header.Get(HeaderGeneration)
+	if generationHeader == "" {
+		log.Warning.Println("no new generation header")
+		return
+	}
+
+	log.Trace.Println("new generation header: ", generationHeader)
+	newGeneration, err = strconv.ParseInt(generationHeader, 10, 64)
+	if err != nil {
+		log.Error.Print(err)
+	}
+
+	return
+}
+func (ctx HttpClientCtx) PutBlobStream(url string, reader io.Reader) (err error) {
+	req, err := http.NewRequest(http.MethodPut, url, reader)
+	if err != nil {
+		return
+	}
+	req.Header.Add("User-Agent", RmapiUserAGent)
 
 	if log.TracingEnabled {
 		drequest, err := httputil.DumpRequest(req, true)
@@ -258,33 +303,18 @@ func (ctx HttpClientCtx) PutBlobStream(url string, gen int64, reader io.Reader) 
 	client := &http.Client{}
 	response, err := client.Do(req)
 	if err != nil {
-		return 0, err
+		return
 	}
 
 	if log.TracingEnabled {
 		defer response.Body.Close()
 		dresponse, err := httputil.DumpResponse(response, true)
-		log.Trace.Printf("PutBlobSteam:Response: %s %v", string(dresponse), err)
+		log.Trace.Printf("PutBlobSteam: Response: %s %v", string(dresponse), err)
 	}
 
-	if response.StatusCode == http.StatusPreconditionFailed {
-		return 0, ErrWrongGeneration
-
-	}
 	if response.StatusCode != http.StatusOK {
-		return 0, fmt.Errorf("PutBlobStream: got status code %d", response.StatusCode)
+		return fmt.Errorf("PutBlobStream: got status code %d", response.StatusCode)
 	}
 
-	if response.Header != nil {
-		genh := response.Header.Get(HeaderGeneration)
-		if genh != "" {
-			log.Trace.Println("new generation header: ", genh)
-			gen, err = strconv.ParseInt(genh, 10, 64)
-			if err != nil {
-				log.Error.Print(err)
-			}
-		}
-	}
-
-	return gen, nil
+	return nil
 }

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
-	"strconv"
+	"net/http"
 
 	"github.com/juruen/rmapi/config"
 	"github.com/juruen/rmapi/log"
@@ -16,15 +16,29 @@ type BlobStorage struct {
 	http *transport.HttpClientCtx
 }
 
-func (b *BlobStorage) PutUrl(hash string, gen int64) (string, error) {
+const ROOT_NAME = "root"
+
+func (b *BlobStorage) PutRootUrl(hash string, gen int64) (string, error) {
+	log.Trace.Println("fetching  ROOT url for: " + hash)
+	req := model.BlobRootStorageRequest{
+		Method:       http.MethodPut,
+		RelativePath: ROOT_NAME,
+		RootSchema:   hash,
+		Generation:   gen,
+	}
+	var res model.BlobStorageResponse
+
+	if err := b.http.Post(transport.UserBearer, config.UploadBlob, req, &res); err != nil {
+		return "", err
+	}
+	return res.Url, nil
+}
+func (b *BlobStorage) PutUrl(hash string) (string, error) {
 	log.Trace.Println("fetching PUT blob url for: " + hash)
 	var req model.BlobStorageRequest
 	var res model.BlobStorageResponse
-	req.Method = "PUT"
+	req.Method = http.MethodPut
 	req.RelativePath = hash
-	if gen > 0 {
-		req.Generation = strconv.FormatInt(gen, 10)
-	}
 	if err := b.http.Post(transport.UserBearer, config.UploadBlob, req, &res); err != nil {
 		return "", err
 	}
@@ -35,7 +49,7 @@ func (b *BlobStorage) GetUrl(hash string) (string, error) {
 	log.Trace.Println("fetching GET blob url for: " + hash)
 	var req model.BlobStorageRequest
 	var res model.BlobStorageResponse
-	req.Method = "GET"
+	req.Method = http.MethodGet
 	req.RelativePath = hash
 	if err := b.http.Post(transport.UserBearer, config.DownloadBlob, req, &res); err != nil {
 		return "", err
@@ -55,14 +69,13 @@ func (b *BlobStorage) GetReader(hash string) (io.ReadCloser, error) {
 }
 
 func (b *BlobStorage) UploadBlob(hash string, reader io.Reader) error {
-	url, err := b.PutUrl(hash, -1)
+	url, err := b.PutUrl(hash)
 	if err != nil {
 		return err
 	}
 	log.Trace.Println("put url: " + url)
 
-	_, err = b.http.PutBlobStream(url, -1, reader)
-	return err
+	return b.http.PutBlobStream(url, reader)
 }
 
 // SyncComplete notifies that the sync is done
@@ -75,20 +88,17 @@ func (b *BlobStorage) SyncComplete(gen int64) error {
 
 func (b *BlobStorage) WriteRootIndex(roothash string, gen int64) (int64, error) {
 	log.Info.Println("writing root with gen: ", gen)
-	url, err := b.PutUrl("root", gen)
+	url, err := b.PutRootUrl(roothash, gen)
 	if err != nil {
 		return 0, err
 	}
 	log.Trace.Println("got root url:", url)
 	reader := bytes.NewBufferString(roothash)
 
-	gen, err = b.http.PutBlobStream(url, gen, reader)
-	return gen, err
-
+	return b.http.PutRootBlobStream(url, gen, reader)
 }
 func (b *BlobStorage) GetRootIndex() (string, int64, error) {
-
-	url, err := b.GetUrl("root")
+	url, err := b.GetUrl(ROOT_NAME)
 	if err != nil {
 		return "", 0, err
 	}

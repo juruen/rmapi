@@ -56,12 +56,20 @@ type UploadDocumentResponse struct {
 	BlobURLPutExpires string
 }
 
+type BlobRootStorageRequest struct {
+	Method       string `json:"http_method"`
+	Initial      bool   `json:"initial_sync,omitempty"`
+	RelativePath string `json:"relative_path"`
+	RootSchema   string `json:"root_schema,omitempty"`
+	Generation   int64  `json:"generation"`
+}
+
 // BlobStorageRequest request
 type BlobStorageRequest struct {
 	Method       string `json:"http_method"`
 	Initial      bool   `json:"initial_sync,omitempty"`
 	RelativePath string `json:"relative_path"`
-	Generation   string `json:"generation,omitempty"`
+	ParentPath   string `json:"parent_path,omitempty"`
 }
 
 // BlobStorageResponse response
