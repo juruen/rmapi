@@ -234,6 +234,7 @@ func (ctx HttpClientCtx) GetBlobStream(url string) (io.ReadCloser, int64, error)
 }
 
 const HeaderGeneration = "x-goog-generation"
+const HeaderContentLengthRange = "x-goog-content-length-range"
 const HeaderGenerationIfMatch = "x-goog-if-generation-match"
 const HeaderContentMD5 = "Content-MD5"
 
@@ -289,13 +290,16 @@ func (ctx HttpClientCtx) PutRootBlobStream(url string, gen int64, reader io.Read
 
 	return
 }
-func (ctx HttpClientCtx) PutBlobStream(url string, reader io.Reader) (err error) {
+func (ctx HttpClientCtx) PutBlobStream(url string, reader io.Reader, size int64) (err error) {
 	req, err := http.NewRequest(http.MethodPut, url, reader)
 	if err != nil {
 		return
 	}
 	req.Header.Add("User-Agent", RmapiUserAGent)
 
+	if size > 0 {
+		req.Header[HeaderContentLengthRange] = []string{fmt.Sprintf("0,%d", size)}
+	}
 	if log.TracingEnabled {
 		drequest, err := httputil.DumpRequest(req, true)
 		log.Trace.Printf("PutBlobStream: %s %v", string(drequest), err)

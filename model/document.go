@@ -74,10 +74,11 @@ type BlobStorageRequest struct {
 
 // BlobStorageResponse response
 type BlobStorageResponse struct {
-	Expires      string `json:"expires"`
-	Method       string `json:"method"`
-	RelativePath string `json:"relative_path"`
-	Url          string `json:"url"`
+	Expires            string `json:"expires"`
+	Method             string `json:"method"`
+	RelativePath       string `json:"relative_path"`
+	Url                string `json:"url"`
+	MaxUploadSizeBytes int64  `json:"maxuploadsize_bytes,omitifempty"`
 }
 
 // SyncCompleteRequest payload of the sync completion

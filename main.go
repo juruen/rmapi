@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 
 	"github.com/juruen/rmapi/api"
@@ -31,17 +30,11 @@ func main() {
 	var ctx api.ApiCtx
 	var err error
 	for i := 0; i < AUTH_RETRIES; i++ {
-		isSync15 := false
-		ctx, isSync15, err = api.CreateApiCtx(api.AuthHttpCtx(i > 0, *ni))
+		ctx, err = api.CreateApiCtx(api.AuthHttpCtx(i > 0, *ni))
 
 		if err != nil {
 			log.Trace.Println(err)
 		} else {
-			if isSync15 {
-				fmt.Fprintln(os.Stderr, `WARNING!!!
-  Using the new 1.5 sync, this has not been fully tested yet!!!
-  Make sure you have a backup, in case there is a bug that could cause data loss!`)
-			}
 			break
 		}
 	}

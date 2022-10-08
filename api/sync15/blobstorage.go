@@ -33,16 +33,16 @@ func (b *BlobStorage) PutRootUrl(hash string, gen int64) (string, error) {
 	}
 	return res.Url, nil
 }
-func (b *BlobStorage) PutUrl(hash string) (string, error) {
+func (b *BlobStorage) PutUrl(hash string) (string, int64, error) {
 	log.Trace.Println("fetching PUT blob url for: " + hash)
 	var req model.BlobStorageRequest
 	var res model.BlobStorageResponse
 	req.Method = http.MethodPut
 	req.RelativePath = hash
 	if err := b.http.Post(transport.UserBearer, config.UploadBlob, req, &res); err != nil {
-		return "", err
+		return "", 0, err
 	}
-	return res.Url, nil
+	return res.Url, res.MaxUploadSizeBytes, nil
 }
 
 func (b *BlobStorage) GetUrl(hash string) (string, error) {
@@ -69,13 +69,13 @@ func (b *BlobStorage) GetReader(hash string) (io.ReadCloser, error) {
 }
 
 func (b *BlobStorage) UploadBlob(hash string, reader io.Reader) error {
-	url, err := b.PutUrl(hash)
+	url, size, err := b.PutUrl(hash)
 	if err != nil {
 		return err
 	}
 	log.Trace.Println("put url: " + url)
 
-	return b.http.PutBlobStream(url, reader)
+	return b.http.PutBlobStream(url, reader, size)
 }
 
 // SyncComplete notifies that the sync is done
