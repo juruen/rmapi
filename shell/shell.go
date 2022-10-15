@@ -75,7 +75,7 @@ func RunShell(apiCtx api.ApiCtx, userInfo *api.UserInfo, args []string) error {
 	if len(args) > 0 {
 		return shell.Process(args...)
 	} else {
-		shell.Printf("ReMarkable Cloud API Shell, User: %s, SyncVersion: %d\n", userInfo.User, userInfo.SyncVersion)
+		shell.Printf("ReMarkable Cloud API Shell, User: %s, SyncVersion: %s\n", userInfo.User, userInfo.SyncVersion)
 		shell.Run()
 
 		return nil

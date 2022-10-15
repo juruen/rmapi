@@ -29,6 +29,7 @@ type ApiCtx interface {
 type UserToken struct {
 	Auth0 struct {
 		UserID string
+		Email  string
 	} `json:"auth0-profile"`
 	Scopes string
 	*jwt.StandardClaims
@@ -40,6 +41,17 @@ const (
 	Version10 SyncVersion = 10
 	Version15 SyncVersion = 15
 )
+
+func (s SyncVersion) String() string {
+	switch s {
+	case Version10:
+		return "1.0"
+	case Version15:
+		return "1.5"
+	default:
+		return "unknown"
+	}
+}
 
 type UserInfo struct {
 	SyncVersion SyncVersion
