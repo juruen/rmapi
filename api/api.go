@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -47,12 +48,10 @@ type UserInfo struct {
 
 func ParseToken(userToken string) (token *UserInfo, err error) {
 	claims := UserToken{}
-	jwt.ParseWithClaims(userToken, &claims, func(token *jwt.Token) (interface{}, error) {
-		return nil, nil
-	})
+	_, _, err = (&jwt.Parser{}).ParseUnverified(userToken, &claims)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't parse token %v", err)
 	}
 
 	if !claims.VerifyExpiresAt(time.Now().Unix(), false) {
