@@ -233,9 +233,11 @@ func (ctx HttpClientCtx) GetBlobStream(url string) (io.ReadCloser, int64, error)
 	return response.Body, gen, err
 }
 
+// those headers are case sensitive
 const HeaderGeneration = "x-goog-generation"
 const HeaderContentLengthRange = "x-goog-content-length-range"
 const HeaderGenerationIfMatch = "x-goog-if-generation-match"
+
 const HeaderContentMD5 = "Content-MD5"
 
 var ErrWrongGeneration = errors.New("wrong generation")
@@ -253,7 +255,7 @@ func (ctx HttpClientCtx) PutRootBlobStream(url string, gen, maxRequestSize int64
 		return
 	}
 	req.Header.Add("User-Agent", RmapiUserAGent)
-	//don't change the header case
+	//don't change the header case, signed headers
 	req.Header[HeaderGenerationIfMatch] = []string{strconv.FormatInt(gen, 10)}
 	addSizeHeader(req, maxRequestSize)
 
@@ -270,7 +272,7 @@ func (ctx HttpClientCtx) PutRootBlobStream(url string, gen, maxRequestSize int64
 	if log.TracingEnabled {
 		defer response.Body.Close()
 		dresponse, err := httputil.DumpResponse(response, true)
-		log.Trace.Printf("PutRootBlobSteam:Response: %s %v", string(dresponse), err)
+		log.Trace.Printf("PutRootBlobStream:Response: %s %v", string(dresponse), err)
 	}
 
 	if response.StatusCode == http.StatusPreconditionFailed {
