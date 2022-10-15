@@ -241,7 +241,13 @@ const HeaderContentMD5 = "Content-MD5"
 var ErrWrongGeneration = errors.New("wrong generation")
 var ErrNotFound = errors.New("not found")
 
-func (ctx HttpClientCtx) PutRootBlobStream(url string, gen int64, reader io.Reader) (newGeneration int64, err error) {
+func addSizeHeader(req *http.Request, maxRequestSize int64) {
+	if maxRequestSize > 0 {
+		req.Header[HeaderContentLengthRange] = []string{fmt.Sprintf("0,%d", maxRequestSize)}
+	}
+}
+
+func (ctx HttpClientCtx) PutRootBlobStream(url string, gen, maxRequestSize int64, reader io.Reader) (newGeneration int64, err error) {
 	req, err := http.NewRequest(http.MethodPut, url, reader)
 	if err != nil {
 		return
@@ -249,6 +255,7 @@ func (ctx HttpClientCtx) PutRootBlobStream(url string, gen int64, reader io.Read
 	req.Header.Add("User-Agent", RmapiUserAGent)
 	//don't change the header case
 	req.Header[HeaderGenerationIfMatch] = []string{strconv.FormatInt(gen, 10)}
+	addSizeHeader(req, maxRequestSize)
 
 	if log.TracingEnabled {
 		drequest, err := httputil.DumpRequest(req, true)
@@ -290,16 +297,14 @@ func (ctx HttpClientCtx) PutRootBlobStream(url string, gen int64, reader io.Read
 
 	return
 }
-func (ctx HttpClientCtx) PutBlobStream(url string, reader io.Reader, size int64) (err error) {
+func (ctx HttpClientCtx) PutBlobStream(url string, reader io.Reader, maxRequestSize int64) (err error) {
 	req, err := http.NewRequest(http.MethodPut, url, reader)
 	if err != nil {
 		return
 	}
 	req.Header.Add("User-Agent", RmapiUserAGent)
+	addSizeHeader(req, maxRequestSize)
 
-	if size > 0 {
-		req.Header[HeaderContentLengthRange] = []string{fmt.Sprintf("0,%d", size)}
-	}
 	if log.TracingEnabled {
 		drequest, err := httputil.DumpRequest(req, true)
 		log.Trace.Printf("PutBlobStream: %s %v", string(drequest), err)

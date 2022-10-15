@@ -18,7 +18,7 @@ type BlobStorage struct {
 
 const ROOT_NAME = "root"
 
-func (b *BlobStorage) PutRootUrl(hash string, gen int64) (string, error) {
+func (b *BlobStorage) PutRootUrl(hash string, gen int64) (string, int64, error) {
 	log.Trace.Println("fetching  ROOT url for: " + hash)
 	req := model.BlobRootStorageRequest{
 		Method:       http.MethodPut,
@@ -29,9 +29,9 @@ func (b *BlobStorage) PutRootUrl(hash string, gen int64) (string, error) {
 	var res model.BlobStorageResponse
 
 	if err := b.http.Post(transport.UserBearer, config.UploadBlob, req, &res); err != nil {
-		return "", err
+		return "", 0, err
 	}
-	return res.Url, nil
+	return res.Url, res.MaxUploadSizeBytes, nil
 }
 func (b *BlobStorage) PutUrl(hash string) (string, int64, error) {
 	log.Trace.Println("fetching PUT blob url for: " + hash)
@@ -88,14 +88,14 @@ func (b *BlobStorage) SyncComplete(gen int64) error {
 
 func (b *BlobStorage) WriteRootIndex(roothash string, gen int64) (int64, error) {
 	log.Info.Println("writing root with gen: ", gen)
-	url, err := b.PutRootUrl(roothash, gen)
+	url, maxRequestSize, err := b.PutRootUrl(roothash, gen)
 	if err != nil {
 		return 0, err
 	}
 	log.Trace.Println("got root url:", url)
 	reader := bytes.NewBufferString(roothash)
 
-	return b.http.PutRootBlobStream(url, gen, reader)
+	return b.http.PutRootBlobStream(url, gen, maxRequestSize, reader)
 }
 func (b *BlobStorage) GetRootIndex() (string, int64, error) {
 	url, err := b.GetUrl(ROOT_NAME)
