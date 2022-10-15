@@ -5,33 +5,44 @@ import (
 	"os"
 
 	"github.com/juruen/rmapi/api"
+	"github.com/juruen/rmapi/config"
 	"github.com/juruen/rmapi/log"
 	"github.com/juruen/rmapi/shell"
 )
 
 const AUTH_RETRIES = 3
 
-func run_shell(ctx api.ApiCtx, args []string) {
-	err := shell.RunShell(ctx, args)
-
-	if err != nil {
-		log.Error.Println("Error: ", err)
-
-		os.Exit(1)
-	}
-}
-
 func main() {
-	// log.InitLog()
 	ni := flag.Bool("ni", false, "not interactive")
 	flag.Parse()
-	rstArgs := flag.Args()
+	otherFlags := flag.Args()
+
+	if len(otherFlags) > 0 {
+		switch otherFlags[0] {
+		case "logout":
+			configFile := config.ConfigPath()
+			err := os.Remove(configFile)
+			if err != nil {
+				log.Error.Fatalln(err)
+			}
+			return
+		}
+	}
 
 	var ctx api.ApiCtx
 	var err error
-	for i := 0; i < AUTH_RETRIES; i++ {
-		ctx, err = api.CreateApiCtx(api.AuthHttpCtx(i > 0, *ni))
+	var userInfo *api.UserInfo
 
+	for i := 0; i < AUTH_RETRIES; i++ {
+		authCtx := api.AuthHttpCtx(i > 0, *ni)
+
+		userInfo, err = api.ParseToken(authCtx.Tokens.UserToken)
+		if err != nil {
+			log.Trace.Println(err)
+			continue
+		}
+
+		ctx, err = api.CreateApiCtx(authCtx, userInfo.SyncVersion)
 		if err != nil {
 			log.Trace.Println(err)
 		} else {
@@ -43,5 +54,11 @@ func main() {
 		log.Error.Fatal("failed to build documents tree, last error: ", err)
 	}
 
-	run_shell(ctx, rstArgs)
+	err = shell.RunShell(ctx, userInfo, otherFlags)
+
+	if err != nil {
+		log.Error.Println("Error: ", err)
+
+		os.Exit(1)
+	}
 }

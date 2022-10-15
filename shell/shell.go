@@ -14,6 +14,7 @@ type ShellCtxt struct {
 	api            api.ApiCtx
 	path           string
 	useHiddenFiles bool
+	UserInfo       api.UserInfo
 }
 
 func (ctx *ShellCtxt) prompt() string {
@@ -40,13 +41,15 @@ func useHiddenFiles() bool {
 	return val != "0"
 }
 
-func RunShell(apiCtx api.ApiCtx, args []string) error {
+func RunShell(apiCtx api.ApiCtx, userInfo *api.UserInfo, args []string) error {
 	shell := ishell.New()
 	ctx := &ShellCtxt{
 		node:           apiCtx.Filetree().Root(),
 		api:            apiCtx,
 		path:           apiCtx.Filetree().Root().Name(),
-		useHiddenFiles: useHiddenFiles()}
+		useHiddenFiles: useHiddenFiles(),
+		UserInfo:       *userInfo,
+	}
 
 	shell.SetPrompt(ctx.prompt())
 
@@ -65,13 +68,14 @@ func RunShell(apiCtx api.ApiCtx, args []string) error {
 	shell.AddCmd(getACmd(ctx))
 	shell.AddCmd(findCmd(ctx))
 	shell.AddCmd(nukeCmd(ctx))
+	shell.AddCmd(accountCmd(ctx))
 
 	setCustomCompleter(shell)
 
 	if len(args) > 0 {
 		return shell.Process(args...)
 	} else {
-		shell.Println("ReMarkable Cloud API Shell")
+		shell.Printf("ReMarkable Cloud API Shell, User: %s, SyncVersion: %d\n", userInfo.User, userInfo.SyncVersion)
 		shell.Run()
 
 		return nil

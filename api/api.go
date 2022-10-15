@@ -1,9 +1,10 @@
 package api
 
 import (
-	"fmt"
-	"os"
+	"errors"
+	"log"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/juruen/rmapi/api/sync10"
@@ -25,40 +26,69 @@ type ApiCtx interface {
 }
 
 type UserToken struct {
+	Auth0 struct {
+		UserID string
+	} `json:"auth0-profile"`
 	Scopes string
 	*jwt.StandardClaims
 }
 
-// CreateApiCtx initializes an instance of ApiCtx
-func CreateApiCtx(http *transport.HttpClientCtx) (ctx ApiCtx, err error) {
-	userToken := http.Tokens.UserToken
+type SyncVersion int
+
+const (
+	Version10 SyncVersion = 10
+	Version15 SyncVersion = 15
+)
+
+type UserInfo struct {
+	SyncVersion SyncVersion
+	User        string
+}
+
+func ParseToken(userToken string) (token *UserInfo, err error) {
 	claims := UserToken{}
 	jwt.ParseWithClaims(userToken, &claims, func(token *jwt.Token) (interface{}, error) {
 		return nil, nil
 	})
-	if err != nil {
-		return
-	}
-	fld := strings.Fields(claims.Scopes)
-	isSync15 := false
 
-forloop:
-	for _, f := range fld {
-		switch f {
+	if err != nil {
+		return nil, err
+	}
+
+	if !claims.VerifyExpiresAt(time.Now().Unix(), false) {
+		return nil, errors.New("Token Expired")
+	}
+
+	token = &UserInfo{
+		User:        claims.Auth0.UserID,
+		SyncVersion: Version10,
+	}
+
+	scopes := strings.Fields(claims.Scopes)
+
+	for _, scope := range scopes {
+		switch scope {
 		case "sync:fox":
 			fallthrough
 		case "sync:tortoise":
 			fallthrough
 		case "sync:hare":
-			isSync15 = true
-			break forloop
+			token.SyncVersion = Version15
+			return
 		}
 	}
-	if isSync15 {
-		fmt.Fprintln(os.Stderr, `WARNING!!! Using the new 1.5 sync, this has not been fully tested yet!!! first sync can be slow`)
-		ctx, err = sync15.CreateCtx(http)
-	} else {
-		ctx, err = sync10.CreateCtx(http)
+	return token, nil
+}
+
+// CreateApiCtx initializes an instance of ApiCtx
+func CreateApiCtx(httpCtx *transport.HttpClientCtx, syncVerison SyncVersion) (ctx ApiCtx, err error) {
+	switch syncVerison {
+	case Version10:
+		return sync10.CreateCtx(httpCtx)
+	case Version15:
+		return sync15.CreateCtx(httpCtx)
+	default:
+		log.Fatal("Unsupported sync version")
 	}
 	return
 }
