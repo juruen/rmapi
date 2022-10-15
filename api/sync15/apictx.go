@@ -196,9 +196,8 @@ func Sync(b *BlobStorage, tree *HashTree, operation func(t *HashTree) error) err
 
 		newGeneration, err := b.WriteRootIndex(tree.Hash, tree.Generation)
 
-		log.Info.Println("wrote root, new gen: ", newGeneration)
-
 		if err == nil {
+			log.Info.Println("wrote root, new gen: ", newGeneration)
 			tree.Generation = newGeneration
 			break
 		}
