@@ -56,20 +56,34 @@ type UploadDocumentResponse struct {
 	BlobURLPutExpires string
 }
 
-// BlobStorageRequest else
+type BlobRootStorageRequest struct {
+	Method       string `json:"http_method"`
+	Initial      bool   `json:"initial_sync,omitempty"`
+	RelativePath string `json:"relative_path"`
+	RootSchema   string `json:"root_schema,omitempty"`
+	Generation   int64  `json:"generation"`
+}
+
+// BlobStorageRequest request
 type BlobStorageRequest struct {
 	Method       string `json:"http_method"`
 	Initial      bool   `json:"initial_sync,omitempty"`
 	RelativePath string `json:"relative_path"`
-	Generation   string `json:"generation,omitempty"`
+	ParentPath   string `json:"parent_path,omitempty"`
 }
 
-// BlobStorageResponse  what else
+// BlobStorageResponse response
 type BlobStorageResponse struct {
-	Expires      string `json:"expires"`
-	Method       string `json:"method"`
-	RelativePath string `json:"relative_path"`
-	Url          string `json:"url"`
+	Expires            string `json:"expires"`
+	Method             string `json:"method"`
+	RelativePath       string `json:"relative_path"`
+	Url                string `json:"url"`
+	MaxUploadSizeBytes int64  `json:"maxuploadsize_bytes,omitifempty"`
+}
+
+// SyncCompleteRequest payload of the sync completion
+type SyncCompletedRequest struct {
+	Generation int64 `json:"generation"`
 }
 
 func CreateDirDocument(parent, name string) MetadataDocument {

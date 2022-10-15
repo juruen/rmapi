@@ -37,7 +37,7 @@ func (ctx *ApiCtx) Nuke() error {
 	for _, d := range documents {
 		log.Info.Println("Deleting: ", d.VissibleName)
 
-		err := ctx.Http.Put(transport.UserBearer, config.DeleteEntry, d, nil)
+		err := ctx.Http.Put(transport.UserBearer, config.DeleteEntry, util.InSlice(d), nil)
 		if err != nil {
 			log.Error.Println("failed to remove entry", err)
 			return err
@@ -141,7 +141,7 @@ func (ctx *ApiCtx) CreateDir(parentId, name string) (*model.Document, error) {
 
 	metaDoc := model.CreateUploadDocumentMeta(uploadRsp.ID, model.DirectoryType, parentId, name)
 
-	err = ctx.Http.Put(transport.UserBearer, config.UpdateStatus, metaDoc, nil)
+	err = ctx.Http.Put(transport.UserBearer, config.UpdateStatus, util.InSlice(metaDoc), nil)
 
 	if err != nil {
 		log.Error.Println("failed to move entry", err)
@@ -162,7 +162,7 @@ func (ctx *ApiCtx) DeleteEntry(node *model.Node) error {
 
 	deleteDoc := node.Document.ToDeleteDocument()
 
-	err := ctx.Http.Put(transport.UserBearer, config.DeleteEntry, deleteDoc, nil)
+	err := ctx.Http.Put(transport.UserBearer, config.DeleteEntry, util.InSlice(deleteDoc), nil)
 
 	if err != nil {
 		log.Error.Println("failed to remove entry", err)
@@ -186,7 +186,7 @@ func (ctx *ApiCtx) MoveEntry(src, dstDir *model.Node, name string) (*model.Node,
 	metaDoc.VissibleName = name
 	metaDoc.Parent = dstDir.Id()
 
-	err := ctx.Http.Put(transport.UserBearer, config.UpdateStatus, metaDoc, nil)
+	err := ctx.Http.Put(transport.UserBearer, config.UpdateStatus, util.InSlice(metaDoc), nil)
 
 	if err != nil {
 		log.Error.Println("failed to move entry", err)
@@ -258,7 +258,7 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string, notify 
 
 	metaDoc := model.CreateUploadDocumentMeta(uploadRsp.ID, model.DocumentType, parentId, name)
 
-	err = ctx.Http.Put(transport.UserBearer, config.UpdateStatus, metaDoc, nil)
+	err = ctx.Http.Put(transport.UserBearer, config.UpdateStatus, util.InSlice(metaDoc), nil)
 
 	if err != nil {
 		log.Error.Println("failed to move entry", err)
@@ -274,7 +274,7 @@ func (ctx *ApiCtx) uploadRequest(id string, entryType string) (model.UploadDocum
 	uploadReq := model.CreateUploadDocumentRequest(id, entryType)
 	uploadRsp := make([]model.UploadDocumentResponse, 0)
 
-	err := ctx.Http.Put(transport.UserBearer, config.UploadRequest, uploadReq, &uploadRsp)
+	err := ctx.Http.Put(transport.UserBearer, config.UploadRequest, util.InSlice(uploadReq), &uploadRsp)
 
 	if err != nil {
 		log.Error.Println("failed to to send upload request", err)

@@ -196,9 +196,8 @@ func Sync(b *BlobStorage, tree *HashTree, operation func(t *HashTree) error) err
 
 		newGeneration, err := b.WriteRootIndex(tree.Hash, tree.Generation)
 
-		log.Info.Println("wrote root, new gen: ", newGeneration)
-
 		if err == nil {
+			log.Info.Println("wrote root, new gen: ", newGeneration)
 			tree.Generation = newGeneration
 			break
 		}
@@ -388,7 +387,6 @@ func CreateCtx(http *transport.HttpClientCtx) (*ApiCtx, error) {
 		fmt.Print(err)
 		return nil, err
 	}
-	fmt.Fprintln(os.Stderr, "Refreshing tree...")
 	err = cacheTree.Mirror(apiStorage)
 	if err != nil {
 		return nil, err
@@ -426,7 +424,7 @@ func DocumentsFileTree(tree *HashTree) (*filetree.FileTreeCtx, error) {
 
 // SyncComplete notfies that somethings has changed (triggers tablet sync)
 func (ctx *ApiCtx) SyncComplete() error {
-	err := ctx.blobStorage.SyncComplete()
+	err := ctx.blobStorage.SyncComplete(ctx.hashTree.Generation)
 	if err != nil {
 		log.Error.Printf("cannot send sync %v", err)
 	}

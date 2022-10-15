@@ -1,3 +1,4 @@
+//go:build withauth
 // +build withauth
 
 package cloud

@@ -23,8 +23,8 @@
 //
 // To try to be as idiomatic as possible, this package implements the two following interfaces
 // of the default encoding package (https://golang.org/pkg/encoding/).
-//  - BinaryMarshaler
-//  - BinaryUnmarshaler
+//   - BinaryMarshaler
+//   - BinaryUnmarshaler
 //
 // The scope of this package is defined as just the encoding/decoding of the .rm format.
 // It will only deal with bytes and not files (one must take care of unzipping the archive

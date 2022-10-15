@@ -69,10 +69,11 @@ func mputCmd(ctx *ShellCtxt) *ishell.Cmd {
 // Print the required spaces and characters for tree formatting.
 //
 // Input -> [*ishell.Context]
-//			[int]				tree depth (0 ... N-1)
-//			[int]				Current item index in directory
-//			[int]				Current directory list length
-//			[*string]			Book keeping for tree formatting
+//
+//	[int]				tree depth (0 ... N-1)
+//	[int]				Current item index in directory
+//	[int]				Current directory list length
+//	[*string]			Book keeping for tree formatting
 func treeFormat(pC *ishell.Context, num int, lIndex int, lSize int, tFS *string) {
 
 	tFStr := ""

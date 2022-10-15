@@ -16,7 +16,7 @@ var SyncComplete string
 func init() {
 	docHost := "https://document-storage-production-dot-remarkable-production.appspot.com"
 	authHost := "https://webapp-production-dot-remarkable-production.appspot.com"
-	blobHost := "https://rm-blob-storage-prod.appspot.com"
+	syncHost := "https://internal.cloud.remarkable.com"
 
 	host := os.Getenv("RMAPI_DOC")
 	if host != "" {
@@ -33,7 +33,7 @@ func init() {
 	if host != "" {
 		authHost = host
 		docHost = host
-		blobHost = host
+		syncHost = host
 	}
 
 	NewTokenDevice = authHost + "/token/json/2/device/new"
@@ -43,7 +43,7 @@ func init() {
 	UploadRequest = docHost + "/document-storage/json/2/upload/request"
 	DeleteEntry = docHost + "/document-storage/json/2/delete"
 
-	UploadBlob = blobHost + "/api/v1/signed-urls/uploads"
-	DownloadBlob = blobHost + "/api/v1/signed-urls/downloads"
-	SyncComplete = blobHost + "/api/v1/sync-complete"
+	UploadBlob = syncHost + "/sync/v2/signed-urls/uploads"
+	DownloadBlob = syncHost + "/sync/v2/signed-urls/downloads"
+	SyncComplete = syncHost + "/sync/v2/sync-complete"
 }

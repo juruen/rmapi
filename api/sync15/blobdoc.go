@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"sort"
@@ -218,7 +217,6 @@ func (d *BlobDoc) ToDocument() *model.Document {
 
 		t := time.Unix(unixTime/1000, 0)
 		lastModified = t.UTC().Format(time.RFC3339Nano)
-		fmt.Println(" Time " + lastModified + " " + d.MetadataFile.DocName)
 	}
 	return &model.Document{
 		ID:             d.DocumentID,
