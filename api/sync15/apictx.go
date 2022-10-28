@@ -33,7 +33,7 @@ func (ctx *ApiCtx) Filetree() *filetree.FileTreeCtx {
 	return ctx.ft
 }
 
-// Crude implementation of the rmapi nuke command
+// Implementation of the rmapi nuke command
 func (ctx *ApiCtx) _nuke(root *model.Node) error {
 	// Fallback to root if no node is provided
 	if root == nil {
