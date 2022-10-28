@@ -35,28 +35,40 @@ func (ctx *ApiCtx) Filetree() *filetree.FileTreeCtx {
 
 // Crude implementation of the rmapi nuke command
 func (ctx *ApiCtx) _nuke(root *model.Node) error {
+	// Fallback to root if no node is provided
 	if root == nil {
 		root = ctx.ft.Root()
 	}
 
+	// Recursively delete all children
 	for _, node := range root.Children {
+		// If the node is a non empty directory,
+		// recursively delete its children
 		if node.IsDirectory() && len(node.Children) > 0 {
+			// Call _nuke recursively
 			err := ctx._nuke(node)
+
+			// If an error occurs, return it
 			if err != nil {
 				return err
 			}
 		} else {
+			// Otherwise, delete the node
 			err := ctx.DeleteEntry(node)
+
+			// If an error occurs, return it
 			if err != nil {
 				return err
 			}
 		}
 	}
+	// When the function finishes without errors, return nil
 	return nil
 }
 
 // Nuke removes all documents from the account
 func (ctx *ApiCtx) Nuke() error {
+	// Call the private _nuke recursive function
 	return ctx._nuke(nil)
 }
 
