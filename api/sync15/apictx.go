@@ -33,9 +33,31 @@ func (ctx *ApiCtx) Filetree() *filetree.FileTreeCtx {
 	return ctx.ft
 }
 
+// Crude implementation of the rmapi nuke command
+func (ctx *ApiCtx) _nuke(root *model.Node) error {
+	if root == nil {
+		root = ctx.ft.Root()
+	}
+
+	for _, node := range root.Children {
+		if node.IsDirectory() && len(node.Children) > 0 {
+			err := ctx._nuke(node)
+			if err != nil {
+				return err
+			}
+		} else {
+			err := ctx.DeleteEntry(node)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // Nuke removes all documents from the account
 func (ctx *ApiCtx) Nuke() error {
-	return ErrorNotImplemented
+	return ctx._nuke(nil)
 }
 
 // FetchDocument downloads a document given its ID and saves it locally into dstPath
