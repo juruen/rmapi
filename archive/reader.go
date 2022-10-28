@@ -92,9 +92,6 @@ func (z *Zip) readContent(zr *zip.Reader) error {
 	redirectedCount := len(z.Content.RedirectionMap)
 	pagesCount := len(z.Content.Pages)
 	if redirectedCount > 0 {
-		if redirectedCount != pagesCount {
-			log.Warning.Print("redirection != pages")
-		}
 		z.pageMap = make(map[string]int)
 		z.Pages = make([]Page, redirectedCount)
 		for index, docPage := range z.Content.RedirectionMap {
@@ -107,9 +104,9 @@ func (z *Zip) readContent(zr *zip.Reader) error {
 			z.Pages[index].DocPage = docPage
 		}
 
-	} else if z.Content.Pages != nil && len(z.Content.Pages) > 0 {
+	} else if pagesCount > 0 {
 		z.pageMap = make(map[string]int)
-		z.Pages = make([]Page, len(z.Content.Pages))
+		z.Pages = make([]Page, pagesCount)
 		for index, pageUUID := range z.Content.Pages {
 			z.pageMap[pageUUID] = index
 			z.Pages[index].DocPage = index
