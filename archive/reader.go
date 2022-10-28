@@ -89,11 +89,30 @@ func (z *Zip) readContent(zr *zip.Reader) error {
 	id, _ := util.DocPathToName(p)
 	z.UUID = id
 
-	if z.Content.Pages != nil && len(z.Content.Pages) > 0 {
+	redirectedCount := len(z.Content.RedirectionMap)
+	pagesCount := len(z.Content.Pages)
+	if redirectedCount > 0 {
+		if redirectedCount != pagesCount {
+			log.Warning.Print("redirection != pages")
+		}
+		z.pageMap = make(map[string]int)
+		z.Pages = make([]Page, redirectedCount)
+		for index, docPage := range z.Content.RedirectionMap {
+			if index > pagesCount {
+				log.Warning.Print("redirection > pages")
+				break
+			}
+			pageUUID := z.Content.Pages[index]
+			z.pageMap[pageUUID] = index
+			z.Pages[index].DocPage = docPage
+		}
+
+	} else if z.Content.Pages != nil && len(z.Content.Pages) > 0 {
 		z.pageMap = make(map[string]int)
 		z.Pages = make([]Page, len(z.Content.Pages))
-		for i, p := range z.Content.Pages {
-			z.pageMap[p] = i
+		for index, pageUUID := range z.Content.Pages {
+			z.pageMap[pageUUID] = index
+			z.Pages[index].DocPage = index
 		}
 	} else {
 		// instantiate the slice of pages
