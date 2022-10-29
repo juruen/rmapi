@@ -24,13 +24,14 @@ func run_shell(ctx api.ApiCtx, args []string) {
 func main() {
 	// log.InitLog()
 	ni := flag.Bool("ni", false, "not interactive")
+	ign := flag.Bool("ig", false, "ignore 1.5 sync warning")
 	flag.Parse()
 	rstArgs := flag.Args()
 
 	var ctx api.ApiCtx
 	var err error
 	for i := 0; i < AUTH_RETRIES; i++ {
-		ctx, err = api.CreateApiCtx(api.AuthHttpCtx(i > 0, *ni))
+		ctx, err = api.CreateApiCtx(api.AuthHttpCtx(i > 0, *ni), *ign)
 
 		if err != nil {
 			log.Trace.Println(err)

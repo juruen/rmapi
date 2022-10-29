@@ -30,7 +30,7 @@ type UserToken struct {
 }
 
 // CreateApiCtx initializes an instance of ApiCtx
-func CreateApiCtx(http *transport.HttpClientCtx) (ctx ApiCtx, err error) {
+func CreateApiCtx(http *transport.HttpClientCtx, ign bool) (ctx ApiCtx, err error) {
 	userToken := http.Tokens.UserToken
 	claims := UserToken{}
 	jwt.ParseWithClaims(userToken, &claims, func(token *jwt.Token) (interface{}, error) {
@@ -54,7 +54,7 @@ forloop:
 			break forloop
 		}
 	}
-	if isSync15 {
+	if isSync15 && !ign {
 		fmt.Fprintln(os.Stderr, `WARNING!!! Using the new 1.5 sync, this has not been fully tested yet!!! first sync can be slow`)
 		ctx, err = sync15.CreateCtx(http)
 	} else {
