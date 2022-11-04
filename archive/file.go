@@ -73,6 +73,8 @@ type Page struct {
 	Thumbnail []byte
 	// Pagedata contains the name of the selected background template
 	Pagedata string
+	// page number of the underlying document
+	DocPage int
 }
 
 // Metadata represents the structure of a .metadata json file associated to a page.
@@ -100,8 +102,10 @@ type Content struct {
 	Orientation string `json:"orientation"`
 	PageCount   int    `json:"pageCount"`
 	// Pages is a list of page IDs
-	Pages     []string `json:"pages"`
-	TextScale int      `json:"textScale"`
+	Pages          []string `json:"pages"`
+	Tags           []string `json:"pageTags"`
+	RedirectionMap []int    `json:"redirectionPageMap"`
+	TextScale      int      `json:"textScale"`
 
 	Transform Transform `json:"transform"`
 }

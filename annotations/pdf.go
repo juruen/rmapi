@@ -89,15 +89,17 @@ func (p *PdfGenerator) Generate() error {
 		c.SetOutlineTree(outlines)
 	}
 
-	for i, pageAnnotations := range zip.Pages {
+	for _, pageAnnotations := range zip.Pages {
 		hasContent := pageAnnotations.Data != nil
 
 		// do not add a page when there are no annotations
 		if !p.options.AllPages && !hasContent {
 			continue
 		}
+		//1 based, redirected page
+		pageNum := pageAnnotations.DocPage + 1
 
-		page, err := p.addBackgroundPage(c, i+1)
+		page, err := p.addBackgroundPage(c, pageNum)
 		if err != nil {
 			return err
 		}
@@ -220,7 +222,8 @@ func (p *PdfGenerator) initBackgroundPages(pdfArr []byte) error {
 func (p *PdfGenerator) addBackgroundPage(c *creator.Creator, pageNum int) (*pdf.PdfPage, error) {
 	var page *pdf.PdfPage
 
-	if !p.template && !p.options.AnnotationsOnly {
+	// if page == 0 then empty page
+	if !p.template && !p.options.AnnotationsOnly && pageNum > 0 {
 		tmpPage, err := p.pdfReader.GetPage(pageNum)
 		if err != nil {
 			return nil, err
