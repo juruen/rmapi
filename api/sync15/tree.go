@@ -250,13 +250,18 @@ func BuildTree(provider RemoteStorage) (*HashTree, error) {
 
 		doc := &BlobDoc{}
 		doc.Entry = *e
-		tree.Docs = append(tree.Docs, doc)
 
 		items, _ := parseIndex(f)
 		doc.Files = items
 		for _, i := range items {
 			doc.ReadMetadata(i, provider)
 		}
+		//don't include deleted items
+		if doc.Deleted {
+			continue
+		}
+
+		tree.Docs = append(tree.Docs, doc)
 	}
 
 	return &tree, nil
