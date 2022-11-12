@@ -209,7 +209,7 @@ func (z *Zip) readData(zr *zip.Reader) error {
 		}
 
 		z.Pages[idx].Data = rm.New()
-		z.Pages[idx].Data.UnmarshalBinary(bytes)
+		err = z.Pages[idx].Data.UnmarshalBinary(bytes)
 		if err != nil {
 			return err
 		}
