@@ -42,8 +42,7 @@ func main() {
 
 Offline Commands:
   version	prints the version
-  reset		removes the config file
-`)
+  reset		removes the config file `)
 
 		flag.PrintDefaults()
 	}
