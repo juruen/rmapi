@@ -17,6 +17,10 @@ type FileTreeVistor struct {
 	Visit func(node *model.Node, path []string) bool
 }
 
+func (ctx *FileTreeCtx) Clear() {
+	ctx.root.Children = nil
+}
+
 func CreateFileTreeCtx() FileTreeCtx {
 	root := model.CreateNode(model.Document{
 		ID:           "",
