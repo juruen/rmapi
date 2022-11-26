@@ -15,7 +15,7 @@ var SyncComplete string
 
 func init() {
 	docHost := "https://document-storage-production-dot-remarkable-production.appspot.com"
-	authHost := "https://webapp-production-dot-remarkable-production.appspot.com"
+	authHost := "https://webapp-prod.cloud.remarkable.engineering"
 	syncHost := "https://internal.cloud.remarkable.com"
 
 	host := os.Getenv("RMAPI_DOC")
