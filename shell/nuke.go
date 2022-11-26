@@ -1,7 +1,6 @@
 package shell
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/abiosoft/ishell"
@@ -26,8 +25,10 @@ func nukeCmd(ctx *ShellCtxt) *ishell.Cmd {
 			err = ctx.api.Nuke()
 
 			if err != nil {
-				c.Err(errors.New(fmt.Sprint("failed to delete entry", err)))
+				c.Err(fmt.Errorf("failed to delete entry: %v", err))
+				return
 			}
+			ctx.api.Filetree().Clear()
 		},
 	}
 }

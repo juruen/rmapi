@@ -34,8 +34,17 @@ func (ctx *ApiCtx) Filetree() *filetree.FileTreeCtx {
 }
 
 // Nuke removes all documents from the account
-func (ctx *ApiCtx) Nuke() error {
-	return ErrorNotImplemented
+func (ctx *ApiCtx) Nuke() (err error) {
+	err = Sync(ctx.blobStorage, ctx.hashTree, func(t *HashTree) error {
+		ctx.hashTree.Docs = nil
+		ctx.hashTree.Rehash()
+		return nil
+	})
+
+	if err != nil {
+		return
+	}
+	return ctx.SyncComplete()
 }
 
 // FetchDocument downloads a document given its ID and saves it locally into dstPath
