@@ -245,7 +245,13 @@ var ErrNotFound = errors.New("not found")
 
 func addSizeHeader(req *http.Request, maxRequestSize int64) {
 	if maxRequestSize > 0 {
+		//don't change the header case, signed headers
 		req.Header[HeaderContentLengthRange] = []string{fmt.Sprintf("0,%d", maxRequestSize)}
+	}
+}
+func addGenerationMatchHeader(req *http.Request, gen int64) {
+	if gen > 0 {
+		req.Header[HeaderGenerationIfMatch] = []string{strconv.FormatInt(gen, 10)}
 	}
 }
 
@@ -255,8 +261,7 @@ func (ctx HttpClientCtx) PutRootBlobStream(url string, gen, maxRequestSize int64
 		return
 	}
 	req.Header.Add("User-Agent", RmapiUserAGent)
-	//don't change the header case, signed headers
-	req.Header[HeaderGenerationIfMatch] = []string{strconv.FormatInt(gen, 10)}
+	addGenerationMatchHeader(req, gen)
 	addSizeHeader(req, maxRequestSize)
 
 	if log.TracingEnabled {
