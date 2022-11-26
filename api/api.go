@@ -67,11 +67,11 @@ func ParseToken(userToken string) (token *UserInfo, err error) {
 	}
 
 	if !claims.VerifyExpiresAt(time.Now().Unix(), false) {
-		return nil, errors.New("Token Expired")
+		return nil, errors.New("token Expired")
 	}
 
 	token = &UserInfo{
-		User:        claims.Auth0.UserID,
+		User:        claims.Auth0.Email,
 		SyncVersion: Version10,
 	}
 
@@ -79,11 +79,7 @@ func ParseToken(userToken string) (token *UserInfo, err error) {
 
 	for _, scope := range scopes {
 		switch scope {
-		case "sync:fox":
-			fallthrough
-		case "sync:tortoise":
-			fallthrough
-		case "sync:hare":
+		case "sync:fox", "sync:tortoise", "sync:hare":
 			token.SyncVersion = Version15
 			return
 		}
