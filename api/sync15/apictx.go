@@ -405,6 +405,10 @@ func DocumentsFileTree(tree *HashTree) (*filetree.FileTreeCtx, error) {
 
 	documents := make([]*model.Document, 0)
 	for _, d := range tree.Docs {
+		//dont show deleted (already cached)
+		if d.Deleted {
+			continue
+		}
 		doc := d.ToDocument()
 		documents = append(documents, doc)
 	}
