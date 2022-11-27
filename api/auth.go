@@ -6,11 +6,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/juruen/rmapi/config"
 	"github.com/juruen/rmapi/log"
 	"github.com/juruen/rmapi/model"
 	"github.com/juruen/rmapi/transport"
-	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -78,16 +78,12 @@ func readCode() string {
 }
 
 func newDeviceToken(http *transport.HttpClientCtx, code string) (string, error) {
-	uuid, err := uuid.NewV4()
-
-	if err != nil {
-		panic(err)
-	}
+	uuid := uuid.New()
 
 	req := model.DeviceTokenRequest{code, defaultDeviceDesc, uuid.String()}
 
 	resp := transport.BodyString{}
-	err = http.Post(transport.EmptyBearer, config.NewTokenDevice, req, &resp)
+	err := http.Post(transport.EmptyBearer, config.NewTokenDevice, req, &resp)
 
 	if err != nil {
 		log.Error.Fatal("failed to create a new device token")

@@ -1,10 +1,9 @@
 package model
 
 import (
-	"log"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 )
 
 const (
@@ -87,11 +86,7 @@ type SyncCompletedRequest struct {
 }
 
 func CreateDirDocument(parent, name string) MetadataDocument {
-	id, err := uuid.NewV4()
-
-	if err != nil {
-		log.Panic("failed to create uuid for directory")
-	}
+	id := uuid.New()
 
 	return MetadataDocument{
 		ID:             id.String(),
@@ -105,11 +100,8 @@ func CreateDirDocument(parent, name string) MetadataDocument {
 
 func CreateUploadDocumentRequest(id string, entryType string) UploadDocumentRequest {
 	if id == "" {
-		newId, err := uuid.NewV4()
+		newId := uuid.New()
 
-		if err != nil {
-			log.Panic("failed to create uuid for directory")
-		}
 		id = newId.String()
 	}
 

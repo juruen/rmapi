@@ -33,9 +33,12 @@ func getCachedTreePath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	x := path.Join(cachedir, "rmapi")
-	os.MkdirAll(x, 0700)
-	cacheFile := path.Join(x, ".tree")
+	rmapiFolder := path.Join(cachedir, "rmapi")
+	err = os.MkdirAll(rmapiFolder, 0700)
+	if err != nil {
+		return "", err
+	}
+	cacheFile := path.Join(rmapiFolder, ".tree")
 	return cacheFile, nil
 }
 

@@ -21,7 +21,7 @@ import (
 	"net/http"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 )
 
 // ClientTimeout is the timeout set for the http.Client
@@ -57,10 +57,7 @@ func NewFromStore(ts TokenStore) *Auth {
 // to register a new device. The code should be gathered at https://my.remarkable.com/generator-device.
 // The DeviceToken is then attached to the Auth instance.
 func (a *Auth) RegisterDevice(code string) error {
-	uuid, err := uuid.NewV4()
-	if err != nil {
-		return err
-	}
+	uuid := uuid.New()
 
 	body, err := json.Marshal(map[string]string{
 		"code":       code,
