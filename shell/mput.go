@@ -56,7 +56,14 @@ func mputCmd(ctx *ShellCtxt) *ishell.Cmd {
 			ctx.node = node
 
 			c.Println()
-			putFilesAndDirs(ctx, c, "./", 0, &treeFormatStr)
+			err = putFilesAndDirs(ctx, c, "./", 0, &treeFormatStr)
+			if err != nil {
+				c.Err(err)
+			}
+			err = ctx.api.SyncComplete()
+			if err != nil {
+				c.Err(fmt.Errorf("failed to complete the sync: %v", err))
+			}
 			c.Println()
 
 			// Reset.
@@ -104,7 +111,7 @@ func treeFormat(pC *ishell.Context, num int, lIndex int, lSize int, tFS *string)
 	*tFS = tFStr
 }
 
-func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth int, tFS *string) bool {
+func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth int, tFS *string) error {
 
 	if depth == 0 {
 		pC.Println(pCtx.path)
@@ -117,12 +124,11 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 
 	if err != nil {
 		pC.Err(fmt.Errorf("could not read the directory: %s", wd))
-		return false
+		return err
 	}
 
 	lSize := len(dirList)
 	for index, d := range dirList {
-
 		name := d.Name()
 
 		if !pCtx.useHiddenFiles && strings.HasPrefix(d.Name(), ".") {
@@ -139,7 +145,7 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 				// Directory does not exist. Create directory.
 				treeFormat(pC, depth, index, lSize, tFS)
 				pC.Printf("creating directory [%s]...", name)
-				doc, err := pCtx.api.CreateDir(pCtx.node.Id(), name)
+				doc, err := pCtx.api.CreateDir(pCtx.node.Id(), name, false)
 
 				if err != nil {
 					pC.Err(errors.New(fmt.Sprint("failed to create directory", err)))
@@ -167,7 +173,10 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 			pCtx.path = path
 			pCtx.node = node
 
-			putFilesAndDirs(pCtx, pC, name, depth+1, tFS)
+			err = putFilesAndDirs(pCtx, pC, name, depth+1, tFS)
+			if err != nil {
+				return err
+			}
 
 			// Reset.
 			pCtx.path = currCtxPath
@@ -204,14 +213,9 @@ func putFilesAndDirs(pCtx *ShellCtxt, pC *ishell.Context, localDir string, depth
 		}
 	}
 
-	err = pCtx.api.SyncComplete()
-	if err != nil {
-		pC.Err(fmt.Errorf("failed to complete the sync: %v", err))
-	}
-
 	if localDir != "./" {
 		os.Chdir("..")
 	}
 
-	return true
+	return nil
 }

@@ -99,7 +99,7 @@ func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
 }
 
 // CreateDir creates a remote directory with a given name under the parentId directory
-func (ctx *ApiCtx) CreateDir(parentId, name string) (*model.Document, error) {
+func (ctx *ApiCtx) CreateDir(parentId, name string, notify bool) (*model.Document, error) {
 	var err error
 
 	files := &archive.DocumentFiles{}
@@ -168,9 +168,11 @@ func (ctx *ApiCtx) CreateDir(parentId, name string) (*model.Document, error) {
 		return nil, err
 	}
 
-	err = ctx.SyncComplete()
-	if err != nil {
-		return nil, err
+	if notify {
+		err = ctx.SyncComplete()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return doc.ToDocument(), nil
@@ -438,6 +440,13 @@ func DocumentsFileTree(tree *HashTree) (*filetree.FileTreeCtx, error) {
 // SyncComplete notfies that somethings has changed (triggers tablet sync)
 func (ctx *ApiCtx) SyncComplete() error {
 	err := ctx.blobStorage.SyncComplete(ctx.hashTree.Generation)
+
+	//sync can be called once per generation, ignore the error if nothing was changed
+	if err == transport.ErrConflict {
+		log.Trace.Printf("ignoring error: %v", err)
+		return nil
+	}
+
 	if err != nil {
 		log.Error.Printf("cannot send sync %v", err)
 	}

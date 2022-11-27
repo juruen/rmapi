@@ -48,7 +48,7 @@ func mkdirCmd(ctx *ShellCtxt) *ishell.Cmd {
 				parentId = ""
 			}
 
-			document, err := ctx.api.CreateDir(parentId, newDir)
+			document, err := ctx.api.CreateDir(parentId, newDir, true)
 
 			if err != nil {
 				c.Err(errors.New(fmt.Sprint("failed to create directory", err)))
