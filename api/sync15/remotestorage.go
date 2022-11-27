@@ -5,7 +5,6 @@ import "io"
 type RemoteStorage interface {
 	GetRootIndex() (hash string, generation int64, err error)
 	GetReader(hash string) (io.ReadCloser, error)
-	Concurrent() int
 }
 
 type RemoteStorageWriter interface {

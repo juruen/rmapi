@@ -16,18 +16,14 @@ type BlobStorage struct {
 	concurrency int
 }
 
-func NewBlobStorage(http *transport.HttpClientCtx, concurrency int) *BlobStorage {
+func NewBlobStorage(http *transport.HttpClientCtx) *BlobStorage {
 	return &BlobStorage{
-		http:        http,
-		concurrency: concurrency,
+		http: http,
 	}
 }
 
 const ROOT_NAME = "root"
 
-func (b *BlobStorage) Concurrent() int {
-	return b.concurrency
-}
 func (b *BlobStorage) PutRootUrl(hash string, gen int64) (string, int64, error) {
 	log.Trace.Println("fetching  ROOT url for: " + hash)
 	req := model.BlobRootStorageRequest{

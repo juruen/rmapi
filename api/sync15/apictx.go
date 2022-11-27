@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -18,14 +19,41 @@ import (
 	"github.com/juruen/rmapi/util"
 )
 
-var ErrorNotImplemented = errors.New("not implemented")
-
 // An ApiCtx allows you interact with the remote reMarkable API
 type ApiCtx struct {
 	Http        *transport.HttpClientCtx
 	ft          *filetree.FileTreeCtx
 	blobStorage *BlobStorage
 	hashTree    *HashTree
+}
+
+// max number of concurrent requests
+var concurrent = 20
+
+func init() {
+	c := os.Getenv("RMAPI_CONCURRENT")
+	if u, err := strconv.Atoi(c); err == nil {
+		concurrent = u
+	}
+}
+
+func CreateCtx(http *transport.HttpClientCtx) (*ApiCtx, error) {
+	apiStorage := NewBlobStorage(http)
+	cacheTree, err := loadTree()
+	if err != nil {
+		fmt.Print(err)
+		return nil, err
+	}
+	err = cacheTree.Mirror(apiStorage, concurrent)
+	if err != nil {
+		return nil, err
+	}
+	saveTree(cacheTree)
+	tree, err := DocumentsFileTree(cacheTree)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch document tree %v", err)
+	}
+	return &ApiCtx{http, tree, apiStorage, cacheTree}, nil
 }
 
 func (ctx *ApiCtx) Filetree() *filetree.FileTreeCtx {
@@ -216,7 +244,7 @@ func Sync(b *BlobStorage, tree *HashTree, operation func(t *HashTree) error) err
 
 		log.Info.Println("wrong generation, re-reading remote tree")
 		//resync and try again
-		err = tree.Mirror(b)
+		err = tree.Mirror(b, concurrent)
 		if err != nil {
 			return err
 		}
@@ -386,25 +414,6 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string, notify 
 	}
 
 	return doc.ToDocument(), nil
-}
-
-func CreateCtx(http *transport.HttpClientCtx) (*ApiCtx, error) {
-	apiStorage := NewBlobStorage(http, 10)
-	cacheTree, err := loadTree()
-	if err != nil {
-		fmt.Print(err)
-		return nil, err
-	}
-	err = cacheTree.Mirror(apiStorage)
-	if err != nil {
-		return nil, err
-	}
-	saveTree(cacheTree)
-	tree, err := DocumentsFileTree(cacheTree)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch document tree %v", err)
-	}
-	return &ApiCtx{http, tree, apiStorage, cacheTree}, nil
 }
 
 // DocumentsFileTree reads your remote documents and builds a file tree

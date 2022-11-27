@@ -2,6 +2,7 @@ package sync15
 
 import (
 	"bufio"
+	"context"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -164,7 +165,7 @@ func (t *HashTree) Rehash() error {
 }
 
 // / Mirror makes the tree look like the storage
-func (t *HashTree) Mirror(r RemoteStorage) error {
+func (t *HashTree) Mirror(r RemoteStorage, maxconcurrent int) error {
 	rootHash, gen, err := r.GetRootIndex()
 	if err != nil {
 		return err
@@ -199,8 +200,8 @@ func (t *HashTree) Mirror(r RemoteStorage) error {
 	for _, e := range entries {
 		new[e.DocumentID] = e
 	}
-	var wg errgroup.Group
-	wg.SetLimit(r.Concurrent())
+	wg, ctx := errgroup.WithContext(context.TODO())
+	wg.SetLimit(maxconcurrent)
 
 	//current documents
 	for _, doc := range t.Docs {
@@ -209,12 +210,17 @@ func (t *HashTree) Mirror(r RemoteStorage) error {
 			current[doc.DocumentID] = doc
 
 			if entry.Hash != doc.Hash {
-				log.Info.Println("doc updated: " + doc.DocumentID)
+				log.Info.Println("doc updated: ", doc.DocumentID)
 				e := entry
 				wg.Go(func() error {
 					return doc.Mirror(e, r)
 				})
 			}
+		}
+		select {
+		case <-ctx.Done():
+			goto EXIT
+		default:
 		}
 	}
 
@@ -222,14 +228,20 @@ func (t *HashTree) Mirror(r RemoteStorage) error {
 	for k, newEntry := range new {
 		if _, ok := current[k]; !ok {
 			doc := &BlobDoc{}
-			log.Trace.Println("doc new: " + k)
+			log.Trace.Println("doc new: ", k)
 			head = append(head, doc)
 			e := newEntry
 			wg.Go(func() error {
 				return doc.Mirror(e, r)
 			})
 		}
+		select {
+		case <-ctx.Done():
+			goto EXIT
+		default:
+		}
 	}
+EXIT:
 	err = wg.Wait()
 	if err != nil {
 		return err
