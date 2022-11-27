@@ -2,36 +2,70 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 
 	"github.com/juruen/rmapi/api"
+	"github.com/juruen/rmapi/config"
 	"github.com/juruen/rmapi/log"
 	"github.com/juruen/rmapi/shell"
+	"github.com/juruen/rmapi/version"
 )
 
 const AUTH_RETRIES = 3
 
-func run_shell(ctx api.ApiCtx, args []string) {
-	err := shell.RunShell(ctx, args)
-
-	if err != nil {
-		log.Error.Println("Error: ", err)
-
-		os.Exit(1)
+func parseOfflineCommands(cmd []string) bool {
+	if len(cmd) == 0 {
+		return false
 	}
+
+	switch cmd[0] {
+	case "reset":
+		configFile := config.ConfigPath()
+		err := os.Remove(configFile)
+		if err != nil {
+			log.Error.Fatalln(err)
+		}
+		return true
+	case "version":
+		fmt.Println(version.Version)
+		return true
+	}
+	return false
 }
 
 func main() {
-	// log.InitLog()
-	ni := flag.Bool("ni", false, "not interactive")
+	ni := flag.Bool("ni", false, "not interactive (prevents asking for code)")
+	flag.Usage = func() {
+		fmt.Println(`
+  help		detailed commands, but the user needs to be logged in
+
+Offline Commands:
+  version	prints the version
+  reset		removes the config file `)
+
+		flag.PrintDefaults()
+	}
 	flag.Parse()
-	rstArgs := flag.Args()
+	otherFlags := flag.Args()
+	if parseOfflineCommands(otherFlags) {
+		return
+	}
 
 	var ctx api.ApiCtx
 	var err error
-	for i := 0; i < AUTH_RETRIES; i++ {
-		ctx, err = api.CreateApiCtx(api.AuthHttpCtx(i > 0, *ni))
+	var userInfo *api.UserInfo
 
+	for i := 0; i < AUTH_RETRIES; i++ {
+		authCtx := api.AuthHttpCtx(i > 0, *ni)
+
+		userInfo, err = api.ParseToken(authCtx.Tokens.UserToken)
+		if err != nil {
+			log.Trace.Println(err)
+			continue
+		}
+
+		ctx, err = api.CreateApiCtx(authCtx, userInfo.SyncVersion)
 		if err != nil {
 			log.Trace.Println(err)
 		} else {
@@ -43,5 +77,11 @@ func main() {
 		log.Error.Fatal("failed to build documents tree, last error: ", err)
 	}
 
-	run_shell(ctx, rstArgs)
+	err = shell.RunShell(ctx, userInfo, otherFlags)
+
+	if err != nil {
+		log.Error.Println("Error: ", err)
+
+		os.Exit(1)
+	}
 }
