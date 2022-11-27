@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -54,7 +53,7 @@ func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
 		return err
 	}
 
-	tmp, err := ioutil.TempFile("", "rmapizip")
+	tmp, err := os.CreateTemp("", "rmapizip")
 
 	if err != nil {
 		log.Error.Println("failed to create tmpfile for zip dir", err)
@@ -104,7 +103,7 @@ func (ctx *ApiCtx) CreateDir(parentId, name string) (*model.Document, error) {
 
 	files := &archive.DocumentFiles{}
 
-	tmpDir, err := ioutil.TempDir("", "rmupload")
+	tmpDir, err := os.MkdirTemp("", "rmupload")
 	if err != nil {
 		return nil, err
 	}
@@ -256,10 +255,10 @@ func (ctx *ApiCtx) MoveEntry(src, dstDir *model.Node, name string) (*model.Node,
 		if err != nil {
 			return err
 		}
-		doc.MetadataFile.Version += 1
-		doc.MetadataFile.DocName = name
-		doc.MetadataFile.Parent = dstDir.Id()
-		doc.MetadataFile.MetadataModified = true
+		doc.Metadata.Version += 1
+		doc.Metadata.DocName = name
+		doc.Metadata.Parent = dstDir.Id()
+		doc.Metadata.MetadataModified = true
 
 		hashStr, reader, err := doc.MetadataHashAndReader()
 		if err != nil {
@@ -304,7 +303,7 @@ func (ctx *ApiCtx) MoveEntry(src, dstDir *model.Node, name string) (*model.Node,
 		return nil, err
 	}
 
-	return &model.Node{d.ToDocument(), src.Children, dstDir}, nil
+	return &model.Node{Document: d.ToDocument(), Children: src.Children, Parent: dstDir}, nil
 }
 
 // UploadDocument uploads a local document given by sourceDocPath under the parentId directory
@@ -322,7 +321,7 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string, notify 
 
 	var err error
 
-	tmpDir, err := ioutil.TempDir("", "rmupload")
+	tmpDir, err := os.MkdirTemp("", "rmupload")
 	if err != nil {
 		return nil, err
 	}
@@ -390,7 +389,7 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string, notify 
 }
 
 func CreateCtx(http *transport.HttpClientCtx) (*ApiCtx, error) {
-	apiStorage := &BlobStorage{http}
+	apiStorage := NewBlobStorage(http, 10)
 	cacheTree, err := loadTree()
 	if err != nil {
 		fmt.Print(err)
@@ -415,7 +414,7 @@ func DocumentsFileTree(tree *HashTree) (*filetree.FileTreeCtx, error) {
 	documents := make([]*model.Document, 0)
 	for _, d := range tree.Docs {
 		//dont show deleted (already cached)
-		if d.Deleted {
+		if d.Metadata.Deleted {
 			continue
 		}
 		doc := d.ToDocument()
