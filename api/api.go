@@ -24,6 +24,7 @@ type ApiCtx interface {
 	DeleteEntry(node *model.Node) error
 	SyncComplete() error
 	Nuke() error
+	Refresh() error
 }
 
 type UserToken struct {

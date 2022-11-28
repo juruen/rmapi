@@ -49,15 +49,21 @@ func CreateCtx(http *transport.HttpClientCtx) (*ApiCtx, error) {
 		return nil, err
 	}
 	saveTree(cacheTree)
-	tree, err := DocumentsFileTree(cacheTree)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch document tree %v", err)
-	}
+	tree := DocumentsFileTree(cacheTree)
 	return &ApiCtx{http, tree, apiStorage, cacheTree}, nil
 }
 
 func (ctx *ApiCtx) Filetree() *filetree.FileTreeCtx {
 	return ctx.ft
+}
+
+func (ctx *ApiCtx) Refresh() error {
+	err := ctx.hashTree.Mirror(ctx.blobStorage, concurrent)
+	if err != nil {
+		return err
+	}
+	ctx.ft = DocumentsFileTree(ctx.hashTree)
+	return nil
 }
 
 // Nuke removes all documents from the account
@@ -248,6 +254,7 @@ func Sync(b *BlobStorage, tree *HashTree, operation func(t *HashTree) error) err
 		if err != nil {
 			return err
 		}
+		log.Warning.Println("remote tree has changed, refresh the file tree")
 	}
 	return saveTree(tree)
 }
@@ -418,7 +425,7 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string, notify 
 
 // DocumentsFileTree reads your remote documents and builds a file tree
 // structure to represent them
-func DocumentsFileTree(tree *HashTree) (*filetree.FileTreeCtx, error) {
+func DocumentsFileTree(tree *HashTree) *filetree.FileTreeCtx {
 
 	documents := make([]*model.Document, 0)
 	for _, d := range tree.Docs {
@@ -440,7 +447,7 @@ func DocumentsFileTree(tree *HashTree) (*filetree.FileTreeCtx, error) {
 		log.Trace.Println(d.Name(), d.IsFile())
 	}
 
-	return &fileTree, nil
+	return &fileTree
 }
 
 // SyncComplete notfies that somethings has changed (triggers tablet sync)
