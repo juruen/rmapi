@@ -23,7 +23,8 @@ type BodyString struct {
 	Content string
 }
 
-var UnAuthorizedError = errors.New("401 Unauthorized Error")
+var ErrUnauthorized = errors.New("401 Unauthorized")
+var ErrConflict = errors.New("409 Conflict")
 
 var RmapiUserAGent = "rmapi"
 
@@ -198,9 +199,11 @@ func (ctx HttpClientCtx) Request(authType AuthType, verb, url string, body io.Re
 	case http.StatusOK:
 		return response, nil
 	case http.StatusUnauthorized:
-		return response, UnAuthorizedError
+		return response, ErrUnauthorized
+	case http.StatusConflict:
+		return response, ErrConflict
 	default:
-		return response, errors.New(fmt.Sprintf("request failed with status %d", response.StatusCode))
+		return response, fmt.Errorf("request failed with status %d", response.StatusCode)
 	}
 }
 

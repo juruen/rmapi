@@ -43,7 +43,7 @@ func AuthHttpCtx(reAuth, nonInteractive bool) *transport.HttpClientCtx {
 	if authTokens.UserToken == "" || reAuth {
 		userToken, err := newUserToken(&httpClientCtx)
 
-		if err == transport.UnAuthorizedError {
+		if err == transport.ErrUnauthorized {
 			log.Trace.Println("Invalid deviceToken, resetting")
 			authTokens.DeviceToken = ""
 		} else if err != nil {

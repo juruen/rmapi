@@ -105,7 +105,7 @@ func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
 }
 
 // CreateDir creates a remote directory with a given name under the parentId directory
-func (ctx *ApiCtx) CreateDir(parentId, name string) (*model.Document, error) {
+func (ctx *ApiCtx) CreateDir(parentId, name string, notify bool) (*model.Document, error) {
 	uploadRsp, err := ctx.uploadRequest("", model.DirectoryType)
 
 	if err != nil {
