@@ -2,6 +2,7 @@ package sync15
 
 import (
 	"bufio"
+	"context"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"strconv"
 
 	"github.com/juruen/rmapi/log"
+	"golang.org/x/sync/errgroup"
 )
 
 const SchemaVersion = "3"
@@ -112,9 +114,10 @@ func (t *HashTree) IndexReader() (io.ReadCloser, error) {
 }
 
 type HashTree struct {
-	Hash       string
-	Generation int64
-	Docs       []*BlobDoc
+	Hash         string
+	Generation   int64
+	Docs         []*BlobDoc
+	CacheVersion int
 }
 
 func (t *HashTree) FindDoc(id string) (*BlobDoc, error) {
@@ -162,7 +165,7 @@ func (t *HashTree) Rehash() error {
 }
 
 // / Mirror makes the tree look like the storage
-func (t *HashTree) Mirror(r RemoteStorage) error {
+func (t *HashTree) Mirror(r RemoteStorage, maxconcurrent int) error {
 	rootHash, gen, err := r.GetRootIndex()
 	if err != nil {
 		return err
@@ -179,13 +182,13 @@ func (t *HashTree) Mirror(r RemoteStorage) error {
 	}
 	log.Info.Printf("remote root hash different")
 
-	rdr, err := r.GetReader(rootHash)
+	rootIndexReader, err := r.GetReader(rootHash)
 	if err != nil {
 		return err
 	}
-	defer rdr.Close()
+	defer rootIndexReader.Close()
 
-	entries, err := parseIndex(rdr)
+	entries, err := parseIndex(rootIndexReader)
 	if err != nil {
 		return err
 	}
@@ -193,19 +196,31 @@ func (t *HashTree) Mirror(r RemoteStorage) error {
 	head := make([]*BlobDoc, 0)
 	current := make(map[string]*BlobDoc)
 	new := make(map[string]*Entry)
+
 	for _, e := range entries {
 		new[e.DocumentID] = e
 	}
+	wg, ctx := errgroup.WithContext(context.TODO())
+	wg.SetLimit(maxconcurrent)
+
 	//current documents
 	for _, doc := range t.Docs {
-		if entry, ok := new[doc.Entry.DocumentID]; ok {
-			//hash different update
-			if entry.Hash != doc.Hash {
-				log.Info.Println("doc updated: " + doc.DocumentID)
-				doc.Mirror(entry, r)
-			}
+		if entry, ok := new[doc.DocumentID]; ok {
 			head = append(head, doc)
 			current[doc.DocumentID] = doc
+
+			if entry.Hash != doc.Hash {
+				log.Info.Println("doc updated: ", doc.DocumentID)
+				e := entry
+				wg.Go(func() error {
+					return doc.Mirror(e, r)
+				})
+			}
+		}
+		select {
+		case <-ctx.Done():
+			goto EXIT
+		default:
 		}
 	}
 
@@ -213,10 +228,23 @@ func (t *HashTree) Mirror(r RemoteStorage) error {
 	for k, newEntry := range new {
 		if _, ok := current[k]; !ok {
 			doc := &BlobDoc{}
-			log.Trace.Println("doc new: " + k)
-			doc.Mirror(newEntry, r)
+			log.Trace.Println("doc new: ", k)
 			head = append(head, doc)
+			e := newEntry
+			wg.Go(func() error {
+				return doc.Mirror(e, r)
+			})
 		}
+		select {
+		case <-ctx.Done():
+			goto EXIT
+		default:
+		}
+	}
+EXIT:
+	err = wg.Wait()
+	if err != nil {
+		return err
 	}
 	sort.Slice(head, func(i, j int) bool { return head[i].DocumentID < head[j].DocumentID })
 	t.Docs = head
@@ -257,7 +285,7 @@ func BuildTree(provider RemoteStorage) (*HashTree, error) {
 			doc.ReadMetadata(i, provider)
 		}
 		//don't include deleted items
-		if doc.Deleted {
+		if doc.Metadata.Deleted {
 			continue
 		}
 

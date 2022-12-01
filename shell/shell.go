@@ -69,6 +69,7 @@ func RunShell(apiCtx api.ApiCtx, userInfo *api.UserInfo, args []string) error {
 	shell.AddCmd(findCmd(ctx))
 	shell.AddCmd(nukeCmd(ctx))
 	shell.AddCmd(accountCmd(ctx))
+	shell.AddCmd(refreshCmd(ctx))
 
 	setCustomCompleter(shell)
 

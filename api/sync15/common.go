@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path"
 	"sort"
@@ -42,14 +41,16 @@ func getCachedTreePath() (string, error) {
 	return cacheFile, nil
 }
 
+const cacheVersion = 2
+
 func loadTree() (*HashTree, error) {
-	tree := &HashTree{}
 	cacheFile, err := getCachedTreePath()
 	if err != nil {
 		return nil, err
 	}
+	tree := &HashTree{}
 	if _, err := os.Stat(cacheFile); err == nil {
-		b, err := ioutil.ReadFile(cacheFile)
+		b, err := os.ReadFile(cacheFile)
 		if err != nil {
 			return nil, err
 		}
@@ -58,8 +59,10 @@ func loadTree() (*HashTree, error) {
 			log.Error.Println("cache corrupt")
 			return tree, nil
 		}
-	} else {
-		os.Create(cacheFile)
+		if tree.CacheVersion != cacheVersion {
+			log.Info.Println("wrong cache file version, resync")
+			return &HashTree{}, nil
+		}
 	}
 	log.Info.Println("cache loaded: ", cacheFile)
 
@@ -72,10 +75,11 @@ func saveTree(tree *HashTree) error {
 	if err != nil {
 		return err
 	}
+	tree.CacheVersion = cacheVersion
 	b, err := json.MarshalIndent(tree, "", "")
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(cacheFile, b, 0644)
+	err = os.WriteFile(cacheFile, b, 0644)
 	return err
 }

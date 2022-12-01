@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,8 +19,6 @@ import (
 	"github.com/juruen/rmapi/util"
 )
 
-var ErrorNotImplemented = errors.New("not implemented")
-
 // An ApiCtx allows you interact with the remote reMarkable API
 type ApiCtx struct {
 	Http        *transport.HttpClientCtx
@@ -29,8 +27,43 @@ type ApiCtx struct {
 	hashTree    *HashTree
 }
 
+// max number of concurrent requests
+var concurrent = 20
+
+func init() {
+	c := os.Getenv("RMAPI_CONCURRENT")
+	if u, err := strconv.Atoi(c); err == nil {
+		concurrent = u
+	}
+}
+
+func CreateCtx(http *transport.HttpClientCtx) (*ApiCtx, error) {
+	apiStorage := NewBlobStorage(http)
+	cacheTree, err := loadTree()
+	if err != nil {
+		fmt.Print(err)
+		return nil, err
+	}
+	err = cacheTree.Mirror(apiStorage, concurrent)
+	if err != nil {
+		return nil, err
+	}
+	saveTree(cacheTree)
+	tree := DocumentsFileTree(cacheTree)
+	return &ApiCtx{http, tree, apiStorage, cacheTree}, nil
+}
+
 func (ctx *ApiCtx) Filetree() *filetree.FileTreeCtx {
 	return ctx.ft
+}
+
+func (ctx *ApiCtx) Refresh() error {
+	err := ctx.hashTree.Mirror(ctx.blobStorage, concurrent)
+	if err != nil {
+		return err
+	}
+	ctx.ft = DocumentsFileTree(ctx.hashTree)
+	return nil
 }
 
 // Nuke removes all documents from the account
@@ -54,7 +87,7 @@ func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
 		return err
 	}
 
-	tmp, err := ioutil.TempFile("", "rmapizip")
+	tmp, err := os.CreateTemp("", "rmapizip")
 
 	if err != nil {
 		log.Error.Println("failed to create tmpfile for zip dir", err)
@@ -104,7 +137,7 @@ func (ctx *ApiCtx) CreateDir(parentId, name string, notify bool) (*model.Documen
 
 	files := &archive.DocumentFiles{}
 
-	tmpDir, err := ioutil.TempDir("", "rmupload")
+	tmpDir, err := os.MkdirTemp("", "rmupload")
 	if err != nil {
 		return nil, err
 	}
@@ -219,10 +252,11 @@ func Sync(b *BlobStorage, tree *HashTree, operation func(t *HashTree) error) err
 
 		log.Info.Println("wrong generation, re-reading remote tree")
 		//resync and try again
-		err = tree.Mirror(b)
+		err = tree.Mirror(b, concurrent)
 		if err != nil {
 			return err
 		}
+		log.Warning.Println("remote tree has changed, refresh the file tree")
 	}
 	return saveTree(tree)
 }
@@ -258,10 +292,10 @@ func (ctx *ApiCtx) MoveEntry(src, dstDir *model.Node, name string) (*model.Node,
 		if err != nil {
 			return err
 		}
-		doc.MetadataFile.Version += 1
-		doc.MetadataFile.DocName = name
-		doc.MetadataFile.Parent = dstDir.Id()
-		doc.MetadataFile.MetadataModified = true
+		doc.Metadata.Version += 1
+		doc.Metadata.DocName = name
+		doc.Metadata.Parent = dstDir.Id()
+		doc.Metadata.MetadataModified = true
 
 		hashStr, reader, err := doc.MetadataHashAndReader()
 		if err != nil {
@@ -306,7 +340,7 @@ func (ctx *ApiCtx) MoveEntry(src, dstDir *model.Node, name string) (*model.Node,
 		return nil, err
 	}
 
-	return &model.Node{d.ToDocument(), src.Children, dstDir}, nil
+	return &model.Node{Document: d.ToDocument(), Children: src.Children, Parent: dstDir}, nil
 }
 
 // UploadDocument uploads a local document given by sourceDocPath under the parentId directory
@@ -324,7 +358,7 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string, notify 
 
 	var err error
 
-	tmpDir, err := ioutil.TempDir("", "rmupload")
+	tmpDir, err := os.MkdirTemp("", "rmupload")
 	if err != nil {
 		return nil, err
 	}
@@ -391,33 +425,14 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string, notify 
 	return doc.ToDocument(), nil
 }
 
-func CreateCtx(http *transport.HttpClientCtx) (*ApiCtx, error) {
-	apiStorage := &BlobStorage{http}
-	cacheTree, err := loadTree()
-	if err != nil {
-		fmt.Print(err)
-		return nil, err
-	}
-	err = cacheTree.Mirror(apiStorage)
-	if err != nil {
-		return nil, err
-	}
-	saveTree(cacheTree)
-	tree, err := DocumentsFileTree(cacheTree)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch document tree %v", err)
-	}
-	return &ApiCtx{http, tree, apiStorage, cacheTree}, nil
-}
-
 // DocumentsFileTree reads your remote documents and builds a file tree
 // structure to represent them
-func DocumentsFileTree(tree *HashTree) (*filetree.FileTreeCtx, error) {
+func DocumentsFileTree(tree *HashTree) *filetree.FileTreeCtx {
 
 	documents := make([]*model.Document, 0)
 	for _, d := range tree.Docs {
 		//dont show deleted (already cached)
-		if d.Deleted {
+		if d.Metadata.Deleted {
 			continue
 		}
 		doc := d.ToDocument()
@@ -434,7 +449,7 @@ func DocumentsFileTree(tree *HashTree) (*filetree.FileTreeCtx, error) {
 		log.Trace.Println(d.Name(), d.IsFile())
 	}
 
-	return &fileTree, nil
+	return &fileTree
 }
 
 // SyncComplete notfies that somethings has changed (triggers tablet sync)

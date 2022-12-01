@@ -1,7 +1,7 @@
 package sync15
 
 import (
-	"io/ioutil"
+	"io"
 	"strings"
 	"testing"
 )
@@ -58,7 +58,7 @@ func TestCreateDocIndex(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	index, err := ioutil.ReadAll(reader)
+	index, err := io.ReadAll(reader)
 	if err != nil {
 		t.Error(err)
 		return
@@ -89,7 +89,7 @@ func TestCreateRootIndex(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	index, err := ioutil.ReadAll(reader)
+	index, err := io.ReadAll(reader)
 	if err != nil {
 		t.Error(err)
 		return

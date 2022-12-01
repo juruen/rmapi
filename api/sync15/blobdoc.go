@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"io/ioutil"
 	"sort"
 	"strconv"
 	"strings"
@@ -22,12 +21,12 @@ import (
 type BlobDoc struct {
 	Files []*Entry
 	Entry
-	archive.MetadataFile
+	Metadata archive.MetadataFile
 }
 
 func NewBlobDoc(name, documentId, colType, parentId string) *BlobDoc {
 	return &BlobDoc{
-		MetadataFile: archive.MetadataFile{
+		Metadata: archive.MetadataFile{
 			DocName:        name,
 			CollectionType: colType,
 			LastModified:   archive.UnixTimestamp(),
@@ -52,7 +51,7 @@ func (d *BlobDoc) Rehash() error {
 }
 
 func (d *BlobDoc) MetadataHashAndReader() (hash string, reader io.Reader, err error) {
-	jsn, err := json.Marshal(d.MetadataFile)
+	jsn, err := json.Marshal(d.Metadata)
 	if err != nil {
 		return
 	}
@@ -121,7 +120,7 @@ func (d *BlobDoc) ReadMetadata(fileEntry *Entry, r RemoteStorage) error {
 			return err
 		}
 		defer meta.Close()
-		content, err := ioutil.ReadAll(meta)
+		content, err := io.ReadAll(meta)
 		if err != nil {
 			return err
 		}
@@ -130,7 +129,7 @@ func (d *BlobDoc) ReadMetadata(fileEntry *Entry, r RemoteStorage) error {
 			log.Error.Printf("cannot read metadata %s %v", fileEntry.DocumentID, err)
 		}
 		log.Trace.Println("name from metadata: ", metadata.DocName)
-		d.MetadataFile = metadata
+		d.Metadata = metadata
 	}
 
 	return nil
@@ -208,10 +207,10 @@ func (d *BlobDoc) Mirror(e *Entry, r RemoteStorage) error {
 }
 func (d *BlobDoc) ToDocument() *model.Document {
 	var lastModified string
-	unixTime, err := strconv.ParseInt(d.MetadataFile.LastModified, 10, 64)
+	unixTime, err := strconv.ParseInt(d.Metadata.LastModified, 10, 64)
 	if err == nil {
 		//HACK: convert wrong nano timestamps to millis
-		if len(d.MetadataFile.LastModified) > 18 {
+		if len(d.Metadata.LastModified) > 18 {
 			unixTime /= 1000000
 		}
 
@@ -220,11 +219,11 @@ func (d *BlobDoc) ToDocument() *model.Document {
 	}
 	return &model.Document{
 		ID:             d.DocumentID,
-		VissibleName:   d.MetadataFile.DocName,
-		Version:        d.MetadataFile.Version,
-		Parent:         d.MetadataFile.Parent,
-		Type:           d.MetadataFile.CollectionType,
-		CurrentPage:    d.MetadataFile.LastOpenedPage,
+		VissibleName:   d.Metadata.DocName,
+		Version:        d.Metadata.Version,
+		Parent:         d.Metadata.Parent,
+		Type:           d.Metadata.CollectionType,
+		CurrentPage:    d.Metadata.LastOpenedPage,
 		ModifiedClient: lastModified,
 	}
 }

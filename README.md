@@ -209,3 +209,4 @@ rMAPI will set the exit code to `0` if the command succeedes, or `1` if it fails
 - `RMAPI_AUTH`: override the default authorization url
 - `RMAPI_DOC`: override the default document storage url
 - `RMAPI_HOST`: override all urls 
+- `RMAPI_CONCURRENT`: sync15: maximum number of goroutines/http requests to use (default: 20)

@@ -3,7 +3,6 @@ package sync15
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/juruen/rmapi/config"
@@ -13,7 +12,14 @@ import (
 )
 
 type BlobStorage struct {
-	http *transport.HttpClientCtx
+	http        *transport.HttpClientCtx
+	concurrency int
+}
+
+func NewBlobStorage(http *transport.HttpClientCtx) *BlobStorage {
+	return &BlobStorage{
+		http: http,
+	}
 }
 
 const ROOT_NAME = "root"
@@ -111,7 +117,7 @@ func (b *BlobStorage) GetRootIndex() (string, int64, error) {
 	if err != nil {
 		return "", 0, err
 	}
-	content, err := ioutil.ReadAll(blob)
+	content, err := io.ReadAll(blob)
 	if err != nil {
 		return "", 0, err
 	}

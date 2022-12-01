@@ -26,6 +26,10 @@ func (ctx *ApiCtx) Filetree() *filetree.FileTreeCtx {
 	return ctx.ft
 }
 
+func (ctx *ApiCtx) Refresh() (err error) {
+	return errors.New("not implemented")
+}
+
 // Nuke removes all documents from the account
 func (ctx *ApiCtx) Nuke() error {
 	documents := make([]model.Document, 0)
