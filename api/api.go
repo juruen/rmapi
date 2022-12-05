@@ -21,7 +21,7 @@ type ApiCtx interface {
 	CreateDir(parentId, name string, notify bool) (*model.Document, error)
 	UploadDocument(parentId string, sourceDocPath string, notify bool) (*model.Document, error)
 	MoveEntry(src, dstDir *model.Node, name string) (*model.Node, error)
-	DeleteEntry(node *model.Node) error
+	DeleteEntry(node *model.Node, recursive, notify bool) error
 	SyncComplete() error
 	Nuke() error
 	Refresh() error

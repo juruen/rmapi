@@ -2,6 +2,9 @@ package model
 
 import (
 	"errors"
+	"fmt"
+	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -9,6 +12,15 @@ type Node struct {
 	Document *Document
 	Children map[string]*Node
 	Parent   *Node
+}
+
+func (node *Node) Nodes() []*Node {
+	result := make([]*Node, 0)
+	for _, n := range node.Children {
+		result = append(result, n)
+	}
+	return result
+
 }
 
 func CreateNode(document Document) Node {
@@ -53,5 +65,28 @@ func (node *Node) FindByName(name string) (*Node, error) {
 			return n, nil
 		}
 	}
-	return nil, errors.New("entry doesn't exist")
+	return nil, fmt.Errorf("entry '%s' doesnt exist", name)
+}
+
+func (node *Node) FindByPattern(pattern string) ([]*Node, error) {
+	result := make([]*Node, 0)
+	if pattern == "" {
+		return nil, errors.New("empty pattern")
+	}
+
+	lowerCasePattern := strings.ToLower(pattern)
+
+	for _, n := range node.Children {
+		matched, err := filepath.Match(lowerCasePattern, strings.ToLower(n.Name()))
+		if err != nil {
+			return nil, err
+		}
+		if matched {
+			result = append(result, n)
+		}
+	}
+	if len(result) == 0 {
+		return nil, fmt.Errorf("no matches for '%s'", pattern)
+	}
+	return result, nil
 }

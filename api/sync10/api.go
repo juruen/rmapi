@@ -159,7 +159,7 @@ func (ctx *ApiCtx) CreateDir(parentId, name string, notify bool) (*model.Documen
 }
 
 // DeleteEntry removes an entry: either an empty directory or a file
-func (ctx *ApiCtx) DeleteEntry(node *model.Node) error {
+func (ctx *ApiCtx) DeleteEntry(node *model.Node, recursive, notify bool) error {
 	if node.IsDirectory() && len(node.Children) > 0 {
 		return errors.New("directory is not empty")
 	}
@@ -193,7 +193,7 @@ func (ctx *ApiCtx) MoveEntry(src, dstDir *model.Node, name string) (*model.Node,
 	err := ctx.Http.Put(transport.UserBearer, config.UpdateStatus, util.InSlice(metaDoc), nil)
 
 	if err != nil {
-		log.Error.Println("failed to move entry", err)
+		log.Error.Println("failed to move entry ", err)
 		return nil, err
 	}
 

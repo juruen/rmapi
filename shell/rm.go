@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/abiosoft/ishell"
+	flag "github.com/ogier/pflag"
 )
 
 func rmCmd(ctx *ShellCtxt) *ishell.Cmd {
@@ -13,25 +14,44 @@ func rmCmd(ctx *ShellCtxt) *ishell.Cmd {
 		Help:      "delete entry",
 		Completer: createEntryCompleter(ctx),
 		Func: func(c *ishell.Context) {
-			for _, target := range c.Args {
-				node, err := ctx.api.Filetree().NodeByPath(target, ctx.node)
-
-				if err != nil {
-					c.Err(errors.New("entry doesn't exist"))
-					return
+			flagSet := flag.NewFlagSet("rm", flag.ContinueOnError)
+			recursive := flagSet.BoolP("recursive", "r", false, "remove non empty folders")
+			if err := flagSet.Parse(c.Args); err != nil {
+				if err != flag.ErrHelp {
+					c.Err(err)
 				}
-
-				err = ctx.api.DeleteEntry(node)
-
-				if err != nil {
-					c.Err(errors.New(fmt.Sprint("failed to delete entry", err)))
-					return
-				}
-
-				ctx.api.Filetree().DeleteNode(node)
+				return
+			}
+			argRest := flagSet.Args()
+			if len(argRest) < 1 {
+				c.Err(errors.New("missing param"))
+				return
 			}
 
-			c.Println("entry(s) deleted")
+			for _, target := range argRest {
+				nodes, err := ctx.api.Filetree().NodesByPath(target, ctx.node, false)
+
+				if err != nil {
+					c.Err(err)
+					return
+				}
+				for _, node := range nodes {
+					c.Println("deleting: ", node.Name())
+					err = ctx.api.DeleteEntry(node, *recursive, false)
+
+					if err != nil {
+						c.Err(fmt.Errorf("failed to delete entry, %v", err))
+						return
+					}
+
+					ctx.api.Filetree().DeleteNode(node)
+				}
+			}
+
+			err := ctx.api.SyncComplete()
+			if err != nil {
+				c.Err(err)
+			}
 		},
 	}
 }
