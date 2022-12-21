@@ -99,12 +99,12 @@ func mvCmd(ctx *ShellCtxt) *ishell.Cmd {
 }
 
 // isSubdir check for moves e.g. a in a/sub1 which result in data loss
-func isSubdir(src *model.Node, dst *model.Node) bool {
-	for dst != nil {
-		if src.Id() == dst.Id() {
+func isSubdir(parent *model.Node, child *model.Node) bool {
+	for child != nil {
+		if parent.Id() == child.Id() {
 			return true
 		}
-		dst = dst.Parent
+		child = child.Parent
 	}
 	return false
 }
