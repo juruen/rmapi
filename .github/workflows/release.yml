@@ -37,10 +37,10 @@ jobs:
         run: zip rmapi-macosx.zip rmapi
 
       - name: Build Windows binary
-        run:  GOOS=windows go build -v -o rmapi .
+        run:  GOOS=windows go build -v -o rmapi.exe .
 
       - name: Create zip
-        run: zip rmapi-win64.zip rmapi
+        run: zip rmapi-win64.zip rmapi.exe
 
       - name: Release
         uses: docker://softprops/action-gh-release
