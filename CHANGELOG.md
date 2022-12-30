@@ -1,4 +1,4 @@
-## rmapi master
+## rmapi 0.0.24 (December 30, 2022)
 
 - Make sure Windows binaries have an exe extension (@juruen)
 
