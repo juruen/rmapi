@@ -4,19 +4,27 @@ set -e
 
 # Script to prepare a new rmapi release
 
+SED="sed"
+
+set_sed(){
+  if $(which gsed 2>&1 >/dev/null); then
+    SED="gsed"
+  fi
+}
+
 update_app_version(){
   local version=$1
-  sed -i "s/const Version = \".*\"/const Version = \"$version\"/" version/version.go
+  $SED -i "s/var Version = \".*\"/var Version = \"$version\"/" version/version.go
 }
 
 update_changelog(){
   local version=$1
-  sed -i "1c## rmapi $version ($(date "+%B %d, %Y"))" CHANGELOG.md
+  $SED -i "1c## rmapi $version ($(date "+%B %d, %Y"))" CHANGELOG.md
 }
 
 update_macosx_tutorial(){
   local version=$1
-  sed -i "s/v.*\/rmapi-macosx.zip/v${version}\/rmapi-macosx.zip -o rmapi.zip/" docs/tutorial-print-macosx.md
+  $SED -i "s/v.*\/rmapi-macosx.zip/v${version}\/rmapi-macosx.zip -o rmapi.zip/" docs/tutorial-print-macosx.md
 }
 
 create_tag(){
@@ -42,6 +50,7 @@ if [ -z "$1" ]; then
 fi
 
 version=$1
+set_sed
 update_app_version $version
 update_changelog $version
 update_macosx_tutorial $version
