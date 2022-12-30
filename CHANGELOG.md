@@ -2,6 +2,8 @@
 
 - Make sure Windows binaries have an exe extension (@juruen)
 
+- Use go 1.19 (@juruen)
+
 ## rmapi 0.0.23 (December 01, 2022)
 
 - sync 1.5: use parallel requests when getting remote tree (@ddvk)
