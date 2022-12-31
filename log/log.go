@@ -1,10 +1,13 @@
 package log
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
+	"time"
 )
 
 var (
@@ -14,6 +17,8 @@ var (
 	Error          *log.Logger
 	TracingEnabled bool
 	TraceLevel     int
+	dumpPath       string
+	IsDebug        bool
 )
 
 func Init(
@@ -56,4 +61,18 @@ func InitLog() {
 	}
 
 	Init(trace, info, os.Stdout, os.Stderr)
+
+	dumpPath = os.Getenv("RMAPI_DUMPPATH")
+	if dumpPath != "" {
+		IsDebug = true
+	}
+}
+
+// Dump the contents somewhere
+func Dump(what string, content []byte) {
+	timeStamp := time.Now().UTC().Format(time.RFC3339Nano)
+	filename := fmt.Sprintf("%s_%s", timeStamp, what)
+
+	fullname := path.Join(dumpPath, filename)
+	ioutil.WriteFile(fullname, content, 0600)
 }

@@ -2,6 +2,7 @@ package sync15
 
 import (
 	"archive/zip"
+	"bytes"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -229,6 +230,16 @@ func Sync(b *BlobStorage, tree *HashTree, operation func(t *HashTree) error) err
 		indexReader, err := tree.IndexReader()
 		if err != nil {
 			return err
+		}
+
+		if log.IsDebug {
+			content, err := io.ReadAll(indexReader)
+			if err != nil {
+				return err
+			}
+			indexReader = io.NopCloser(bytes.NewBuffer(content))
+
+			log.Dump("root_out_"+tree.Hash, content)
 		}
 		err = b.UploadBlob(tree.Hash, indexReader)
 		if err != nil {

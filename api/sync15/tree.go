@@ -2,6 +2,7 @@ package sync15
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"errors"
@@ -187,6 +188,19 @@ func (t *HashTree) Mirror(r RemoteStorage, maxconcurrent int) error {
 		return err
 	}
 	defer rootIndexReader.Close()
+	if log.IsDebug {
+		content, err := io.ReadAll(rootIndexReader)
+		if err != nil {
+			return err
+		}
+		err = rootIndexReader.Close()
+		if err != nil {
+			return err
+		}
+		rootIndexReader = io.NopCloser(bytes.NewBuffer(content))
+
+		log.Dump("root_in_"+rootHash, content)
+	}
 
 	entries, err := parseIndex(rootIndexReader)
 	if err != nil {

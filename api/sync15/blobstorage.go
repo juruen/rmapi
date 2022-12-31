@@ -111,8 +111,8 @@ func (b *BlobStorage) GetRootIndex() (string, int64, error) {
 	log.Info.Println("got root get url:", url)
 	blob, gen, err := b.http.GetBlobStream(url)
 	if err == transport.ErrNotFound {
+		log.Warning.Println("no root found, assuming empty")
 		return "", 0, nil
-
 	}
 	if err != nil {
 		return "", 0, err
@@ -122,6 +122,9 @@ func (b *BlobStorage) GetRootIndex() (string, int64, error) {
 		return "", 0, err
 	}
 	log.Info.Println("got root gen:", gen)
+	if log.TracingEnabled {
+		log.Trace.Println(string(content))
+	}
 	return string(content), gen, nil
 
 }

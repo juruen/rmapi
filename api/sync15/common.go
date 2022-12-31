@@ -54,6 +54,9 @@ func loadTree() (*HashTree, error) {
 		if err != nil {
 			return nil, err
 		}
+		if log.IsDebug {
+			log.Dump("cache_read", b)
+		}
 		err = json.Unmarshal(b, tree)
 		if err != nil {
 			log.Error.Println("cache corrupt")
@@ -79,6 +82,9 @@ func saveTree(tree *HashTree) error {
 	b, err := json.MarshalIndent(tree, "", "")
 	if err != nil {
 		return err
+	}
+	if log.IsDebug {
+		log.Dump("cache_write", b)
 	}
 	err = os.WriteFile(cacheFile, b, 0644)
 	return err
