@@ -74,5 +74,5 @@ func Dump(what string, content []byte) {
 	filename := fmt.Sprintf("%s_%s", timeStamp, what)
 
 	fullname := path.Join(dumpPath, filename)
-	ioutil.WriteFile(fullname, content, 0600)
+	os.WriteFile(fullname, content, 0600)
 }
