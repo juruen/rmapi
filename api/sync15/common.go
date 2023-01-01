@@ -41,7 +41,7 @@ func getCachedTreePath() (string, error) {
 	return cacheFile, nil
 }
 
-const cacheVersion = 2
+const cacheVersion = 3
 
 func loadTree() (*HashTree, error) {
 	cacheFile, err := getCachedTreePath()
