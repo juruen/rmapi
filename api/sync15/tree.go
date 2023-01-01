@@ -212,8 +212,9 @@ func (t *HashTree) Mirror(r RemoteStorage, maxconcurrent int) error {
 			if entry.Hash != doc.Hash {
 				log.Info.Println("doc updated: ", doc.DocumentID)
 				e := entry
+				d := doc
 				wg.Go(func() error {
-					return doc.Mirror(e, r)
+					return d.Mirror(e, r)
 				})
 			}
 		}
