@@ -124,7 +124,7 @@ func (d *BlobDoc) ReadContentTags(fileEntry *Entry, r RemoteStorage) error {
 		}
 		err = json.Unmarshal(content, &contentFile)
 		if err != nil {
-			log.Error.Printf("cannot read content %s %v", fileEntry.DocumentID, err)
+			return err
 		}
 		if contentFile.FileTags != nil {
 			fileTags := []string{}
