@@ -21,9 +21,11 @@ func parseOfflineCommands(cmd []string) bool {
 
 	switch cmd[0] {
 	case "reset":
-		configFile := config.ConfigPath()
-		err := os.Remove(configFile)
+		configFile, err := config.ConfigPath()
 		if err != nil {
+			log.Error.Fatalln(err)
+		}
+		if err := os.Remove(configFile); err != nil {
 			log.Error.Fatalln(err)
 		}
 		return true

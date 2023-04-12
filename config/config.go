@@ -1,9 +1,9 @@
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
-	"os/user"
 	"path/filepath"
 
 	"github.com/juruen/rmapi/log"
@@ -18,39 +18,42 @@ const (
 	configFileEnvVar     = "RMAPI_CONFIG"
 )
 
-func ConfigPath() (config string) {
-	configFile, ok := os.LookupEnv(configFileEnvVar)
-	if ok {
-		return configFile
+/*
+ConfigPath returns the path to the config file. It will check the following in order:
+  - If the RMAPI_CONFIG environment variable is set, it will use that path.
+  - If a config file exists in the user's home dir as described by os.UserHomeDir, it will use that.
+  - Otherwise, it will use the XDG config dir, as described by os.UserConfigDir.
+*/
+func ConfigPath() (string, error) {
+	if config, ok := os.LookupEnv(configFileEnvVar); ok {
+		return config, nil
 	}
 
-	user, err := user.Current()
+	home, err := os.UserHomeDir()
 	if err != nil {
-		log.Error.Panicln("failed to get current user:", err)
+		return "", fmt.Errorf("failed to get current user: %w", err)
 	}
 
-	home := user.HomeDir
-	config = filepath.Join(home, defaultConfigFile)
+	config := filepath.Join(home, defaultConfigFile)
 
 	//return config in home if exists
 	if _, err := os.Stat(config); err == nil {
-		return
+		return config, nil
 	}
 
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		log.Warning.Println("cannot determine config dir, using HOME", err)
-		return
+		return config, nil
 	}
 
 	xdgConfigDir := filepath.Join(configDir, appName)
-	err = os.MkdirAll(xdgConfigDir, 0700)
-	if err != nil {
+	if err := os.MkdirAll(xdgConfigDir, 0700); err != nil {
 		log.Error.Panicln("cannot create config dir "+xdgConfigDir, err)
 	}
 	config = filepath.Join(xdgConfigDir, defaultConfigFileXDG)
 
-	return
+	return config, nil
 
 }
 
