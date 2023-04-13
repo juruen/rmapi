@@ -18,7 +18,10 @@ const (
 )
 
 func AuthHttpCtx(reAuth, nonInteractive bool) *transport.HttpClientCtx {
-	configPath := config.ConfigPath()
+	configPath, err := config.ConfigPath()
+	if err != nil {
+		log.Error.Fatal("failed to get config path")
+	}
 	authTokens := config.LoadTokens(configPath)
 	httpClientCtx := transport.CreateHttpClientCtx(authTokens)
 

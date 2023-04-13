@@ -1,8 +1,8 @@
 package model
 
 type AuthTokens struct {
-	DeviceToken string
-	UserToken   string
+	DeviceToken string `yaml:"devicetoken"`
+	UserToken   string `yaml:"usertoken"`
 }
 
 type DeviceTokenRequest struct {
