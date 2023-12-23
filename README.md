@@ -1,6 +1,6 @@
 # rMAPI
 
-*Note: rMAPI is effectiviely unmaintaied at this point, and will be archived in the next few weeks. Please see [this discussion for more info](https://github.com/juruen/rmapi/discussions/313).*
+*Note: rMAPI is effectiviely unmaintaied at this point, and this repo will be archived in the next few weeks. Please see [this discussion for more info](https://github.com/juruen/rmapi/discussions/313).*
 
 [![Actions Status](https://github.com/juruen/rmapi/workflows/Go/badge.svg)](https://github.com/juruen/rmapi/actions)
 
