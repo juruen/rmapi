@@ -29,7 +29,12 @@ func getCmd(ctx *ShellCtxt) *ishell.Cmd {
 
 			c.Println(fmt.Sprintf("downloading: [%s]...", srcName))
 
-			err = ctx.api.FetchDocument(node.Document.ID, fmt.Sprintf("%s.zip", node.Name()))
+			if len(c.Args) > 1 {
+				dest := c.Args[1]
+				err = ctx.api.FetchDocument(node.Document.ID, fmt.Sprintf("%s/%s.zip", dest, node.Name()))
+			} else {
+				err = ctx.api.FetchDocument(node.Document.ID, fmt.Sprintf("%s.zip", node.Name()))
+			}
 
 			if err == nil {
 				c.Println("OK")
