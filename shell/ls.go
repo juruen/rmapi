@@ -2,6 +2,8 @@ package shell
 
 import (
 	"errors"
+	"sort"
+	"strings"
 
 	"github.com/abiosoft/ishell"
 )
@@ -27,7 +29,24 @@ func lsCmd(ctx *ShellCtxt) *ishell.Cmd {
 				node = argNode
 			}
 
-			for _, e := range node.Children {
+			children := node.Children
+
+			// create an array of the keys of the children map
+			keys := make([]string, 0, len(children))
+			for k := range children {
+				keys = append(keys, k)
+			}
+
+			// sort the keys by the name of the node case insensitively
+			sort.SliceStable(keys, func(i, j int) bool {
+				name1 := strings.ToLower(children[keys[i]].Name())
+				name2 := strings.ToLower(children[keys[j]].Name())
+				return name1 < name2
+			})
+
+			for _, key := range keys {
+				e := children[key]
+
 				eType := "d"
 				if e.IsFile() {
 					eType = "f"
