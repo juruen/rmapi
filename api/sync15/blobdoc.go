@@ -108,6 +108,42 @@ func (d *BlobDoc) IndexReader() (io.ReadCloser, error) {
 	return pipeReader, nil
 }
 
+func (d *BlobDoc) ReadContentTags(fileEntry *Entry, r RemoteStorage) error {
+	if strings.HasSuffix(fileEntry.DocumentID, ".content") {
+		contentFile := archive.Content{}
+
+		meta, err := r.GetReader(fileEntry.Hash)
+		if err != nil {
+			return err
+		}
+		defer meta.Close()
+		content, err := ioutil.ReadAll(meta)
+		if err != nil {
+			return err
+		}
+		err = json.Unmarshal(content, &contentFile)
+		if err != nil {
+			return err
+		}
+		if contentFile.FileTags != nil {
+			fileTags := []string{}
+			for _, t := range contentFile.FileTags {
+				fileTags = append(fileTags, t.Name)
+			}
+			d.MetadataFile.FileTags = fileTags
+		}
+		if contentFile.Tags != nil {
+			pageTags := []string{}
+			for _, t := range contentFile.Tags {
+				pageTags = append(pageTags, t.Name)
+			}
+			d.MetadataFile.PageTags = pageTags
+		}
+	}
+
+	return nil
+}
+
 // ReadMetadata the document metadata from remote blob
 func (d *BlobDoc) ReadMetadata(fileEntry *Entry, r RemoteStorage) error {
 	if strings.HasSuffix(fileEntry.DocumentID, ".metadata") {
@@ -183,6 +219,10 @@ func (d *BlobDoc) Mirror(e *Entry, r RemoteStorage) error {
 				if err != nil {
 					return err
 				}
+				err = d.ReadContentTags(newEntry, r)
+				if err != nil {
+					return err
+				}
 				currentEntry.Hash = newEntry.Hash
 			}
 			head = append(head, currentEntry)
@@ -194,6 +234,10 @@ func (d *BlobDoc) Mirror(e *Entry, r RemoteStorage) error {
 	for k, newEntry := range new {
 		if _, ok := current[k]; !ok {
 			err = d.ReadMetadata(newEntry, r)
+			if err != nil {
+				return err
+			}
+			err = d.ReadContentTags(newEntry, r)
 			if err != nil {
 				return err
 			}

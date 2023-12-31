@@ -87,25 +87,37 @@ type Layer struct {
 	Name string `json:"name"`
 }
 
+type FileTag struct {
+	Name      string `json:"name"`
+	Timestamp int    `json:"timestamp"`
+}
+
+type PageTag struct {
+	Name      string `json:"name"`
+	PageId    string `json:"pageId"`
+	Timestamp int    `json:"timestamp"`
+}
+
 // Content represents the structure of a .content json file.
 type Content struct {
 	DummyDocument bool          `json:"dummyDocument"`
 	ExtraMetadata ExtraMetadata `json:"extraMetadata"`
 
 	// FileType is "pdf", "epub" or empty for a simple note
-	FileType       string `json:"fileType"`
-	FontName       string `json:"fontName"`
-	LastOpenedPage int    `json:"lastOpenedPage"`
-	LineHeight     int    `json:"lineHeight"`
-	Margins        int    `json:"margins"`
+	FileType       string    `json:"fileType"`
+	FileTags       []FileTag `json:"fileTags"`
+	FontName       string    `json:"fontName"`
+	LastOpenedPage int       `json:"lastOpenedPage"`
+	LineHeight     int       `json:"lineHeight"`
+	Margins        int       `json:"margins"`
 	// Orientation can take "portrait" or "landscape".
 	Orientation string `json:"orientation"`
 	PageCount   int    `json:"pageCount"`
 	// Pages is a list of page IDs
-	Pages          []string `json:"pages"`
-	Tags           []string `json:"pageTags"`
-	RedirectionMap []int    `json:"redirectionPageMap"`
-	TextScale      int      `json:"textScale"`
+	Pages          []string  `json:"pages"`
+	Tags           []PageTag `json:"pageTags"`
+	RedirectionMap []int     `json:"redirectionPageMap"`
+	TextScale      int       `json:"textScale"`
 
 	Transform Transform `json:"transform"`
 }
@@ -147,13 +159,15 @@ type MetadataFile struct {
 	CollectionType string `json:"type"`
 	Parent         string `json:"parent"`
 	//LastModified in milliseconds
-	LastModified     string `json:"lastModified"`
-	LastOpened       string `json:"lastOpened"`
-	LastOpenedPage   int    `json:"lastOpenedPage"`
-	Version          int    `json:"version"`
-	Pinned           bool   `json:"pinned"`
-	Synced           bool   `json:"synced"`
-	Modified         bool   `json:"modified"`
-	Deleted          bool   `json:"deleted"`
-	MetadataModified bool   `json:"metadatamodified"`
+	LastModified     string   `json:"lastModified"`
+	LastOpened       string   `json:"lastOpened"`
+	LastOpenedPage   int      `json:"lastOpenedPage"`
+	Version          int      `json:"version"`
+	Pinned           bool     `json:"pinned"`
+	Synced           bool     `json:"synced"`
+	Modified         bool     `json:"modified"`
+	Deleted          bool     `json:"deleted"`
+	MetadataModified bool     `json:"metadatamodified"`
+	FileTags         []string `json:"fileTags"`
+	PageTags         []string `json:"pageTags"`
 }
