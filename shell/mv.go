@@ -6,6 +6,7 @@ import (
 	"path"
 
 	"github.com/abiosoft/ishell"
+	"github.com/juruen/rmapi/model"
 )
 
 func mvCmd(ctx *ShellCtxt) *ishell.Cmd {
@@ -20,35 +21,55 @@ func mvCmd(ctx *ShellCtxt) *ishell.Cmd {
 			}
 
 			src := c.Args[0]
+			dst := c.Args[1]
 
-			srcNode, err := ctx.api.Filetree().NodeByPath(src, ctx.node)
+			srcNodes, err := ctx.api.Filetree().NodesByPath(src, ctx.node, false)
 
 			if err != nil {
-				c.Err(errors.New("source entry doesn't exist"))
+				c.Err(err)
+				return
+			}
+			if len(srcNodes) < 1 {
+				c.Err(errors.New("no nodes found"))
 				return
 			}
 
-			dst := c.Args[1]
-
-			dstNode, err := ctx.api.Filetree().NodeByPath(dst, ctx.node)
+			dstNode, _ := ctx.api.Filetree().NodeByPath(dst, ctx.node)
 
 			if dstNode != nil && dstNode.IsFile() {
 				c.Err(errors.New("destination entry already exists"))
 				return
 			}
 
-			// We are moving the node to antoher directory
+			// We are moving the node to another directory
 			if dstNode != nil && dstNode.IsDirectory() {
-				n, err := ctx.api.MoveEntry(srcNode, dstNode, srcNode.Name())
+				for _, node := range srcNodes {
+					if isSubdir(node, dstNode) {
+						c.Err(fmt.Errorf("cannot move: %s in itself", node.Name()))
+						return
+					}
 
-				if err != nil {
-					c.Err(errors.New(fmt.Sprint("failed to move entry", err)))
-					return
+					n, err := ctx.api.MoveEntry(node, dstNode, node.Name())
+
+					if err != nil {
+						c.Err(fmt.Errorf("failed to move entry %w", err))
+						return
+					}
+
+					ctx.api.Filetree().MoveNode(node, n)
 				}
-
-				ctx.api.Filetree().MoveNode(srcNode, n)
+				err = ctx.api.SyncComplete()
+				if err != nil {
+					c.Err(fmt.Errorf("cannot notify, %w", err))
+				}
 				return
 			}
+
+			if len(srcNodes) > 1 {
+				c.Err(errors.New("cannot rename multiple nodes, only first match will be renamed"))
+			}
+
+			srcNode := srcNodes[0]
 
 			// We are renaming the node
 			parentDir := path.Dir(dst)
@@ -57,18 +78,33 @@ func mvCmd(ctx *ShellCtxt) *ishell.Cmd {
 			parentNode, err := ctx.api.Filetree().NodeByPath(parentDir, ctx.node)
 
 			if err != nil || parentNode.IsFile() {
-				c.Err(errors.New("directory doesn't exist"))
+				c.Err(fmt.Errorf("cannot move, %w", err))
 				return
 			}
 
 			n, err := ctx.api.MoveEntry(srcNode, parentNode, newEntry)
 
 			if err != nil {
-				c.Err(errors.New(fmt.Sprint("failed to move entry", err)))
+				c.Err(fmt.Errorf("failed to move entry, %w", err))
 				return
+			}
+			err = ctx.api.SyncComplete()
+			if err != nil {
+				c.Err(fmt.Errorf("cannot notify, %w", err))
 			}
 
 			ctx.api.Filetree().MoveNode(srcNode, n)
 		},
 	}
+}
+
+// isSubdir check for moves e.g. a in a/sub1 which result in data loss
+func isSubdir(parent *model.Node, child *model.Node) bool {
+	for child != nil {
+		if parent.Id() == child.Id() {
+			return true
+		}
+		child = child.Parent
+	}
+	return false
 }
